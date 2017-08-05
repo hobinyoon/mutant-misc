@@ -1,0 +1,6 @@
+#workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/0.05
+#workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/0.10
+#workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/1.00
+#workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/10.00
+#workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/100.00
+workload_dir: ~/work/mutant/misc/quizup/memcached-2w/gen-sim-data/.output/simulator-data/100.00

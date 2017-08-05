@@ -1,0 +1,3 @@
+# Ignore files that end with -d
+*-d
+*.csv

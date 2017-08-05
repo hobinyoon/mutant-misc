@@ -1,0 +1,3 @@
+in_dir: ~/work/quizup-data/memcached-2w/num-reads-by-obj-ages/num-reads-by-obj-by-lastupdatetime-by-obj-age
+
+fn_out: ../.output/initial-hot-region-max-temperature

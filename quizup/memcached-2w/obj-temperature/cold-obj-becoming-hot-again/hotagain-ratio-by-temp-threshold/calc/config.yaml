@@ -1,0 +1,5 @@
+in_dir: ~/work/quizup-data/memcached-2w/num-reads-by-obj-ages/num-reads-by-obj-by-lastupdatetime-by-obj-age
+
+out_dir: ../.output/obj-becoming-hot-again-temp-threshold-vs-percentage
+
+become_hotagain_temp_threshold: 10.0

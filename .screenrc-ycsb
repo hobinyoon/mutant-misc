@@ -1,0 +1,33 @@
+shell -$SHELL
+defscrollback 10000
+
+split
+split
+screen -t dstat dstat -tcdn -C total -D xvda,xvdb -r 10
+# -C total
+#   CPU stats:
+#     usr sys idl wai hiq siq
+#     system, user, idle, wait, hardware interrupt, software interrupt
+#
+# -D xvda,xvdb
+# -r IO
+
+focus
+screen -t ycsb
+stuff "cd ~/work/mutant/YCSB/mutant"
+focus
+screen -t htop htop
+focus
+focus
+
+# http://unix.stackexchange.com/questions/74785/how-to-open-tabs-windows-in-gnu-screen-execute-commands-within-each-one
+altscreen on
+term screen-256color
+#
+#change the hardstatus settings to give an window list at the bottom of the
+#screen, with the time and date and with the current window highlighted
+hardstatus alwayslastline
+#hardstatus string '%{= kG}%-Lw%{= kW}%50> %n%f* %t%{= kG}%+Lw%< %{= kG}%-=%c:%s%{-}'
+hardstatus string '%{= kG}[ %{G}%H %{g}][%= %{= kw}%?%-Lw%?%{r}(%{W}%n*%f%t%?(%u)%?%{r})%{w}%?%+Lw%?%?%= %{g}][%{B} %m-%d %{W}%c %{g}]'
+
+layout save default

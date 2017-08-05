@@ -1,0 +1,34 @@
+"RocksDB with local SSD":
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150512/ycsb/170804-194535.799-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150512/ycsb/170804-193419.327-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150657/ycsb/170804-195650.863-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150657/ycsb/170804-194333.750-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150452/ycsb/170804-194148.719-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150452/ycsb/170804-193025.701-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150634/ycsb/170804-195651.890-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150634/ycsb/170804-194252.443-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150722/ycsb/170804-194322.967-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150533/ycsb/170804-193550.795-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150533/ycsb/170804-194724.604-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150615/ycsb/170804-194358.018-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150615/ycsb/170804-195610.029-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150554/ycsb/170804-193340.373-d
+  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-150554/ycsb/170804-194537.274-d
+
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170804-140453/ycsb/170804-182443.097-d
+
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221431/ycsb/170804-024954.769-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221431/ycsb/170804-025510.265-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221408/ycsb/170804-024406.496-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221408/ycsb/170804-024917.301-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221453/ycsb/170804-024850.482-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221453/ycsb/170804-025429.273-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221539/ycsb/170804-024529.839-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221539/ycsb/170804-025311.922-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221602/ycsb/170804-024010.013-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221602/ycsb/170804-024724.634-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221625/ycsb/170804-024705.637-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221515/ycsb/170804-024500.689-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221515/ycsb/170804-025116.170-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221340/ycsb/170804-024912.729-d
+#  - ~/work/mutant/misc/rocksdb/ycsb/logs/workload-d-by-target-iops/170803-221340/ycsb/170804-025413.943-d

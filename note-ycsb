@@ -1,0 +1,101 @@
+TODO: Merge this to the misc note
+
+TODO: The default bloom_filter_fp_chance for LeveledCompactionStrategy is 0.1,
+not 0.01.
+- How did they pick the parameter? What's the tradeoff? BF size and false positive ratio?
+	- Why does LCS has a much lower number? Since there aren't as many SSTables,
+		getting more false positives are okay? Hope I could find some hint. Search
+		for something and ask the mailing list. Might be an exploration point for
+		the paper.
+
+TODO: What is this?
+- "Hybrid (leveled and size-tiered) compaction improvements to the leveled
+	compaction strategy reduce the performance overhead on read operations when
+	compaction cannot keep pace with write-heavy workload. If Cassandra cannot
+	keep pace with the workload when using the LCS, the compaction strategy
+	switches to STCS until Cassandra catches up. For this reason, it is a best
+	practice to configure the max_threshold subproperty for a table to use when
+	the switch occurs."
+
+Mutant needs a max SSTable size cap.
+- Why do you want to cap it?
+	- To be able to make a fine-grained SSTable allocation to different storages.
+	- The problem can get worse for the migration from S_n to S_(n+1), when n >=
+		1.
+- Can you cap the SSTable size in STCS? I don't see the option. Probably
+	not, since the bigger a SSTable is, the better read performance you get.
+	- "Of course, if you stop updating the row, then size-tiered compaction will
+		eventually merge the row fragments into a single SSTable."
+		[http://www.datastax.com/dev/blog/when-to-use-leveled-compaction]
+	- Then, can you compensate this with a lower BF FP ratio? Probably yes,
+		for workload type d, or read-heavy ones. Probably no, for update heavy one.
+		Explore the tradeoff here.
+- LCS is a natural fit.
+
+
+
+LCS vs STCS
+- "LCS does roughly twice as much i/o as STCS. For primarily insert-oriented
+	workloads, this extra i/o does not pay off in terms of the above benefits,
+	since there are few obsolete row versions involved."
+- STCS: "Cassandra’s size-tiered compaction stragety is very similar to the one
+	described in Google’s Bigtable paper: when enough similar-sized sstables are
+	present (four by default), Cassandra will merge them."
+	[http://www.datastax.com/dev/blog/leveled-compaction-in-apache-cassandra]
+- LCS: "This compaction strategy is modeled after Google's LevelDB
+	implementation."
+	[https://docs.datastax.com/en/cql/3.1/cql/cql_reference/tabProp.html]
+	- "Leveled compaction creates sstables of a fixed, relatively small size (5MB
+		by default in Cassandra’s implementation), that are grouped into “levels.”
+		Within each level, sstables are guaranteed to be non-overlapping. Each
+		level is ten times as large as the previous."
+		[http://www.datastax.com/dev/blog/leveled-compaction-in-apache-cassandra]
+		- It is 160 MB.
+	- The default size is 160 MB. sstable_size_in_mb
+		[https://docs.datastax.com/en/cql/3.3/cql/cql_reference/compactSubprop.html]
+	- LCS is a good fit for workload "d" for high read:write ratio. But, I think
+		the benefit is small with a Zipfian pattern.
+		- "If you perform at least twice as many reads as you do writes, leveled
+			compaction may actually save you disk I/O, despite consuming more I/O for
+			compaction. This is especially true if your reads are fairly random and
+			don’t focus on a single, hot dataset."
+	- How do they organize SSTables at each level so that they don't overlap?
+		When a SSTable is moved down (promoted to the next level), the overlapping
+		SSTables are rewritten. And, at each level, I think, there are 10 such
+		SSTables in average.
+
+Apache Cassandra Compaction Strategies
+- Nice figure of 3 of them.
+	[https://www.instaclustr.com/blog/2016/01/27/apache-cassandra-compaction/]
+- Similar diagram.
+	[http://www.datastax.com/dev/blog/when-to-use-leveled-compaction]
+- The write path to compaction. This is nice too.
+	[https://docs.datastax.com/en/cassandra/2.1/cassandra/dml/dml_write_path_c.html]
+- SSTables per read. nodetool cfhistograms foo bar TODO: try this!
+	- TODO: restart from here!!!
+	[http://www.slideshare.net/planetcassandra/compaction-compaction-everywhere]
+
+
+TODO: How are the SSTable temperatures like in LCS with the workload type d?
+Hope I could see them separated.
+
+
+TODO: Follow up on DTCS. What is it now? Time something ...
+
+
+LCS is more disk IO-heavy.
+- TODO: write sampling?
+- So, for workload d, LCS doesn't give you any benefit. "Rows are write once:
+	If your rows are always written entirely at once and are never updated, they
+	will naturally always be contained by a single SSTable when using size-tiered
+	compaction. Thus, there’s really nothing to gain from leveled compaction."
+
+
+Misc
+----
+Store YCSB client machine dstat log to a file just in case
+
+_run-d.py includes recreating Cassandra YCSB table, loading, and running the
+workload.
+
+:mksession! ~/vim-session-ycsb

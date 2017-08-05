@@ -1,0 +1,911 @@
+
+
+TODO: Calculate cost. High priority!
+- With and (TODO) without Mutant. Optionize.
+	- How do you get Options or MutantOptions? How did DBImple() get the option?
+
+TODO: Write down the design and implementation
+
+TODO: Launch multiple EC2 instances and do the experiment. Time to automate
+experiment.
+- For different pairs of devices.
+
+
+
+
+
+TODO: Calculate cost. High priority!
+- With and (TODO) without Mutant. Optionize.
+	- How do you get Options or MutantOptions? How did DBImple() get the option?
+
+TODO: Write down the design and implementation
+
+TODO: Launch multiple EC2 instances and do the experiment. Time to automate
+experiment.
+- For different pairs of devices.
+
+
+RocksDB-Quizup killed by Linux OOM killer. /var/log/syslog
+	[ 8186.298535] quizup invoked oom-killer: gfp_mask=0x24000c0, order=0, oom_score_adj=0
+	[ 8186.298538] quizup cpuset=/ mems_allowed=0
+	[ 8186.298544] CPU: 5 PID: 16914 Comm: quizup Not tainted 4.4.0-59-generic #80-Ubuntu
+	[ 8186.298546] Hardware name: Xen HVM domU, BIOS 4.2.amazon 11/11/2016
+	[ 8186.298547]  0000000000000286 0000000075434158 ffff8803078e7c88 ffffffff813f7583
+	[ 8186.298551]  ffff8803078e7d68 ffff8803bd36b800 ffff8803078e7cf8 ffffffff8120ad5e
+	[ 8186.298554]  ffffffff81cd5548 ffff8803bc902000 ffffffff81e67760 0000000000000206
+	[ 8186.298557] Call Trace:
+	[ 8186.298563]  [<ffffffff813f7583>] dump_stack+0x63/0x90
+	[ 8186.298567]  [<ffffffff8120ad5e>] dump_header+0x5a/0x1c5
+	[ 8186.298571]  [<ffffffff81192722>] oom_kill_process+0x202/0x3c0
+	[ 8186.298574]  [<ffffffff811fe9d4>] ? mem_cgroup_iter+0x204/0x390
+	[ 8186.298577]  [<ffffffff81200a33>] mem_cgroup_out_of_memory+0x2b3/0x300
+	[ 8186.298580]  [<ffffffff81201808>] mem_cgroup_oom_synchronize+0x338/0x350
+	[ 8186.298583]  [<ffffffff811fc8e0>] ? kzalloc_node.constprop.49+0x20/0x20
+	[ 8186.298586]  [<ffffffff81192dd4>] pagefault_out_of_memory+0x44/0xc0
+	[ 8186.298589]  [<ffffffff8106b282>] mm_fault_error+0x82/0x160
+	[ 8186.298592]  [<ffffffff8106b738>] __do_page_fault+0x3d8/0x400
+	[ 8186.298594]  [<ffffffff8106b782>] do_page_fault+0x22/0x30
+	[ 8186.298599]  [<ffffffff8183a678>] page_fault+0x28/0x30
+	[ 8186.298601] Task in /small_mem killed as a result of limit of /small_mem
+	[ 8186.298606] memory: usage 1048576kB, limit 1048576kB, failcnt 1662311
+	[ 8186.298608] memory+swap: usage 0kB, limit 9007199254740988kB, failcnt 0
+	[ 8186.298609] kmem: usage 0kB, limit 9007199254740988kB, failcnt 0
+	[ 8186.298611] Memory cgroup stats for /small_mem: cache:24432KB rss:1024144KB rss_huge:886784KB mapped_file:828KB dirty:7676KB writeback:964KB inactive_anon:0KB active_anon:1024144KB inactive_file:11352KB active_file:9032KB unevictable:0KB
+	[ 8186.298625] [ pid ]   uid  tgid total_vm      rss nr_ptes nr_pmds swapents oom_score_adj name
+	[ 8186.298691] [15990]  1000 15990  3167800   224079    1583      15        0             0 quizup
+	[ 8186.298694] Memory cgroup out of memory: Kill process 15990 (quizup) score 860 or sacrifice child
+	[ 8186.306184] Killed process 15990 (quizup) total-vm:12671200kB, anon-rss:896316kB, file-rss:0kB
+
+
+Make sure RocksDB options work as specified.
+- A file is created automatically in the data directory.
+  ~/work/rocksdb-data/quizup/OPTIONS-000005
+
+Can you restart the database that was once stopped? Yes. RocksDB loads all
+SSTables from all directories in the db_paths. This should be trivial.
+
+
+Tablet migration implementation on mjolnir
+- Temperature monitoring.
+	- Implementation took longer than I thought. Also, spent half a day figuring
+		out the deadlock problem. sigh; The 2-level locking was needed indeed!
+- TODO: Figure out the SSTable migration temperature threshold
+	- Plot the chart again with the result from the 2000 sec experiment on
+		mjolnir, and you will have a better idea. You wanna make it smoother by
+		setting a decay factor closer to 1, like 0.999. TODO: This is an
+		optimization. Revisit later.
+	- TODO: Generate an aggregate stat by levels.
+- TODO: Implement migration
+	- TODO: Figure out how compaction is done
+	- Are the compaction jobs overlapping? I think there can be multiple
+		compaction threads, as I've seen from the LOG.
+		- Looking at db/compaction_job_test.cc. This looks like a good one.
+		- CompactionPicker
+	- Let's implement compaction-piggybacked migration first
+	- Directory structure
+		~/work/rocksdb/quizup/t0/000700.sst
+														/000701.sst
+												 /t1/...
+														/...
+												 /t2
+												 /t3
+
+	- Implemented compaction-driven migration.
+		- It is creation of new SSTables at the right temperature level.
+	- TODO: Implement single-SSTable migration! Or, temperature-driven migration!
+		- Still here. Taking longer than I thought. Started from 4th I think.
+
+
+
+
+TODO: too many "Compaction nothing to do"
+
+thread.join() and singleton prevent the processor from terminating. it so
+bothers me. Spent like half a day!
+- It could be related to the singleton thread object not being released? No,
+	verified with a simple example.
+- There was another place where threads are waiting for a cv! Fixed!
+
+
+
+TODO: Write down first. You will need to plot these
+- TODO: Plot the number of SSTables
+- TODO: Plot the volume of each SSTables
+
+
+
+
+
+
+Resolution independent fractional second
+- http://www.boost.org/doc/libs/1_63_0/doc/html/date_time/posix_time.html#date_time.posix_time.time_duration
+  long cnt = boost::posix_time::time_duration::ticks_per_second()
+    * been_cold_for * _simulation_over_simulated_time_dur;
+  _became_cold_at_simulation_time = t - boost::posix_time::time_duration(0, 0, 0, cnt);
+
+I guess, in RocksDB, SSTables are for user-defined tablets, not for the system.
+
+Animated gif is tricky. Will work on it later if absolutely needed. A time
+chart might be just fine.
+
+db/compaction_picker.h
+   // Pick a path ID to place a newly generated file, with its level
+   static uint32_t GetPathId(const ImmutableCFOptions& ioptions,
+                             const MutableCFOptions& mutable_cf_options,
+                             int level);
+
+Is moving less-frequently accessed SSTables to a cold storage the right decision?
+- Any access to it will generate a cache fault.
+- If you move the more-frequently accessed SSTables instead, they won't
+	generate as much cache fault. So, it depends on the cache size. I wish I can
+	get a statistics of page cache fault per SSTable.
+	- This might be a hint:
+		http://serverfault.com/questions/157612/is-there-a-way-to-get-cache-hit-miss-ratios-for-block-devices-in-linux
+	- Mutant moves the less-frequently accessed SSTables.
+- For compaction, which is a scan, keeping more-frequently accessed SSTables in
+	the hot storage device makes more sense.
+- Might be a good digging for the next paper.
+
+
+
+
+
+RocksDB already considers multi db_paths!
+- include/rocksdb/options.h
+		std::vector<DbPath> db_paths;
+	"Newer data is placed into paths specified earlier in the vector while older
+	data gradually moves to paths specified later in the vector."
+- What they do is (SSTable age (probably by sst_id), storage capacity)-based.
+- Working!
+- TODO: Trace the code and see how they place SSTables to different storages.
+	- It starts from GetPathId(). Took about a day to figure this out. Similar to
+		what Cassandra does.
+- You can specify up to 4 paths, which is fine for now.
+
+In one compaction, there can be multiple output SSTables, they all need to have
+the same path_id. The temperature of them is the average temperature of all of
+the input files, which decides in which storage the output files are stored.
+The temperature of the newly created SSTables will be calculated later when
+there are in service, with some initial no-migration time period.
+
+TODO: I wonder how the path_is is persisted. Hope they don't just exhaustivly
+search for all paths for a requested file. Probably not, since they mentioned
+a SSD and slow disk as an example.
+
+
+
+
+TODO: report the progress when at least one migration works!
+
+
+Level score. Not sure if it's something worth mentioning.
+- http://docs.basho.com/riak/kv/2.2.0/setup/planning/backend/leveldb
+- http://www.slideshare.net/meeeejin/rocksdb-compaction
+
+TODO: git commit after making sure tables are getting moved.
+- report after the single-tablet move implementation!
+
+RockDB knows where SSTables are stored! I'm guessing it reads the list of
+SSTables from all paths when it starts.  Worth mentioning in the paper.
+
+
+
+How SSTables are created in the code path. Might be something that can be added
+in the paper, if space is left.
+	include/rocksdb/table.h
+		Return a table builder to write to a file for this table type.
+		It is called in several places:
+		(1) When flushing memtable to a level-0 output file, it creates a table
+				builder (In DBImpl::WriteLevel0Table(), by calling BuildTable())
+		(2) During compaction, it gets the builder for writing compaction output
+				files in DBImpl::OpenCompactionOutputFile().
+		(3) When recovering from transaction logs, it creates a table builder to
+				write to a level-0 output file (In DBImpl::WriteLevel0TableForRecovery,
+				by calling BuildTable())
+		(4) When running Repairer, it creates a table builder to convert logs to
+				SST files (In Repairer::ConvertLogToTable() by calling BuildTable())
+
+
+
+SSTable access frequency and temperature
+- Use the 60,000 sec experiment data to figure out a good parameter.
+- Plot them with the temperature curve.
+	- temp_drop_alpha = 0.99. Temperature 1 drops to 0.001 in 687 time units.
+		With sec, in about 11.5 mins simulated time. About 30 secs in simulation
+		time.
+	- TODO: I like the new definition of the temperature better. Write it down
+		and update the paper.
+- TODO: Generate an aggregate stat, which can go into the paper.
+
+
+
+TODO: Stat temperatures by SSTables by time. The numbers look quite different
+from the OSDI poster.
+- This will lead to the parameter selection.
+
+
+TODO: Stat (how many SSTables are there / how much volume do the files occupy)
+by levels by time
+
+
+
+Make sure RocksDB options work as specified.
+- A file is created automatically in the data directory.
+  ~/work/rocksdb-data/quizup/OPTIONS-000005
+
+Can you restart the database that was once stopped? Yes. RocksDB loads all
+SSTables from all directories in the db_paths. This should be trivial.
+
+
+Tablet migration implementation on mjolnir
+- Temperature monitoring.
+	- Implementation took longer than I thought. Also, spent half a day figuring
+		out the deadlock problem. sigh; The 2-level locking was needed indeed!
+- TODO: Figure out the SSTable migration temperature threshold
+	- Plot the chart again with the result from the 2000 sec experiment on
+		mjolnir, and you will have a better idea. You wanna make it smoother by
+		setting a decay factor closer to 1, like 0.999. TODO: This is an
+		optimization. Revisit later.
+	- TODO: Generate an aggregate stat by levels.
+- TODO: Implement migration
+	- TODO: Figure out how compaction is done
+	- Are the compaction jobs overlapping? I think there can be multiple
+		compaction threads, as I've seen from the LOG.
+		- Looking at db/compaction_job_test.cc. This looks like a good one.
+		- CompactionPicker
+	- Let's implement compaction-piggybacked migration first
+	- Directory structure
+		~/work/rocksdb/quizup/t0/000700.sst
+														/000701.sst
+												 /t1/...
+														/...
+												 /t2
+												 /t3
+
+	- Implemented compaction-driven migration.
+		- It is creation of new SSTables at the right temperature level.
+	- TODO: Implement single-SSTable migration! Or, temperature-driven migration!
+		- Still here. Taking longer than I thought. Started from 4th I think.
+
+
+
+
+TODO: too many "Compaction nothing to do"
+
+thread.join() and singleton prevent the processor from terminating. it so
+bothers me. Spent like half a day!
+- It could be related to the singleton thread object not being released? No,
+	verified with a simple example.
+- There was another place where threads are waiting for a cv! Fixed!
+
+
+
+TODO: Write down first. You will need to plot these
+- TODO: Plot the number of SSTables
+- TODO: Plot the volume of each SSTables
+
+
+
+
+
+
+Resolution independent fractional second
+- http://www.boost.org/doc/libs/1_63_0/doc/html/date_time/posix_time.html#date_time.posix_time.time_duration
+  long cnt = boost::posix_time::time_duration::ticks_per_second()
+    * been_cold_for * _simulation_over_simulated_time_dur;
+  _became_cold_at_simulation_time = t - boost::posix_time::time_duration(0, 0, 0, cnt);
+
+I guess, in RocksDB, SSTables are for user-defined tablets, not for the system.
+
+Animated gif is tricky. Will work on it later if absolutely needed. A time
+chart might be just fine.
+
+db/compaction_picker.h
+   // Pick a path ID to place a newly generated file, with its level
+   static uint32_t GetPathId(const ImmutableCFOptions& ioptions,
+                             const MutableCFOptions& mutable_cf_options,
+                             int level);
+
+Is moving less-frequently accessed SSTables to a cold storage the right decision?
+- Any access to it will generate a cache fault.
+- If you move the more-frequently accessed SSTables instead, they won't
+	generate as much cache fault. So, it depends on the cache size. I wish I can
+	get a statistics of page cache fault per SSTable.
+	- This might be a hint:
+		http://serverfault.com/questions/157612/is-there-a-way-to-get-cache-hit-miss-ratios-for-block-devices-in-linux
+	- Mutant moves the less-frequently accessed SSTables.
+- For compaction, which is a scan, keeping more-frequently accessed SSTables in
+	the hot storage device makes more sense.
+- Might be a good digging for the next paper.
+
+
+
+
+
+RocksDB already considers multi db_paths!
+- include/rocksdb/options.h
+		std::vector<DbPath> db_paths;
+	"Newer data is placed into paths specified earlier in the vector while older
+	data gradually moves to paths specified later in the vector."
+- What they do is (SSTable age (probably by sst_id), storage capacity)-based.
+- Working!
+- TODO: Trace the code and see how they place SSTables to different storages.
+	- It starts from GetPathId(). Took about a day to figure this out. Similar to
+		what Cassandra does.
+- You can specify up to 4 paths, which is fine for now.
+
+In one compaction, there can be multiple output SSTables, they all need to have
+the same path_id. The temperature of them is the average temperature of all of
+the input files, which decides in which storage the output files are stored.
+The temperature of the newly created SSTables will be calculated later when
+there are in service, with some initial no-migration time period.
+
+TODO: I wonder how the path_is is persisted. Hope they don't just exhaustivly
+search for all paths for a requested file. Probably not, since they mentioned
+a SSD and slow disk as an example.
+
+
+
+
+TODO: report the progress when at least one migration works!
+
+
+Level score. Not sure if it's something worth mentioning.
+- http://docs.basho.com/riak/kv/2.2.0/setup/planning/backend/leveldb
+- http://www.slideshare.net/meeeejin/rocksdb-compaction
+
+TODO: git commit after making sure tables are getting moved.
+- report after the single-tablet move implementation!
+
+RockDB knows where SSTables are stored! I'm guessing it reads the list of
+SSTables from all paths when it starts.  Worth mentioning in the paper.
+
+
+
+How SSTables are created in the code path. Might be something that can be added
+in the paper, if space is left.
+	include/rocksdb/table.h
+		Return a table builder to write to a file for this table type.
+		It is called in several places:
+		(1) When flushing memtable to a level-0 output file, it creates a table
+				builder (In DBImpl::WriteLevel0Table(), by calling BuildTable())
+		(2) During compaction, it gets the builder for writing compaction output
+				files in DBImpl::OpenCompactionOutputFile().
+		(3) When recovering from transaction logs, it creates a table builder to
+				write to a level-0 output file (In DBImpl::WriteLevel0TableForRecovery,
+				by calling BuildTable())
+		(4) When running Repairer, it creates a table builder to convert logs to
+				SST files (In Repairer::ConvertLogToTable() by calling BuildTable())
+
+
+
+SSTable access frequency and temperature
+- Use the 60,000 sec experiment data to figure out a good parameter.
+- Plot them with the temperature curve.
+	- temp_drop_alpha = 0.99. Temperature 1 drops to 0.001 in 687 time units.
+		With sec, in about 11.5 mins simulated time. About 30 secs in simulation
+		time.
+	- TODO: I like the new definition of the temperature better. Write it down
+		and update the paper.
+- TODO: Generate an aggregate stat, which can go into the paper.
+
+
+
+TODO: Stat temperatures by SSTables by time. The numbers look quite different
+from the OSDI poster.
+- This will lead to the parameter selection.
+
+
+TODO: Stat (how many SSTables are there / how much volume do the files occupy)
+by levels by time
+
+
+Baseline performance.
+- With the 99th percentile, EBS Mag's performance is better than Local SSD.  I
+	can't explain this. It could be misleading. Find good metrics. Average seems
+	good. Find a near worst case ones. Tail latency.
+	- Log in more details and see what you want to present! You have like up to
+		16K gets/sec.  With 16,000 gets/sec,
+			99   th percentile -> 160  th slowest one
+			99.9 th percentile ->  16  th slowest one
+			99.99th percentile ->   1.6th slowest one. Almost worst-case performance.
+- Read latency
+	- Local SSD has the lowest average latency, but a high variability.
+	- EBS SSD has the second lowest latency in average, and the distribution is
+		very stable, low variance.
+	- EBS Mag and Mag Cold have very high latencies, with Mag Cold the highest.
+		- When they are served from the cache, their latencies are even lower then
+			Local SSD and EBS SSD. I can't explain this. I don't have to present this
+			one until I figure it out.
+- Write latency
+	- Compared to read
+		- average is a bit higher.
+		- tail latency is a lot lower, since they are asynchronous.
+	- By storage devices,
+		- Average: Local SSD and EBS SSD have about the same high latency, EBS Mag
+			and Mag Cold have very similar low latencies.
+		- Tail latency
+			- Local SSD has bigger latencies. May not be a fair comparison since it's
+				a single SSD. Not RAIDed.
+			- All EBS ones have stable latencies.
+- Resource usage
+	- 2 big spikes and 1 tiny one. What are they? TODO: Look at the compaction
+		logs. Translate the time to simulation time.
+	- IO wait time explains this the best.
+	- Others - CPU time,
+	- Total memory usage and cache usage are interesting. Can't they EBS Mags
+		have lower cache usage.
+		- TODO: I'm suspecting something might have been cached before entering
+			group. Still doen't explain.
+		- TODO: The DB data files weren't evicted from cache. Still doen't explain much but worth redoing the experiments.
+			- Making sure to evict all cache before the experiment. A bit worried
+				about the small, EBS SSD root volume. Surprisingly not a lot of IO.
+				Added to the script.
+				- TODO: Redoing all 4 experiment. We'll see how it goes :) TODO: Revisit the resource usage.
+
+
+
+
+TODO: Calculate the storage cost. It can wait until you finish tablet
+migration.
+
+TODO: Plot the full 60000 sec experiment. What story do you want to tell? This
+is worth making it to the paper.
+- Latency increases as the amount of disk IO increases.
+	- Due to the IOs from cache misses.
+	- Due to the flush/compaction IOs.
+- Show the number of currently active compactions.
+- Show the amount of IOs.
+
+
+
+
+
+
+
+
+Work backward! Don't get into too much details.
+- TODO: clean up unorganized thoughts below.
+
+
+May want to label them as
+- Local SSD, EBS SSD, EBS magnetic, EBS magnetic cold
+
+Make a 90%-loaded data file.
+- Will need a new AMI for the aws cli tools. oh well.
+- Uploaded to S3.
+- Syncing to the S3 directory. Will be super useful for restarting from the 90%.
+	aws s3 sync --delete s3://rocksdb-data/quizup-90p-loaded ~/work/rocksdb-data/quizup
+
+Made a new AMI including new zipped quizup data files
+
+Find a good memory amount for generting enough IOs.
+- 3GB seems good for the 100% data
+	- I can see the relation between disk IO and DB latency, especially the tail latency.
+- Finding the right memory size is not straightforward, cause of the in-kernel
+	page cache compression
+	http://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/commit/?id=96256460487387d28b8398033928e06eb9e428f7
+	- You can increase the randomness to achieve the same thing, but not very
+		real for a real-world workload.
+
+4KB random read latency. It would makes sense if you don't see a lot of differences.
+- Local SSD: 0.15 ms
+- EBS gp2  : 0.45 ms
+
+Explain when DB latency increases. It's when the database starts to hit the
+disk from more memory pressure and more cache misses (in-kernel page cache)
+when accessing SSTables.
+- You may want to explain it with a timeline plot of the entire experiment.
+	- TODO: Figure out which storage device you want to use. Probably with gp2.
+		The experiment takes 16.7 hours (60000 secs).
+		- Running on the EC2 node 161231-132546.
+
+Zip/unzip the workload files in parallel. good.
+
+What is the initial 1- or 2-sec gap? Must be some thread or workload data
+initialization overhead. No time for figuring that out. Move on.
+
+Plot access frequencies or temperature by SSTable ages
+- Add simulation_time/simulated_time begin/end.
+- Calculate acc_freq by sst_age
+	- Calc access freq / size / time (count/64MB/min), and plot them
+		- The time is in simulated time.
+- Make a multi-page pdf per level and show Ymir. It's very valuable.
+- Add sst_id and level. 9m
+
+RocksDB is not working on the ec2 node. Well, I've never tested it on
+Ubuntu 16.04.
+- libsnappy-dev was missing! Interesting that it still builds without it.
+- increased max open file limit
+- make a new AMI when you reboot next time
+
+TODO: Calc storage cost. Write down how you calculated it.
+
+TODO: Plot temperature by SSTable ages
+- Pick a good example and plot!
+
+- TODO: Make a stat of the SSTable lifetime
+	- Lifetime
+		- TODO: They have a periodicity. Dig it!
+	- Average acc freq over the lifetime
+
+- TODO: What's the gap between last access and deleted? Some have a very
+	distinctive gaps. Not sure it's from the request gap.
+	- I don't see it any more.
+
+Do you need Memory size analysis? Not sure. Could be distracting.
+
+
+
+
+
+
+
+
+Not worth making it to the paper
+--------------------------------
+The QuizUp data takes only like 2.3GB when stored in RocksDB. A lot smaller
+than I thought. Need a small-memory node so that not all of them get cached in
+memory. Some of the working set shouldn't be cached in memory to see the
+slowdown from disk accesses.
+
+It's so slow. I'm suspecting the fine-grained locking. Although, it's not
+intuitive. Might be a lot of false invalidations going on?
+- Even without making DB requests, it takes about 30ms for the progress monitor
+	reporter to get the counters.
+	- Well I'm not so sure now. It's low but tolerable.
+- It becomes worse with cgroup. vector<> may be doing something terrible in the
+	background with memory.
+- Wait, do I even have to bother with this? It might be just because the system
+	is loaded! Don't even bother with setting thread priorities.
+
+Stop at 90% and make a snapshot of the database.
+
+The Quizup workload has 2 no-request zones. The first, longer one is:
+	00:08:17.995  17.06 161227-043608.079 160714-080328.601  36979   35646     201    2810   69819      33251    14111
+	00:08:18.995  17.06 161227-043609.080 160714-081103.944      0       0       0       0       0          0        0
+	00:08:19.995  17.06 161227-043610.080 160714-081839.284      0       0       0       0       0          0        0
+	00:08:20.996  17.06 161227-043611.080 160714-082614.623      0       0       0       0       0          0        0
+	00:08:21.996  17.06 161227-043612.080 160714-083349.970      0       0       0       0       0          0        0
+# since_simulation_time_begin            simulated_time running_behind            puts    gets
+# progress(percent)                            running_on_time                      avg_latency_put_in_ns
+#         simulation_time(wall_clock)          avg_runing_behind_dur_avg_in_us               avg_latency_get_in_ns
+#          1      2                 3                 4      5       6       7       8       9         10       11
+	00:08:22.996  17.06 161227-043613.080 160714-084125.317      0       0       0       0       0          0        0
+	00:08:23.996  17.06 161227-043614.081 160714-084900.661      0       0       0       0       0          0        0
+	00:08:24.997  17.06 161227-043615.081 160714-085636.008      0       0       0       0       0          0        0
+	00:08:25.997  17.06 161227-043616.081 160714-090411.358      0       0       0       0       0          0        0
+	00:08:26.997  17.06 161227-043617.081 160714-091146.707      0       0       0       0       0          0        0
+	00:08:27.997  17.06 161227-043618.082 160714-091922.054      0       0       0       0       0          0        0
+	00:08:28.998  17.07 161227-043619.082 160714-092657.387  65044   65677     299    5409  125309      46556    15584
+	00:08:29.998  17.10 161227-043620.082 160714-093432.779  82517   81245     292    6585  157179      41909    15107
+
+Signs of RocksDB getting overloaded
+- "[WARN] [default] Stalling writes because we have 5 immutable memtables
+	(waiting for flush), max_write_buffer_number is set to 6 rate 2097152"
+- "[WARN] [default] Increasing compaction threads because we have 4 level-0
+	files"
+
+Monitor system resource usage while running the rocksdb-quizup client
+
+Public key authentication not working. rsync messed up with the MacOS's home
+directory access permission
+
+Plot the compaction start/finish events. Not needed for now.
+
+
+Today's goal: Finish the section. Record and SSTable temperature analysis.
+- TODO: Memtable temperature analysis too, if time allows.
+
+- TODO: Play with include/exclude the current ones
+
+- TODO: Think about how to define temperature with decays and plot them
+
+
+TODO: Make sure bloom filters are used
+- TODO: How do you set the false positive ratio?
+- TODO: What is compaction_filter?
+
+TODO: Make sure RocksDB has in-place compaction. I hope so.
+
+
+
+
+TODO: Running the 100% data. Getting the per-SSTable access statistics.
+- Save the log files. Rocsdb log and client log.
+- Check the running-behind request pattern. I see a diurnal pattern.
+- TODO: Want to log 99% or 99.9% latency too.
+	- Put everything in the vector and sort when you need to report.
+- TODO: I may want a finer-grained report. Let's see what it looks like for now.
+	- The current resolution is like 8 mins.
+- TODO: Temperature too. Not sure if I want to calculate it offline. Try
+	offline first.
+	- TODO: define temperature of a SSTable. You can do it in the exact same way.
+	- The LOG file contains SSTable level info too. Good.
+
+
+
+Make a unique rocksdb data directory for each run to prevent accidental
+deletions.
+- You don't need it. You will want to reuse the 90%-done one.
+	- figure out why you see the t-da directory. simple mistake.
+
+
+Still don't understand why that many running-behind requests are.
+- Balanced file sizes. CPU usage went up as you shorten the simulation time,
+	which means more balanced CPU usage.
+	- But, still many of them. There might be just many clusters of them.
+
+The reason I didn't see many of SSTable accesses might be because I let those
+threads run as fast as they can. Wait that's not entirely true. There can be
+clusterings, but objects should be intermixed with each other.
+- It was from a wrong sorting order. They were sorted by obj_ids! The sorting
+	by timestamp was not properly implemented!
+	- Now I see more SSTables are read!
+
+Output to a file.
+
+
+QuizUp data has only 2,047,471 unique objects. When the record size is 1KB,
+total 2GB in size, after a full compaction. Not a lot.
+
+
+
+Check all unique_lock<> and lock_guard<>
+- Understood what they are.
+
+Prevent compression
+- Compression was turned off.
+- In-kernel page cache compression is not something that I can control.
+
+For the Sstable deletion, I could have followed this one too. It's okay for now.
+	1087       DeleteObsoleteFileImpl(file_deletion_status, state.job_id, fname, type,
+	1088                              number, path_id);
+
+Use rocksdb log. figured out.
+
+Get ec2 instance ready for rocksdb. done.
+
+TableCache
+  const ImmutableCFOptions& ioptions_;
+		class Env has the SSTable file name
+		- rocksdb/env.h
+
+TODO: Monitor SSTable accesses while running YCSB workload d
+- To make sure you are doing the right thing
+- Expect to see a lot of reads on the Memtable and a lot on new SSTables
+	- Memtable accesses are just to understand what's going on
+	- SSTable accesses are what you need
+
+SSTable created
+- 2016/12/13-14:01:51.546773 7fe7c2ffd700 EVENT_LOG_v1 {"time_micros":
+		1481655711546741, "cf_name": "default", "job": 3, "event":
+		"table_file_creation", "file_number": 228, "file_size": 15244448,
+		"table_properties": {"data_size": 15128800, "index_size": 114806,
+		"filter_size": 0, "raw_key_size": 270000, "raw_average_key_size": 18,
+		"raw_value_size": 14850000, "raw_average_value_size": 990, "num_data_blocks":
+		3750, "num_entries": 15000, "filter_policy_name": "", "reason": kCompaction,
+		"kDeletedKeys": "0", "kMergeOperands": "0"}}
+- Reason can be kCompaction, kRecovery, kFlush
+
+SSTable deleted
+- 2016/12/13-14:01:51.547892 7fe7c2ffd700 EVENT_LOG_v1 {"time_micros":
+		1481655711547887, "job": 3, "event": "table_file_deletion", "file_number": 223}
+
+Figured out the SStable read path whether the key is there or not
+
+
+TODO: See if you can separate bloom filter from data file.
+- Doesn't look like in RocksDB.
+- TODO: an easy option would be keeping them in memory
+	- class FilterBlockReader maybe the one to modify or extend
+
+
+Mutant access monitor is implemented to BlockBasedTable only for now.  Not
+implemented to CuckooTableReader or PlainTableReader.  It's okay.
+
+-------------
+
+TODO: What are the necessary work here?
+- Implement the SSTable temperature monitor in RocksDB
+	- The keyspace range monitoring will be naturally implemeted along the way.
+	- Will be able to use the plotting tools as well.
+		- LOG: "2016/11/26-09:28:52.779838 7f31427fc700 [usertable] [JOB 19] Compacted 2@1 + 2@2 files to L2 => 269257813 bytes"
+	- Will be able to understand the Universal compaction better. Low priority
+		though. The explanation won't be in the paper.
+
+-------------
+
+Find the read path
+- Found the read path of Memtable and SSTable
+- Didn't find an example where a table is skipped by the Bloom filter
+	- It's okay for now. Might be because there aren't enought SSTables and they
+		don't check L0 tables.
+	- Where the filtering is done
+		= BlockBasedTable::Get()
+		- They have a full filter (for a SSTable) and block-based filters.
+			- I wonder how big are the blocks.
+		- Strange that the 2 non-existent keys tested are not filtered out. Might
+			be because of the level. We'll see.
+- Interface file
+	~/work/mutant/rocksdb/include/rocksdb/db.h
+		virtual Status Get(const ReadOptions& options, const Slice& key, std::string* value)
+- Not sure why simple_example can't use a database directory that YCSB binding
+	created. Move on for now.
+
+
+rocksdb_option_file_example.ini
+	table_factory=BlockBasedTable
+
+
+Q: What is the difference between DestroyDB() and directly deleting the DB
+directory manually?
+- A: The major difference is that DestroyDB() will take care of the case where
+	the RocksDB database is stored in multiple directories. For instance, a
+	single DB can be configured to store its data in multiple directories by
+	specifying different paths to DBOptions::db_paths, DBOptions::db_log_dir, and
+	DBOptions::wal_dir.
+- [https://github.com/facebook/rocksdb/wiki/RocksDB-FAQ]
+
+
+They have GET_HIT_L0, but I don't see where it is used.
+	~/work/mutant/rocksdb$ find . \( -name "*.h" -o -name "*.cc" \) -exec grep -nH GET_HIT_L {} \;
+
+
+YCSB-binding
+- make sure it's running. Port to the latest version.
+- made a pull request
+
+Run workload d
+- Load with 10M records. 11GB.
+- Run and measure the performance. no... you don't need to here.
+
+
+Following the log file
+	tail -fF ~/work/rocksdb-data/LOG
+
+
+Interesting sst starts from #10 and not sequentially increasing.
+
+Events to monitor
+- SSTable creation, deletion, access (read)
+
+Print the call stack to see what the code path is like
+
+TODO: keyrange of a sstable when created
+- L0 sst creation
+		40 void EventHelpers::LogAndNotifyTableFileCreationFinished(
+- Other-level sst creation from merge?
+
+Events
+	flush_started flush_finished
+	compaction_started compaction_finished
+	table_file_creation table_file_deletion
+	TODO: trivial_move
+
+Build rocksdb and run YCSB
+	cd ~/work/mutant/rocksdb && time make -j rocksdbjava V=1 && cd ~/work/mutant/misc/ycsb/rocksdb/run-workloads/d && time rm -rf ~/work/rocksdb-data/ && ./load.sh
+
+Interesting that keys are not hashed. How do they evenly split range then? Maybe they don't have to be evenly placed.
+	~/work/mutant/rocksdb/include/rocksdb/metadata.h
+		struct SstFileMetaData {
+			SequenceNumber smallest_seqno;  // Smallest sequence number in file.
+			SequenceNumber largest_seqno;   // Largest sequence number in file.
+			std::string smallestkey;     // Smallest user defined key in the file.
+			std::string largestkey;      // Largest user defined key in the file.
+		};
+
+		// The full set of metadata associated with each SST file.
+		struct LiveFileMetaData : SstFileMetaData {
+			std::string column_family_name;  // Name of the column family
+			int level;               // Level at which this file resides.
+		};
+
+Example of how SSTabls are compacted
+	2016/11/29-14:18:38.038801 7f64b3988700 [usertable] Compaction start summary: Base version 11 Base level 0, inputs: [28(61MB) 25(61MB) 22(61MB) 19(61MB)], [17(64MB) 20(64MB) 23(64MB) 26(53MB)]
+
+My github repository. working on the branch 4.11.2. 4.12.0 has a name conflict, "Status".
+	hobin@node3:~/work/mutant/rocksdb$ git branch v4.11.2
+	hobin@node3:~/work/mutant/rocksdb$ git checkout v4.11.2
+		warning: refname 'v4.11.2' is ambiguous.
+		Switched to branch 'v4.11.2'
+
+	hobin@node3:~/work/mutant/rocksdb$ git branch
+		* v4.11.2
+	hobin@node3:~/work/mutant/rocksdb$ git remote add origin git@github.com:hobinyoon/rocksdb.git
+	hobin@node3:~/work/mutant/rocksdb$ git push -u origin refs/heads/v4.11.2:refs/heads/v4.11.2
+
+Build a custom rocksdbjni jar. Not the one from the maven repository.
+- It's a "fat" jar containing the native so file.
+- Sometimes, it doesn't build first. You need to run it again. I wonder if some
+	dependency is missing.
+		hobin@node3:~/work/mutant/rocksdb$ time make -j rocksdbjava
+	You don't need this.
+		hobin@node3:~/work/mutant/rocksdb$ time make -j shared_lib
+
+
+
+
+
+Do I need to push to the branch like this everytime? There must be a shortcut.
+Not a big deal for now.
+	$ git push origin custom_built_rocksdb
+
+
+RocksDB slides. 2014
+- Written in C++, optimized for fast storage and server workloads.
+- Indexes and bloom filters cached in memory.
+- Tunable compaction to trade-off read / write / space amplification.
+- Tradeoff of Leveled or Universal compactions
+	- L: less write amplification. RA: number of levels. log_10 N
+	- U: less space amplification. RA: number of files. feels like log_2 N.
+- [http://www.flashmemorysummit.com/English/Collaterals/Proceedings/2014/20140805_D12_Dong.pdf]
+
+
+They don't seem to use hashed keys. I guess they don't need to balance between
+nodes using the consistent hashing, unlike distributed databases.
+
+Universal compaction
+- Just like STCS
+- [https://github.com/facebook/rocksdb/wiki/Universal-Compaction]
+- "The Universal Style Compaction typically results in lower write
+	amplification but higher space amplification than Level Style Compaction."
+	[https://github.com/facebook/rocksdb/wiki/RocksDB-Basics]
+
+Level-based compaction style
+- kCompactionStyleLevel is the default one. Not sure why I thought Universal
+	was the default one. I thought I saw it somewhere.
+	options.h
+	602   // The compaction style. Default: kCompactionStyleLevel
+	603   CompactionStyle compaction_style;
+
+Keyrange of a sstable
+- Log files don't have it. Not a must right now.
+- You can dump a sstable offline and check.
+	- ./sst_dump --file=/home/hobin/work/rocksdb-data/000351.sst
+
+make the compaction style as a YCSB parameter. Not a high priority for now.
+
+
+
+
+
+TODO: what's gonna happen to the compaction threads when the YCSB process
+stops? Is it gonna catchup when it restarts?
+- TODO: checking out the log ...
+
+OPTIONS file. Nice.
+
+
+
+
+TODO: https://github.com/hobinyoon/YCSB-0.11.0 can be gone
+
+
+hobin@node3:~/work/mutant/YCSB-adamretter$ time mvn -pl com.yahoo.ycsb:rocksdb-binding -am clean package -DskipTests && bin/ycsb load rocksdb -P workloads/workloada -s -p rocksdb.dir=rocksdb-data
+
+TODO: clean up YCSB and commit rocksb-binding. Move all scripts to misc
+
+TODO: make it use leveled compactions
+
+
+make check -j doesn't work. oh well. move on.
+
+Build is much faster than MongoDB. 1m32.825s
+	/mnt/local-ssd0/mutant/rocksdb$ make static_lib -j16
+	28 secs on mjolnir with j48
+
+It is an embedded databased distributed as a library. Not a database or
+distributed database. So, no separate servers.
+
+How do you run YCSB?
+- Is it fair with the other DBs? Doesn't have to be fair. What you need is
+	the comparison between unmodified DB and Mutant.
+- TODO: There is a YCSB binding. Check it out. Doesn't work :(
+	[https://github.com/YosubShin/RocksDB-YCSB]
+- Will have to write one by myself.
+
+RocksDB seems to be gaining popularity. At least from what I hear lately.
+
+Universal compaction seems to generate big SSTables, which is not good for
+Mutant.

@@ -1,0 +1,5 @@
+dn_in: ~/work/quizup-data/memcached-2w/data-set-get-wallclockts-no-dup
+
+output_percentage: 100.0
+
+dn_out: .output/simulator-data

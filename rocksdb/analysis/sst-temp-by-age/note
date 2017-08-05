@@ -1,0 +1,6 @@
+RocksDB SSTable temperature analysis. For unmodified RocksDB SSTables.
+- mutant_enabled: true (for temperature monitoring)
+- sst_migration: false (to see what the unmodified RocksDB SSTable temperatures are)
+
+Nothing stops analyzing Mutant SSTable temperatures. We'll see how the story
+goes.

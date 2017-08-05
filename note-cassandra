@@ -1,0 +1,8 @@
+Cassandra keeps
+- bloom filter and sampled index (the same name as index summary, I think) in
+	memory. Keep these in hot storage for fast start.
+- Index, which has keys and starting position of data, is not kept in memory.
+	Keep in hot storage.
+- Data files. Keep either hot or cold storage device depending on their
+	temperatures.
+- Show an example size of them.

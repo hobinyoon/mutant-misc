@@ -1,0 +1,50 @@
+128m seq write
+--------------
+c3.2xlarge
+	local-ssd
+		Before init  45.3 MB/s
+		After init  372   MB/s
+	ebs-gp2       124   MB/s
+	ebs-st1       124   MB/s
+	ebs-sc1        44.1 MB/s
+
+	gp2 and st1 are capped by the max EBS bandwidth: 125 MB/s
+	- https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSOptimized.html
+
+r3.xlarge
+	local-ssd
+		Before initialization: 84 and 89 are alternating.
+	        84.6 MB/s
+	        89.3 MB/s
+
+		After initialization: The same.
+	        89.9 MB/s
+	        84.6 MB/s
+
+	ebs-gp2 62.5 MB/s
+	ebs-st1 62.2 MB/s
+	ebs-sc1 43.4 MB/s
+
+	gp2 and st1 are capped by the EBS bandwidth: 62.5 MB/s
+	- 160831-155602
+
+
+4k rand read
+------------
+c3.2xlarge
+		local-ssd min/avg/max/mdev = 141.0 us /    167.8 us /  2.21     ms /   107.5 us
+		ebs-gp2   min/avg/max/mdev = 258.0 us /    455.7 us /  1.50     ms /    61.5 us
+		ebs-st1   min/avg/max/mdev = 343.7 us /  6.22    ms / 60.7      ms / 7.51    ms
+		ebs-sc1   min/avg/max/mdev = 396.6 us / 21.5     ms / 66.3      ms / 9.46    ms
+
+  160831-201951: Performance varies in the shared virtualized env. Not a big deal.
+		local-ssd min/avg/max/mdev = 146.9 us /    175.1 us /   1.77    ms /    79.6 us
+		ebs-gp2   min/avg/max/mdev = 251.1 us /    291.0 us /     392.0 us /    24.6 us
+		ebs-st1   min/avg/max/mdev = 323.7 us /  6.06    ms / 215.3     ms / 7.58    ms
+		ebs-sc1   min/avg/max/mdev = 318.4 us / 21.5     ms /  67.4     ms / 8.91    ms
+
+r3.xlarge
+	local-ssd min/avg/max/mdev =  68.3 us /    158.9 us /     212.9 us /     12.9 us
+	ebs-gp2   min/avg/max/mdev = 255.8 us /    303.5 us /     426.6 us /     31.6 us
+	ebs-st1   min/avg/max/mdev = 312.8 us /  6.02    ms / 227.4     ms /  8.41    ms
+	ebs-sc1   min/avg/max/mdev = 392.8 us / 21.3     ms / 298.5     ms / 14.5     ms

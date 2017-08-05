@@ -1,0 +1,1048 @@
+
+
+
+
+
+
+SSTable progression with read frequencies.
+- Read/sec/bytes.
+- Go for the same color with the timeline plot. 5-sec tumbling window average.
+	500-ms average gives you too big value, which is in the beginning of SSTable
+	1.
+	- Will need a more efficient data structure to get the temperature.
+- Give a bit spacing between SSTables at the same level. Maybe not.
+- Mention the plots are in steady states. So, if you see a colder sstable at an
+	upper level (with a lower level number), that's what the real read frequency
+	distribution is.
+
+- TODO: Red-to-blue heat coloring might be better. Yellow-ish, green-ish colors
+	are not very intuitive.
+- TODO: Not sure how you can make the box borders more visible.
+
+- Reuse the cached Sst heat data, if one exists.
+- Make every part of the data generated on-demand.
+- Note: Some of the calculations can be parallelized. Not a high priority
+
+- TODO: Check with the full version and see at which specific times you want to
+	show. I think the total was around 50 GB. Levels up to L3. See if it's worth
+	presenting.
+
+
+
+TODO: Different workload
+- workload a: needs to have the database pre-populated. Ok.
+
+I could draw SSTables with their areas proportional to the file sizes. Or with
+their heights proportional to the file sizes. We'll see which looks better. Not
+super important. You want to have only one story in a chart.
+
+TODO: mention:
+When a compaction starts, the read frequencies of the source SSTables drop
+quickly to 0. You don't want to migrate them at the moment cause they will be
+gone soon.
+- SSTable temperature better be defined in a way that it can tolerate a sudden
+	drop -- could be a transient network disconnection or a sudden overloading of
+	the system. So some decaying metric is needed.
+
+Read/sec/MByte
+- Then, L0 tables will become even hotter.
+
+Heat color curving
+- Mirrored power function. Tried reciprocal and log.
+
+Heatmap by time plot
+- Try 160927-143257.395
+- Took 2 days. It's good to have an understand of what's going on and when to
+	migrate SSTables. But, too much info for including in the paper. Need to be
+	more abstract.
+
+Depending on the level, the lifetime of a SSTable varies a lot.
+- I think the cutoffs are not always at the level boundary.
+
+There are small SSTables, which don't get as much reads, which is natural.
+- Maybe I should consider # of reads / sec / size, not just # of reads / sec.
+
+
+TODO: What is "block size" here? SSTable size? What are the SSTable sizes of
+LevelDB or RocksDB?
+[https://github.com/basho/leveldb/wiki/mv-dynamic-block-size]
+
+
+MongoDB
+- Build takes long.
+	  scons mongod -j8. About 17 mins.
+		-j16: 985010 ms. 16 mins 25 secs.
+- The target binary files are huge. With
+	- scons all   :  50   GB
+	- scons mongod:   3.5 GB
+- Clean up: scons -c
+- "The WiredTiger storage engine is the default storage engine starting in
+	MongoDB 3.2." [https://docs.mongodb.com/manual/core/wiredtiger/]
+- WiredTiger makes one huge file, which is not what Mutant wanted. Oh well. It
+	doesn't change after stabilization either.
+	.
+	├── [ 36K]  collection-0--4207084632046321725.wt
+	├── [ 16K]  collection-2--4207084632046321725.wt
+	├── [9.1G]  collection-8--8144889533047668123.wt
+	├── [4.0K]  diagnostic.data
+	│   ├── [9.7K]  metrics.2016-10-04T14-21-20Z-00000
+	│   ├── [ 42K]  metrics.2016-10-04T14-23-01Z-00000
+	│   ├── [214K]  metrics.2016-10-04T14-45-31Z-00000
+	│   ├── [168K]  metrics.2016-10-04T16-48-20Z-00000
+	│   └── [9.5K]  metrics.interim
+	├── [ 36K]  index-1--4207084632046321725.wt
+	├── [ 16K]  index-3--4207084632046321725.wt
+	├── [ 16K]  index-4--4207084632046321725.wt
+	├── [406M]  index-9--8144889533047668123.wt
+	├── [4.0K]  journal
+	│   ├── [100M]  WiredTigerLog.0000000109
+	│   ├── [100M]  WiredTigerLog.0000000110
+	│   ├── [100M]  WiredTigerLog.0000000111
+	│   ├── [100M]  WiredTigerLog.0000000112
+	│   ├── [100M]  WiredTigerLog.0000000113
+	│   ├── [100M]  WiredTigerLog.0000000114
+	│   ├── [100M]  WiredTigerLog.0000000115
+	│   ├── [100M]  WiredTigerLog.0000000116
+	│   ├── [100M]  WiredTigerLog.0000000117
+	│   ├── [100M]  WiredTigerPreplog.0000000096
+	│   ├── [100M]  WiredTigerPreplog.0000000097
+	│   ├── [100M]  WiredTigerPreplog.0000000104
+	│   └── [100M]  WiredTigerPreplog.0000000107
+	├── [ 36K]  _mdb_catalog.wt
+	├── [   6]  mongod.lock
+	├── [ 36K]  sizeStorer.wt
+	├── [  95]  storage.bson
+	├── [  46]  WiredTiger
+	├── [4.0K]  WiredTigerLAS.wt
+	├── [  21]  WiredTiger.lock
+	├── [ 946]  WiredTiger.turtle
+	└── [ 52K]  WiredTiger.wt
+- Multi-Temperature Storage
+	- I'm not sure how they split/migrate hot and cold data. Might be how they
+		replicate data. Not migrations of data among storage files.
+	- "Creating Multi-Temperature Storage" "MongoDB will automatically migrate data
+		between storage tiers based on user-defined policies without administrators
+		having to build tools or ETL processes to manage data movement."
+		[https://www.mongodb.com/blog/post/whats-new-mongodb-30-part-3-performance-efficiency-gains-new-storage-architecture]
+		- Oh no. It doesn't go any deeper than that.
+	- "With MongoDB’s exible storage architecture, the database automatically
+		manages the movement of data between storage engine technologies using
+		native replication." [MongoDB Architecture Guide. MongoDB 3.2. June 2016]
+	- "Tag-aware Sharding" The balancer moves data by its tags in a record
+		granularity.
+		[http://blog.mongodb.org/post/85721044164/tiered-storage-models-in-mongodb-optimizing]
+	- "multi-temperature storage. So you have really high performance storage for
+		your "hot" data that you're accessing frequently and then lower cost storage
+		for different access patterns."
+	- "With zone sharding you can assign data to different physical data centers,
+		to different types of storage and a third use case is if you want to ensure a
+		great experience with low latency writes and reads for users depending on
+		where they live. So your New York users can read and write their data really
+		fast and your California users can read and write their data really fast. You
+		understand where those users are and if one goes on vacation, you can assign
+		them to the other group."
+		- [Where Is MongoDB Taking Its Giant Ideas? 2016-06-29
+			http://www.eweek.com/database/where-is-mongodb-taking-its-giant-ideas-3.html]
+	- TODO: I wonder if other DBs tried the same thing. Google it.
+- ~/work/mutant/mongo$ ./mongod -f debian/mongod.conf
+- "Using the XFS filesystem is strongly recommended with the WiredTiger storage
+	engine"
+- Examples [https://www.mkyong.com/mongodb/mongodb-hello-world-example]
+- It has its own client language. Doen't support SQL.
+	[https://docs.mongodb.com/manual/crud]
+
+
+HBase
+- They have minor and major compactions. Similar to what BigTable did.
+- The files are called HFile.
+- TODO: What is the size of HFile? Good architecture article, but it doesn't
+	say here. [https://www.mapr.com/blog/in-depth-look-hbase-architecture]
+	- You can change the block size, the smallest unit of data HBase can read.
+		[https://www.cloudera.com/documentation/enterprise/5-4-x/topics/admin_configure_blocksize.html]
+
+
+Google scholar search hits from 2014:
+	MongoDB:          7960
+	HBase:            7350
+	LevelDB:          3600
+	Apache Cassandra: 3190
+	RocksDB:           110
+http://db-engines.com/en/ranking
+	MongoDB:            4
+	Apache Cassandra:   7
+	HBase:             15
+	LevelDB:           88
+	RocksDB:          133
+
+
+# How do you know the average IOPS of a disk from the system boot? dtat shows
+# it only once in the beginning.
+# - cat /sys/block/xvda/stat
+#   - It has the number of read IOs and write IOs processed
+#   - https://www.kernel.org/doc/Documentation/block/stat.txt
+#
+# File system IOs can be inflated or deflated (e.g., from read caching or write
+# buffering) when translated to block device IOs.
+#
+# IOPS vs TPS (transactions per second)? T is a single IO command written to
+# the raw disk. IOPS includes the requests absorbed by caches. At which
+# level? Probably at the block device level.
+#   dstat --disk-tps
+#     per disk transactions per second (tps) stats
+#   http://serverfault.com/questions/558523/relation-between-disk-iops-and-sar-tps
+
+
+
+What Ymir did to bucketize the access frequencies by time by sstables.
+	cat sst-num-reads-by-time-by-sst-gen-160927-134804.224 | gawk '{print
+	substr($2,0,length($2)-6) "\t" $3 "\t" $1}' |sort -n -k 1 |gawk '{k=$1 "_" $3;
+	a[k] += $2; num[k] ++; sq[k] += $2*$2; }END{ for (i in a){print i "\t" num[i]
+	"\t" a[i] / num[i] "\t" sqrt((sq[i]/num[i])-((a[i]/num[i])*(a[i]/num[i])))}}'>
+	processed-1sec-granularity.out
+
+TODO: Plot the tablet lifespan distribution.
+TODO: Plot the average access frequencies by age.
+
+Why do you need LSM-tree base DBs? Because of the huge volume of incoming
+writes, which B+-tree doesn't do very well.
+
+TODO: Run for a little longer and see what happens. Want to see more number of
+SSTables, with more levels.
+
+TODO: What is anti-compaction?
+
+"L0 makes no guarantees about overlapping-ness" [LeveledCompactionStrategy.java]
+
+The overlapping SSTables are sent to L0, which can happen due to a bug in
+previous versions, or by dropping SSTables from another node. Interesting!
+- LeveledManifest.repairOverlappingSSTables()
+
+LCS does STCS during boot straping mode, where data is fetched from other
+nodes.
+
+getCompactionCandidates()
+- "LevelDB's way around this is to simply block writes if L0 compaction falls
+	behind.  We don't have that luxury."
+- "1) force compacting higher levels first, which minimizes the i/o needed to
+	compact optimially which gives us a long term win, and 2) if L0 falls behind,
+	we will size-tiered compact it to reduce read overhead until we can catch up
+	on the higher levels."
+- "If we do something that makes many levels contain too little data (cleanup,
+	change sstable size) we will "never" compact the high levels.  This method
+	finds if we have gone many compaction rounds without doing any high-level
+	compaction, if so we start bringing in one sstable from the highest level
+	until that level is either empty or is doing compaction."
+- [LeveledManifest.java]
+
+private Collection<SSTableReader> getCandidatesFor(int level)
+- "return highest-priority sstables to compact for the given level."
+
+TODO: What is "suspect"?
+
+getCandidatesFor(int level)
+	"L0 is the dumping ground for new sstables which thus may overlap each other.
+
+	We treat L0 compactions specially:
+	1a. add sstables to the candidate set until we have at least maxSSTableSizeInMB
+	1b. prefer choosing older sstables as candidates, to newer ones
+	1c. any L0 sstables that overlap a candidate, will also become candidates
+	2. At most MAX_COMPACTING_L0 sstables from L0 will be compacted at once
+	3. If total candidate size is less than maxSSTableSizeInMB, we won't bother compacting with L1,
+		 and the result of the compaction will stay in L0 instead of being promoted (see promote())"
+
+
+
+
+Cassandra compaction log has a lot of info
+- [http://docs.datastax.com/en/cql/3.1/cql/cql_reference/compactSubprop.html]
+
+
+
+
+Pending compactions
+- When compaction task won't keep up with the incoming write request rate. The
+	number of pending compactions keep piling.
+	- With an unthrottled YCSB, you see a lot of them.
+	- When the client requests are done, Cassandra is still busy for a while to
+		finish the pending compactions. CPU usage is low like 4% during the
+		catch-up compaction period.
+	- When done, the number of SSTables and their sizes look ok.
+	- During the catch-up period, tablet size can be really big since L0 uses
+		STCS.
+			1.3G mc-105-big-Data.db
+			665M mc-131-big-Data.db
+			984M mc-153-big-Data.db
+			320M mc-178-big-Data.db
+			 61M mc-179-big-Data.db
+			 21M mc-38-big-Data.db
+			6.1M mc-125-big-Data.db
+- For the experiment, sustainable load levels should be used.
+	- "The optimal number of pending compactions is 0 (or at most a very small
+		number). A value greater than 0 indicates that read operations are in I/O
+		contention with compaction operations, which usually manifests itself as
+		declining read performance."
+		[https://docs.datastax.com/en/opscenter/6.0/opsc/online_help/opscPendingTaskMetricsReads_r.html]
+	- Fair with LevelDB, which doesn't have this. They pause write requests.
+		TODO: Add a reference!
+	- With YCSB throttling (with a 2GB ram Cassandra), I see the number of
+		pending transactions goes down.
+		- With 20K IOPS, up to 11. With 15K, 0.
+	- With a 15GB ram Cassandra, I don't see any of them, even without
+		throttling.
+- Optimizing the compaction speed
+	- Set concurrent_compactors and memtable_flush_writers to 8 to the number of
+		cores. They are 1s by defult. Automated in the ec2-tools script.
+	- Separate the commit log directory to a separate physical disk to reduce the
+		contension.
+
+
+Small, short-lived SSTables on L0
+- The size of the smallest ones seems to be proportional to the memory size.
+	Makes sense.
+	- They are a bit bigger like 50 MB on an unlimited-memory Cassandra.  On a
+		c3.2xlarge instance type, which has a 15GiB ram:
+			MAX_HEAP_SIZE=3759M
+			HEAP_NEWSIZE=800M
+	- They were like 15 MB on a 2-GB ram with these constraints:
+			MAX_HEAP_SIZE="1024M"
+			HEAP_NEWSIZE="256M"
+	- I can't find the exact reference or source code of how the sizes are
+		determined.
+- Since they are short-lived, Mutant won't moved them to cold storages.
+	Mutant has a rule that not moving a SSTable for a while after one is moved
+	to a new level.
+	- Or, Mutant can move only full-size SSTables.  This sounds like a better
+		rule.
+	- Or, let Mutant not touch anything on L0. Yes, this sounds the best.
+
+The small ones on L1 might be from Cassandra trying to keep the keyrange evenly
+among the SSTables.
+- Should Muntants not move non-full, high level (> L0) SSTables, since they
+	will be compacted later? Probably not. All SSTables are equally to be
+	compacted in the future.
+
+
+Commit log
+- Cassandra keeps 8G commitlog by default, which can be configured by
+	commitlog_total_space_in_mb.
+	- "The default value is the smaller of 8192, and 1/4 of the total space of
+		the commitlog volume."
+- They shrink sometimes. I noticed that like 2 hours after YCSB requests are
+	done, they are down to 23 MB. Interesting.
+- Separated from the data volume. Data directory has moved to ssd1.
+
+
+
+TODO: Take a note of what events Mutant is tracking! Should go in the paper.
+- Some of them might be common to all DBs; others not.
+- Monitoring API
+  - Some of them are for understanding of how Tablets are created and merged.
+- Tablet Migration API
+
+
+TODO: I see 3 _run-d.py processes. Hmm..
+
+TODO: Sequential read speed matters too for SSTable merges. Add it to the block
+device characteristics.
+
+
+ERROR 17:46:27.695 [Reference-Reaper:1] Ref.java:224 LEAK DETECTED: a reference (org.apache.cassandra.utils.concurrent.Ref$State@2007809e) to class org.apache.cassandra.io.sstable.format.SSTableReader$InstanceTidier@784366318:/mnt/local-ssd0/mutant/cassandra/data/data/ycsb/usertable-9a53688081b511e6b66d3d7595663f3d/mc-1-big was not released before the reference was garbage collected
+- Ugh... And it disappeared. Strange.
+
+
+TODO: Plot key range. To see how they SSTables are compacted and rewritten.
+- TODO: Look at the LCS code. It tells you a lot!
+	- It uses STCS?
+	- PartitionPosition, RingPosition, sstableRange
+
+
+TODO: Make a snapshot of the data directory. Is it worth it? Probably yes. YCSB
+should take longer than restoring from the backup since its performance is
+capped by the network bandwidth.
+
+
+
+
+When you keep running it, it runs into out of space, followed by different
+errors. Interesting.
+- ERROR [PerDiskMemtableFlushWriter_0:2] 2016-09-23 00:08:56,005 CassandraDaemon.java:226 - Exception in thread Thread[PerDiskMemtableFlushWriter_0:2,5,main]
+java.io.IOError: java.io.IOException: No space left on device
+
+TODO: How are the SSTable temperatures like in LCS with the workload type d?
+Hope I could see them separated.
+
+TODO: An animated plot by time. Hmm.
+
+Looks like there is only 1 Memtable at a time. At most 2 with slight overlap,
+which makes sense when one needs to be flushed, you want the other one keep
+serving.
+- The plot only says the address of the Memtable. We don't know if the memory
+	is contiguously allocated or not. Probably not, cause it's dynamically
+	increases.
+
+TODO: Load and run regular workload phases can be separated! Possibly save a
+lot of time. Then you might not need cgroup at all.
+- TODO: Try loading a huge amount of data and make a snapshot. Not sure if you
+	can do the same with local SSD. Probably yes.
+- You can do the full-scale experiment this way!
+
+TODO: The default bloom_filter_fp_chance for LeveledCompactionStrategy is 0.1,
+not 0.01.
+- How did they pick the parameter? What's the tradeoff? BF size and false positive ratio?
+	- Why does LCS has a much lower number? Since there aren't as many SSTables,
+		getting more false positives are okay? Hope I could find some hint. Search
+		for something and ask the mailing list. Might be an exploration point for
+		the paper.
+
+TODO: What is this?
+- "Hybrid (leveled and size-tiered) compaction improvements to the leveled
+	compaction strategy reduce the performance overhead on read operations when
+	compaction cannot keep pace with write-heavy workload. If Cassandra cannot
+	keep pace with the workload when using the LCS, the compaction strategy
+	switches to STCS until Cassandra catches up. For this reason, it is a best
+	practice to configure the max_threshold subproperty for a table to use when
+	the switch occurs."
+
+
+LCS vs STCS
+- "LCS does roughly twice as much i/o as STCS. For primarily insert-oriented
+	workloads, this extra i/o does not pay off in terms of the above benefits,
+	since there are few obsolete row versions involved."
+- STCS: "Cassandra’s size-tiered compaction stragety is very similar to the one
+	described in Google’s Bigtable paper: when enough similar-sized sstables are
+	present (four by default), Cassandra will merge them."
+	[http://www.datastax.com/dev/blog/leveled-compaction-in-apache-cassandra]
+- LCS: "This compaction strategy is modeled after Google's LevelDB
+	implementation."
+	[https://docs.datastax.com/en/cql/3.1/cql/cql_reference/tabProp.html]
+	- "Leveled compaction creates sstables of a fixed, relatively small size (5MB
+		by default in Cassandra’s implementation), that are grouped into “levels.”
+		Within each level, sstables are guaranteed to be non-overlapping. Each
+		level is ten times as large as the previous."
+		- TODO: Double check the 5MB with an experiment.
+	- The default size is 160 MB. sstable_size_in_mb
+		[https://docs.datastax.com/en/cql/3.3/cql/cql_reference/compactSubprop.html]
+	- LCS is a good fit for workload "d" for high read:write ratio. But, I think
+		the benefit is small with a Zipfian pattern.
+		- "If you perform at least twice as many reads as you do writes, leveled
+			compaction may actually save you disk I/O, despite consuming more I/O for
+			compaction. This is especially true if your reads are fairly random and
+			don’t focus on a single, hot dataset."
+	- How do they organize SSTables at each level so that they don't overlap?
+		When a SSTable is moved down (promoted to the next level), the overlapping
+		SSTables are rewritten. And, at each level, I think, there are 10 such
+		SSTables in average.
+- Good explanation here [http://www.scylladb.com/kb/compaction/]
+
+
+TODO: Look into the LevelDB optimization paper. RocksDB or something. Using SSD
+characteristics. A lot of parallelism.
+
+
+TODO: Follow up on DTCS. What is it now? Time something ...
+
+
+LCS is more disk IO-heavy.
+- TODO: write sampling?
+- So, for workload d, LCS doesn't give you any benefit. "Rows are write once:
+	If your rows are always written entirely at once and are never updated, they
+	will naturally always be contained by a single SSTable when using size-tiered
+	compaction. Thus, there’s really nothing to gain from leveled compaction."
+
+TODO: LSM-tree is a superset of LCS and STCS. You can still use STCS and not
+lose generality.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Measuring performance of workload d ...
+- Total 2 GB memory: 1.6 GB memory to Cassandra. 0.4 GB to the OS.
+- With 50 M 20 KB (each record has 10 2 KB columns) requests and local SSD
+	- took 434m30.005s, 7 hours and 14 mins.
+	- SSTable size: about 50 GB
+			119M mc-538-big-Data.db
+			474M mc-537-big-Data.db
+			1.9G mc-532-big-Data.db
+			7.5G mc-512-big-Data.db
+			7.5G mc-427-big-Data.db
+			 30G mc-349-big-Data.db
+		- data directory size break down (unit KB) when the experiment is done
+			- Commit log size is always small since the files are flushed once the
+				corresponding data is persisted in SSTables.  "Data in the commit log
+				is purged after its corresponding data in the memtable is flushed to an
+				SSTable on disk." [https:// docs.datastax.com/ en/ cassandra/ 2.2/
+				cassandra/ dml/ dmlHowDataWritten.html]
+			ubuntu@us-east-1e-160912-153536-s0:~/work/mutant/cassandra$ du -s data/*
+					144244 commitlog (I hope this is constant)
+				49219788 data
+							 4 hints
+					 31260 saved_caches
+			ubuntu@us-east-1e-160912-153536-s0:~/work/mutant/cassandra$ du -s data/data/*
+						 368 data/system
+							72 data/system_auth
+							28 data/system_distributed
+						 484 data/system_schema
+							20 data/system_traces
+				49218812 data/ycsb
+	- The bottleneck is the network bandwidth (1 Gbit/s = 125 MB/s) in the
+		beginning, and after 230 secs disk becomes the bottleneck.
+
+- With EBS gp2
+  - Stopped after 62490 sec = 17 hours 22 mins
+	- 7,626,982 operations done. About 15%.
+	- SSTable size: 7.1 GB
+	- A lot of Cassandra timeouts. Must have hit the EBS gp2 bandwidth
+		throttling. TODO: plot and see what you can do!
+
+
+
+
+
+
+TODO: How long do you want to run the experiment? Doesn't have to be 7 hours.
+Slower storages won't even finish.
+- TODO: With slower storages, you get a lot of timeouts. Suppress them?
+
+TODO: will want to redo the experiment with the SSTable monitor to see when the
+slowdown occurs.
+- Number of SSTables, size of each of them.
+
+
+
+
+
+
+Requests are served by reading MemTable and SSTables.
+
+On the left of the graph, all SSTables are cached in the page cache and there
+are rarely disk reads.
+From around 230 seconds, cached pages start to get evicted and read requests go
+to disks.
+From there the bottleneck moves from network (1 Gbit/sec) to disk.
+
+TODO: As data becomes bigger, the system only gets slower due to the increased
+disk access ratios (the decreased page cache hit ratios).
+
+Can you explain why insert latency is so high in the beginning?  Could be the
+network contention. Cassandra or networking doesn't prioritize writes over
+reads.
+
+
+TODO: mention the stat was 1 sec average IOPS, latency
+
+TODO: draw a representative line. like the running average of the last 10
+seconds.
+
+TODO: record size justification - Atikoglu
+- it has a workload generator too
+
+- TODO: how much amount of read/write are there?
+
+- TODO: Plot the throughput and latency and see when it stabilizes
+- TODO: Plot the server block IO too.
+- TODO: Wanna keep track of SSTable creations and deletions too.
+
+TODO: make sure to keep some YCSB logs before shutting down the machine.
+
+TODO: Plot latencies of workloads after shrinking the memory.
+
+
+TODO: YCSB performance measurement for all 6 workloads
+- Go without capping the physical memory first and see what you get.
+- See what you can plot. Timeline or CDF.
+- Cost too. The calculation should be easy with a single storage setup.
+
+
+
+
+
+
+
+Quizup redis data
+- Field format
+		Timestamp
+		IP addr of the client
+		Command
+		Parameters specific to each command
+- TODO: Check out their request frequencies by obj ages.
+	- TODO: Make a digested file with timestamp, operation, and obj ID. It is huge; 51
+		GB.
+- TODO: Figure out the format. Do it with the 1% of the data and ask Ymir.
+- TODO: check and see Ymir's dataset suggestions. See if you can find
+	long-running application traces.
+- Redis commands: http://redis.io/commands
+
+
+TODO: What's the effect on reliability when you introduce multiple storages?
+
+TODO: STCS is the default CS. Hope I can make a fair comparison with the other
+databases.
+
+TODO: How to trace the cql statements that the Cassandra server serves?
+- This might be a close thing
+  - https://www.ibm.com/support/knowledgecenter/SS3JSW_5.2.0/com.ibm.help.gdha_reference.doc/com.ibm.help.gdha_troubleshooting.doc/gdha_enabling_tracing.html
+- Another idea is to look for the source code and figure out where to insert
+	the statement. I think this is what I did during the development.
+
+TODO: Explore performance by varying the zifpian constant
+
+TODO: Compare YCSB's workload d with the Facebook workload
+
+TODO: Scale to 3 nodes? Probably yes, after the single-node experiment is done.
+
+
+Thoughts worth making it to the paper
+-------------------------------------
+Compaction strategies
+- STCS: SizeTieredCompactionStrategy. Cassandra default. Similar to Google
+	BigTable. 4 similar-sized SSTables get merged. TODO: The reference website?
+	Or the BigTable paper?
+- LCS: LevelDB uses it. TODO: modeled after it? TODO: Probably RocksDB too?
+- TODO: Other databases? MongoDB or HBase? Or LevelDB?
+- "TimeWindowCompactionStrategy has been added. This has proven to be a better
+	approach to time series compaction and new tables should use this instead of
+	DTCS. See CASSANDRA-9666 for details". "DateTieredCompactionStrategy has been
+	deprecated - new tables should use TimeWindowCompactionStrategy".
+	[https://git1-us-west.apache.org/repos/asf?p=cassandra.git;a=blob_plain;f=NEWS.txt;hb=refs/tags/cassandra-3.0.8]
+- High-level explanations
+	- Nice figure of 3 of them.
+		[https://www.instaclustr.com/blog/2016/01/27/apache-cassandra-compaction/]
+	- Similar diagram.
+		[http://www.datastax.com/dev/blog/when-to-use-leveled-compaction]
+	- The write path to compaction. This is nice too.
+		[https://docs.datastax.com/en/cassandra/2.1/cassandra/dml/dml_write_path_c.html]
+	- Number of SSTables per read. Nice! Do I want this? Not sure.
+		nodetool cfhistograms foo bar
+		[http://www.slideshare.net/planetcassandra/compaction-compaction-everywhere]
+
+Run Cassandra with limited memory
+- The OS files are already cached when the ec2 node is initialized.
+- Under cgroup, only the data directory is accounted for.
+- Ubuntu eats up about 500 MB of memory during boot-up.
+	- http://askubuntu.com/questions/227632/average-memory-usage-after-complete-ubuntu-12-04-start-up
+- Cassandra or JVM is not cgroup or container aware. Manually set the limit in
+	conf/cassandra-env.sh. Oh well. I'm afraid that it might get killed while
+	running. Seems to be working so far!
+	- https://docs.datastax.com/en/cassandra/3.x/cassandra/operations/opsTuneJVM.html
+
+Since filling up a disk takes too long -- simulating a long-running
+applications --, we do a small scale experiment with the same storage to memory
+ratio.
+- The data request patterns follows a zifpian distribution with the access
+  frequencies of the records are in the reverse order of the record age: the
+  younger the record, the more frequently accessed it is. For example, the 5%
+  of the youngest records get a 95% of the requests. The numbers are
+  configurable with the zifpian constant.
+- When you increase the number of records and the file system cache size
+  proportionally, which is when you increase the disk size and RAM size
+  proportionally, you should get the same file system cache miss ratio (the
+  same number of disk IOs per request).
+- CPU and network remain the same. They will affect the scalability of the
+  system. Database IOPS.
+- Memory to disk ratios of high IO instances, which are the recommended
+  instance types for serving NoSQL databases.
+    Model      vCPU Mem (GiB) Storage (GB) storage/mem
+    i2.xlarge     4      30.5  1 x 800 SSD      26.230
+    i2.2xlarge    8        61  2 x 800 SSD      26.230
+    i2.4xlarge   16       122  4 x 800 SSD      26.230
+    i2.8xlarge   32       244  8 x 800 SSD      26.230
+    scaled down   8         2       52.459      26.230
+  - TODO: You need to start from after the OS and DB server memory footprint.
+    Measure and start from there!
+- Increasing the record size is another way of filling up the disk fast. 20
+  KB/record, for now.
+
+TODO: explore max SSTable size and its effect on the latency vs cost trade-off.
+- In general, you get a lower latency with bigger SSTable sizes and a smaller
+  the number of SSTables. That's why you do SSTable compations.
+- However, a coarse-grained SSTable classification gives you a less efficient
+  SSTable placement, resulting in a higher storage cost under a latency SLO;
+  you don't migrate SSTables as quickly as when they are smaller when they
+  become cold.
+- As the number of SSTables go down to a very small number, the classification
+  and migration becomes harder.
+- The problem becomes worse as you go down the hierarchy of the storage, since
+  SSTables become bigger from compactions as they age.
+  - A migration from s_n to s_(n+1) is worse than a migration from s_(n-1) to
+    s_n.
+- TODO: Draw a timeline diagram of SSTable migrations
+
+Request throttling
+- Although, the read / write paths are the same regardless of the load, when
+  the load is heavier, the latency will be bigger.  For instance, from more IO
+  contention and heavier request queue management.
+- What would be the representative one, if you have to pick one? At the 50% of
+  capacity? No throttling for now.
+- TODO: This should be an evaulation item: scalability. How much load can a
+  server sustain? How Mutant helps increase the scalability. By showing the
+  throughput vs latency plot.
+
+What and when YCSB writes and reads.
+- Write key is incremented sequentially from recordcount. When converted to a
+  string value, it is either hashed (when orderedinserts = false, the default
+  value) or not. For Mutant, it doesn't mater.  What matters is the access
+  popularity drop as an object ages.
+- Read key generation is zifpian based on the last inserted key. With the zifpian
+  constant 0.99, which I think controls how much it favors the recently
+  inserted values. Don't need to understand the exact formula.  I think it
+  gives a more accurate curve at the right end than my Facebook workload
+  generator.
+
+Do you need transactions? Probably not.
+- For Facebook-like applications, you won't need transactions most of the time.
+  - For checking out someone's latest status updates. Well, permission checks
+    will need it.
+- Cassandra doesn't need them. "In Cassandra, a write is atomic at the
+  partition-level".
+  - https://docs.datastax.com/en/cassandra/2.1/cassandra/dml/dml_atomicity_c.html
+- TODO: What about other DBs?
+
+The network connection between the client and the server nodes
+- Latency. ping.
+	10 packets transmitted, 10 received, 0% packet loss, time 9000ms
+	rtt min/avg/max/mdev = 0.412/0.458/0.496/0.028 ms
+- Throughput. iperf. 1 Gbits/sec. Very stable.
+- Network hops?
+	traceroute from the client to the server.
+		client: 54.221.47.168  10.153.161.184
+		server: 54.145.43.45   10.153.211.52
+	Interesting.
+	- The route is pretty long.
+	- I don't see any prefix of either the client or the server on the route.
+	$ traceroute `cat ~/work/mutant/.run/cassandra-server-ips`
+		traceroute to 54.145.43.45 (54.145.43.45), 30 hops max, 60 byte packets
+		1  100.99.245.193 (100.99.245.193)  0.714 ms  1.006 ms  1.304 ms
+		2  100.88.73.5 (100.88.73.5)  0.404 ms 100.88.73.10 (100.88.73.10)  0.418 ms 100.88.73.2 (100.88.73.2)  0.460 ms
+		3  100.88.73.35 (100.88.73.35)  0.402 ms 100.88.73.41 (100.88.73.41)  0.394 ms 100.88.73.46 (100.88.73.46)  0.419 ms
+		4  * * *
+		5  100.92.134.195 (100.92.134.195)  0.323 ms 100.92.134.192 (100.92.134.192)  0.309 ms 100.92.134.32 (100.92.134.32)  0.291 ms
+		6  100.92.134.18 (100.92.134.18)  0.300 ms 100.92.134.59 (100.92.134.59)  0.256 ms 100.92.134.208 (100.92.134.208)  0.284 ms
+		7  100.92.133.12 (100.92.133.12)  0.271 ms 100.92.133.110 (100.92.133.110)  0.238 ms 100.92.133.248 (100.92.133.248)  0.254 ms
+		8  100.92.134.155 (100.92.134.155)  0.243 ms 100.92.134.157 (100.92.134.157)  0.281 ms 100.92.134.152 (100.92.134.152)  0.239 ms
+		9  100.92.134.128 (100.92.134.128)  0.358 ms 100.92.134.134 (100.92.134.134)  0.325 ms 100.92.134.141 (100.92.134.141)  0.273 ms
+		10  100.92.128.132 (100.92.128.132)  0.345 ms 100.92.128.143 (100.92.128.143)  0.368 ms 100.92.128.139 (100.92.128.139)  0.324 ms
+		11  100.92.128.144 (100.92.128.144)  0.337 ms 100.92.128.157 (100.92.128.157)  0.346 ms 100.92.128.153 (100.92.128.153)  0.355 ms
+		12  100.92.132.235 (100.92.132.235)  0.382 ms 100.92.132.80 (100.92.132.80)  0.435 ms 100.92.132.245 (100.92.132.245)  0.352 ms
+		13  100.92.128.221 (100.92.128.221)  0.382 ms 100.92.128.189 (100.92.128.189)  0.422 ms 100.92.128.177 (100.92.128.177)  0.381 ms
+		14  100.92.128.163 (100.92.128.163)  0.354 ms 100.92.128.197 (100.92.128.197)  0.418 ms 100.92.128.164 (100.92.128.164)  0.354 ms
+		15  100.92.240.67 (100.92.240.67)  17.670 ms 100.92.240.87 (100.92.240.87)  17.122 ms 100.92.240.139 (100.92.240.139)  15.880 ms
+		16  216.182.224.114 (216.182.224.114)  19.554 ms 216.182.224.96 (216.182.224.96)  17.339 ms 216.182.224.114 (216.182.224.114)  19.513 ms
+		17  ec2-54-145-43-45.compute-1.amazonaws.com (54.145.43.45)  0.430 ms  0.430 ms  0.424 ms
+
+
+Cassandra Misc
+--------------
+It's also interesting that Memtable's virtual address range doesn't change from
+max 2GB even with heap size bigger than 2GB. Might be from just the way
+addresses are printed by the MemTable object. Don't bother for now.
+	$ java -version
+	java version "1.8.0_101"
+	Java(TM) SE Runtime Environment (build 1.8.0_101-b13)
+	Java HotSpot(TM) 64-Bit Server VM (build 25.101-b13, mixed mode)
+
+Exp end time will have to be fed from the client node or manually.
+- Last compaction event + the duration of the last compaction event, since we
+	don't really care accesses after the SStables are stabilized.
+	- Better than tracing the number of accesses to SSTables, which happen long
+		after SSTables are stabilized.
+
+Mutant definitely need a max SSTable size cap.
+- Why do you want to cap it?
+	- To be able to make a fine-grained SSTable allocation to different storages.
+	- The problem can get worse for the migration from S_n to S_(n+1), when n >=
+		1.
+- Can you cap the SSTable size in STCS? I don't see the option. Probably
+	not since the bigger a SSTable is, the better read performance you get.
+	- "Of course, if you stop updating the row, then size-tiered compaction will
+		eventually merge the row fragments into a single SSTable."
+		[http://www.datastax.com/dev/blog/when-to-use-leveled-compaction]
+	- TODO: Then, can you compensate this with a lower BF FP ratio? Probably yes,
+		for workload type d, or read-heavy ones. Probably no, for update heavy one.
+		Explore the tradeoff here.
+- TODO: How do you evaluate this?
+- LCS has a 160 MB SSTable size by defualt. So, it's all good now. Looks like
+	LCS is also a common design.
+
+
+Total SSTable size. After stabilization, there are 499 SSTables. 10GB of data.
+So, there are about 500 20 MB SStables. Makes sense.
+	-p operationcount=10,000,000
+	-p fieldcount=10
+	-p fieldlength=100
+
+Get SSTable size, key range, timestamp range.
+
+Print SSTable level in the stat.
+- SSTable levels start with 0. There can be multiple 0s.
+- MemTable doesn't seem to have a level.
+
+LCS tablet size? 160 MB by default. Confirmed by experiments.
+- [https://docs.datastax.com/en/cassandra/2.1/cassandra/operations/ops_configure_compaction_t.html]
+
+Do you want to keep track of Memtable write count? Not needed for now.
+
+Monitor the number of need-to-read-datafile, a more accurate metric than
+SSTableReader.incrementReadCount().
+- Still you don't know how many real disk IOs are there since many of them are
+  absorbed by the Linux page cache.
+
+There are 2 read paths. In queryMemtableAndDiskInternal(), you can
+short-circuit with queryMemtableAndSSTablesInTimestampOrder() or take the other
+path.
+
+Cassandra doesn't use row cache by default.
+- cassandra.yaml says row_cache_size_in_mb: 0.
+- Row cache is not enabled from the table description either.
+    cqlsh> desc ycsb.usertable;
+    CREATE TABLE ycsb.usertable (
+        y_id text PRIMARY KEY,
+        field0 text,
+        ...
+        field9 text
+    ) WITH bloom_filter_fp_chance = 0.1
+        AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+        AND comment = ''
+        AND compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy'}
+        AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+        AND crc_check_chance = 1.0
+        AND dclocal_read_repair_chance = 0.1
+        AND default_time_to_live = 0
+        AND gc_grace_seconds = 864000
+        AND max_index_interval = 2048
+        AND memtable_flush_period_in_ms = 0
+        AND min_index_interval = 128
+        AND read_repair_chance = 0.0
+        AND speculative_retry = '99PERCENTILE';
+
+Diff Mutant on Cassandra 2.x
+  ~/work/mutant/cassandra-2.2.3/src/java/org/apache/cassandra$ git diff 7274a40605a5c6f5a9400022db4833e2116510fb .
+
+Cassandra log configuration file: conf/logback.xml
+- Print thread name, source file name and line number for the console log
+
+ColumnFamily not there anymore :(
+- Figuring out top-down.
+
+"A maximum size for SSTables "values" has been introduced, to prevent out of
+memory exceptions when reading corrupt SSTables. This maximum size can be set
+via max_value_size_in_mb in cassandra.yaml. The default is 256MB"
+[https://git1-us-west.apache.org/repos/asf?p=cassandra.git;a=blob_plain;f=NEWS.txt;hb=refs/tags/cassandra-3.0.8]
+
+WARN  15:00:31 Unable to lock JVM memory (ENOMEM). This can result in part of
+the JVM being swapped out, especially with mmapped I/O enabled. Increase
+RLIMIT_MEMLOCK or run Cassandra as root.
+	$ sudo vi /etc/security/limits.conf
+    ubuntu           -       memlock         unlimited
+	$ sudo sysctl -p
+  [https://docs.datastax.com/en/landing_page/doc/landing_page/troubleshooting/cassandra/insufficientResources.html]
+
+WARN  15:00:31 jemalloc shared library could not be preloaded to speed up
+memory allocations
+	$ sudo apt-get install -y libjemalloc1
+
+WARN  15:00:31 JMX is not enabled to receive remote connections. Please see
+cassandra-env.sh for more info.
+
+WARN  15:00:31 Cassandra server running in degraded mode. Is swap disabled? :
+true,  Address space adequate? : true,  nofile limit adequate? : false, nproc
+limit adequate? : true
+[https://docs.datastax.com/en/landing_page/doc/landing_page/troubleshooting/cassandra/insufficientResources.html]
+
+
+Misc
+----
+tar and 7z Cassandra log directory
+	tar cvf - logs | 7z a -si -mx logs.tar.7z
+	7z e -so logs.tar.7z | tar xvf -
+
+dstat network bandwidth unit is in bytes, not in bits. When it is less than 1K,
+it shows "B".
+
+Setting limit to total physical memory available in Linux
+- http://stackoverflow.com/questions/13484016/setting-limit-to-total-physical-memory-available-in-linux
+	- With this, you might not need to set Xms in cassandra/conf/jvm.options
+	- You may want an IO-provisioned EBS with this option. Since there won't be
+		enough memory for file system cache.  We'll see.
+- cgroup is working great! and probably easier to play with the memory restrictions!
+
+Monior CPU and disk IOs of the server
+
+You can limit memory size, thus limit file system cache size.
+- https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt
+- If a requested file block is already cached in the file system cache, it is
+	still be used by the process under cgroup, regardless of the memory limit.
+	Makes sense.
+
+vmtouch
+- You can visualize which part of the files are cached.
+	hobin@mts7:~/work/mutant/misc/cgroup-test$ vmtouch -v .test-data/
+	.test-data/03
+	[  oOo      oOOOOo      oOo      oOOOOo     oOOo     oOOOOOo ] 960/2560
+	.test-data/06
+	[OOOOOOOOOOOOOo      oOOOOOOOOOOOOOo     oOOOOOOOOOOOOOOo    ] 1793/2560
+	.test-data/05
+	[Oo      oOo      oOOOOo      oOo     oOOOOOo     oOOo     oO] 831/2560
+	.test-data/04
+	[     oOo      oOOOOo      oOo      OOOOOo     oOOo     oOOOO] 895/2560
+	.test-data/08
+	[                                                            ] 0/2560
+	.test-data/02
+	[            oo      oOo      oOOOOo     oOOo     oOOOOOo    ] 700/2560
+	.test-data/07
+	[  oOOOOOOOOOOOOOo      oOOOOOOOOOOOOOo     oOOOOOOOOOOOOOOOO] 1887/2560
+	.test-data/01
+	[                                                            ] 0/2560
+	.test-data/00
+	[ o                                                          ] 10/2560
+	.test-data/09
+	[                                                            ] 0/2560
+						 Files: 10
+			 Directories: 1
+		Resident Pages: 7076/25600  27M/100M  27.6%
+					 Elapsed: 0.003181 seconds
+- You can also lock or unlock parts of files!
+
+Caching at the hypervisor level vs. VM level.
+- "Unlike hypervisor caching, however, guest level caching is performed at the
+	file level, so as a result, specific data sets can be pinned into cache right
+	from the beginning to deliver an immediate cache benefit to performance
+	demanding applications. Cache pinning certain data sets obviates the need to
+	wait for cache warming to run its course; which can be particularly
+	beneficial for applications that have hit a performance wall on conventional
+	storage."
+	[http://www.storage-switzerland.com/Blog/Entries/2013/8/15_Comparing_VMware_Caching_Techniques_-_Guest_vs._Hypervisor.html'
+- So, I'm guessing xen is not caching blocks. If it does, there are too much
+	parameters to consider; for example, how do you allocate memory to different
+	VMs? Better leave it to VMs.
+
+Simulation duration
+- I don't think a concrete number matters, except for the Facebook workload
+  experiment.
+
+Run experiment in the screen and detach before leaving it run. Too much
+terminal output could cost a lot of money!
+
+With 100 threads, the server seems to be saturated. Even with 50. Cause they
+make requests without throttling.
+
+SSTable size growth
+- The default record size is 1 KB. Make it 20 KB.
+  - Inserting 500,516 records. So, about 500 MB. Takes about 6 mins.
+- Make it 20 times more bigger. Make the total size to 10GB.
+  from fieldcount=10, fieldlength=100 to fieldcount=10, fieldlength=2000
+  - Better fix the fieldcount, otherwise you need to change the table schema.
+  - Without memory capping on a c3.2xlarge node with a 15 GiB of memory.
+  - Takes about 30 mins.
+  - Initial sizes
+    $ ll *-Data.db -h
+    -rw-rw-r-- 1 ubuntu ubuntu 437M Sep  6 05:02 mc-1-big-Data.db
+    -rw-rw-r-- 1 ubuntu ubuntu 438M Sep  6 05:03 mc-2-big-Data.db
+  - When done. A bit less than 10 GB.
+    $ ll *-Data.db -h
+    -rw-rw-r-- 1 ubuntu ubuntu 6.9G Sep  6 05:30 mc-22-big-Data.db
+    -rw-rw-r-- 1 ubuntu ubuntu 1.8G Sep  6 05:28 mc-26-big-Data.db
+    -rw-rw-r-- 1 ubuntu ubuntu 438M Sep  6 05:25 mc-27-big-Data.db
+  - The fields contain random strings. The network- or storage-level
+    compression won't have a meaningful impact.
+
+The Measurements class seems to have all latencies plus some extra JVM info.
+- A 1-sec summary looks fine for now.
+
+Too much Cassandra GCs. After restoring JVM heap size to default, I don't see
+the message any more. Also, a lot higher throughput now. 40K IOPS.
+
+What happens if you run a workload without loading?
+- "workload a" gets "read-failed". It's okay.
+- "workload d" gets "read-failed" too. A "run" expects some records exist
+  initially. As more records are inserted, "read latest" picks recently
+  inserted values more.
+
+YCSB's _dotransactions is not a DB transaction; a group of atomic operations.
+It is "Whether or not this is the transaction phase (run) or not (load).".  It
+is set by default when in a "run" mode.
+
+Entry point:
+	core/src/main/java/com/yahoo/ycsb/Client.java main()
+
+YCSB Build:
+- mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests
+- Disabled the annoying checkstyle errors.
+
+ycsb workloade d generates data on the fly.
+
+nodetool drain seems to dump MemTable to a SSTable. You can measure the size
+easily that way.  It doesn't seem to accecpt any new connections after that.
+
+What is a good level of concurrency? how many threads? As long as you use the
+same number for the unmodified Cassandra and Mutant, you should be fine.
+
+How long do you want to run the workload? Long enough that multiple SSTables
+are generated.
+
+Local SSD needs initialization on some instance types.
+- First write to any location is slower than the subsequent writes. c3 instance
+	type is one of those that need initialization.
+	- https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
+	- With a 80GB local SSD on a c3.2xlarge instance. Before initialization,
+		about 40 - 50 MB/s. After, 370 - 400 MB/s.
+- i and r instance don't need initialization.
+  - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html#instance-store-volumes
+	- r3.xlarge looks not bad.
+		vCPU	ECU	Memory (GiB)	Instance Storage (GB)	Linux/UNIX Usage
+		4			13	30.5					1 x 80 SSD						$0.333 per Hour
+- So, I think, without a TRIM support, first writes have the overhead of wiping
+	out the initial space.
+	- "A trim command (known as TRIM in the ATA command set, and UNMAP in the
+		SCSI command set) allows an operating system to inform a solid-state drive
+		(SSD) which blocks of data are no longer considered in use and can be wiped
+		internally."
+	- "Trimming enables the SSD to handle garbage collection overhead, which
+		would otherwise significantly slow down future write operations to the
+		involved blocks, in advance."
+	- https://en.wikipedia.org/wiki/Trim_(computing)
+- On an r3.xlarge, uninitialized local SSD has a throughput around 84 MB/s. Not
+	fast enough. Trying initializing. It's still slow! Not improving any.
+
+Running avg of the last 10 points instead of the Bezier curve. Turns out not
+needed.
+
+80GB EBS GP2 SSD has good enough performance for sequential writes. No worries
+about IO limiting.
+
+Disk IO monitoring tools
+- https://github.com/koct9i/ioping
+- http://freecode.com/projects/fio
+- http://www.iozone.org
+- http://www.coker.com.au/bonnie++
+
+Request more than the cache size. We don't know Probably won't need anyway.
+
+Show price and latencies.
+- Let’s do 4K reads and 128kb writes. 128kb seems to be the biggest write size
+	to a block device from my experiments for all devices.
+
+Local SSD cost inference. These support TRIM (no need for initialization).
+- r3.8xlarge	32	104	244	2 x 320 SSD	$2.66 per Hour
+- i2.8xlarge	32	104	244	8 x 800 SSD	$6.82 per Hour
+
+Ubuntu gnuplot makes prettier charts than MacOS.
+
+Since all experiments data is written on new EBS volumes, it should be okay.
+- "New EBS volumes receive their maximum performance the moment that they are
+	available and do not require initialization (formerly known as pre-warming).
+	However, storage blocks on volumes that were restored from snapshots must be
+	initialized (pulled down from Amazon S3 and written to the volume) before you
+	can access the block."
+- https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-initialize.html
+
+Save GNU screen layout
+- ^a:layout save default

@@ -1,0 +1,108 @@
+log_archive_dn: /mnt/local-ssd0/mutant/log
+
+not_used_for_now:
+  monitor_temp: true
+
+  # Set mutant_enabled=true, migrate_sstables=false for checking the SSTable
+  # temperatures of the unmodified RocksDB
+  migrate_sstables: true
+
+  sst_migration_temperature_threshold: 20.0
+
+  cache_filter_index_at_all_levels: true
+
+  db_path: ~/work/rocksdb-data/quizup
+  slow_dev1_path: uninitialized
+  slow_dev2_path: uninitialized
+  slow_dev3_path: uninitialized
+
+  #workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/0.05
+  #workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/0.10
+  #workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/1.00
+  #workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/10.00
+  workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/100.00
+
+  progress_log_dn: .log
+
+  # Key: 18 bytes long. Assume 8-byte size is there. So, 26 bytes.
+  #   229006591800701509
+  #   012345678901234567
+  # Value: 1000 - (8 + 18 + 8) = 966
+  #
+  # (100% data, 1k, no-compression) generates about 2GB of data
+  #record_size: 40000
+  record_size: 1000
+
+  # For a dry run without actually making requests to RocksDB
+  request_db: true
+
+  # With the 0.05% data, 30-sec simulation is not lagging behind.
+  #simulation_time_dur_in_sec: 5
+  #simulation_time_dur_in_sec: 100
+  #simulation_time_dur_in_sec: 1000
+
+  # (1.00% data, 1k). 30 sec is enough on mjolnir
+  #
+  # With (100% data, 1k, 1800 sec), min idle CPU usage is like 6%. So the system is not overloaded. Good.
+  #simulation_time_dur_in_sec: 3
+  #simulation_time_dur_in_sec: 300
+  #simulation_time_dur_in_sec: 300
+  #simulation_time_dur_in_sec: 1800
+
+  # With (100% data, 1k, 2000 sec, 5.5G of memory), min idle CPU usage is like 6%. So the system is not overloaded. Good.
+  #simulation_time_dur_in_sec: 2000
+
+  # CPU usage is still high
+  #simulation_time_dur_in_sec: 2400
+
+  # With (100% data, 1k, 3600 sec, 3G of memory). Peak CPU usage is like 40%.
+  # Average is a lot lower. Looks good.
+  # 161229-211308.518
+  #simulation_time_dur_in_sec: 3600
+
+  #simulation_time_dur_in_sec: 5400
+
+  # Numbers from the QuizUp data
+  simulated_time_begin: 160711-170502.871000
+  simulated_time_end:   160727-122652.458000
+
+  # Start/stop simulate time position. The snapshot was taken at 90%. Start a bit
+  # before that to avoid the missing record at the boundary.
+  # Stops at like at 90% of the workload. Also useful for loading the database.
+  #
+  # With (100% data, running 1% from 90% loaded DB, 1k record size, 5400 sec
+  # simulation time, 3G of memory, EBS st1). Peak idle CPU usage is like 76%
+  # before the disk becomes the bottleneck.
+  #
+  # -1.0 for undefined.
+  workload_start_from: -1.0
+  workload_stop_at:    -1.0
+
+  #simulation_time_dur_in_sec: 10000
+  # From 6%, it needs to go slower than 10000 sec. You can go with different
+  # speed with different devices.
+  #
+  # Memory gets saturated from 8.7% (98.7% in the overall range). This is where
+  # you want to measure the performance!
+
+  # 99.9th percentile latency is a good one.
+
+  # Note: Try with 100,000 sec to see the 99th percentile performance degrades
+  # significantly. Will have to find a small enough memory size to see this many
+  # disk IOs. Not sure if this is even worth it. Not very realistic.
+  #simulation_time_dur_in_sec: 100000
+
+  # Still see saturation with 15000
+
+  # No saturation on sc1. Good. With the 2-level storage setup, you need to wait
+  # a long time, like 5% before seeing the hit on the cold storage device.
+  simulation_time_dur_in_sec: 60000
+  #simulation_time_dur_in_sec: 4000
+
+  # Dev on Mjolnir. Mjolnir latency is pretty high. I'm guessing the storage medium is HDD.
+  #
+  # For fast dev. On mjolnir, without limiting memory:
+  #   With 6000 secs, about 90% CPU idle.
+  #   With 4000 secs, about 85% CPU idle.
+  #   With 2000 secs, about 55% CPU idle. This is probably the fastest you can go without overloading the system.
+  #simulation_time_dur_in_sec: 2000

@@ -1,0 +1,17 @@
+# i2.2xlarge	8	27	61	2 x 800 SSD	$1.705 per Hour
+# 	EC2 inst cost for 1 year
+# 		calc "1.705 * 24 * 365.25" = 14946.03
+# 	- Storage (local SSD) cost for 1 year
+# 		calc "0.5275833 * 1600 * 12" = 10129.59936
+# 	- Other cost (CPU, memory)
+# 	  calc "14946.03 - 10129.59936" = 4816.43064
+# 
+# EBS sc1 calc "0.025 * 1600 * 12" = 480
+# EBS st1 calc "0.045 * 1600 * 12" = 864
+# EBS gp2 calc "0.100 * 1600 * 12" = 1920
+
+# Storage    cost($)
+"EBS\nMag\nCold"     480
+"EBS\nMag"     864
+"EBS\nSSD"    1920
+"Local\nSSD" 10129.59936

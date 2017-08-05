@@ -1,0 +1,3 @@
+in_dir: ~/work/quizup-data/memcached-2w/data-set-get-wallclockts-no-dup
+
+out_dir: ../.output

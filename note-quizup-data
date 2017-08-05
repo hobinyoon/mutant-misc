@@ -1,0 +1,160 @@
+TODO: Show object temperature progression
+- Define temperature
+- A typical one
+- A cold-become-hot one
+	- Show an example
+	- How much of them are there?
+
+
+TODO: Ask Ling when taking a break!
+
+
+Object initial hot-temperature region
+- How hot is an object during the initial hot-temperature region?
+	- The initial peak before an object becomes cold (temperature drops below the
+		threshold of 0.001.
+		- 0.001: With a decaying factor (smoothing factor) 0.9, object with temp 1
+			drops to 0.001 in 72 mins, about 1.5 hours.
+	- Distribution:
+		- Most of them are not too hot. The median of 20 means that an object gets
+			like 2 reads/min for 10 mins and becomes cold.
+			num_items 11039871
+			avg    47.7554
+			sd    104.011
+			min    10
+			max 38870
+			 1p    10
+			 5p    10
+			10p    10
+			25p    10
+			50p    20
+			75p    40
+			90p   110
+			95p   170
+			99p   423.394
+- How long is the region?
+	- Median: It takes about 16 mins till the last request. It takes 115 mins
+		till cold.
+	- Distribution
+			Until_last_req      Until_cold
+			num_items 11039871  num_items 11039871
+			avg   621.82        avg   529.94
+			sd   1646.1         sd   1647.02
+			min    89           min     1
+			max 22792           max 22704
+			 1p    89            1p     1
+			 5p    89            5p     1
+			10p    92           10p     1
+			25p    99           25p     3
+			50p   115           50p    16
+			75p   302           75p   218
+			90p  1420           90p  1332
+			95p  2945           95p  2855
+			99p  8984           99p  8894
+
+
+Cold object becoming hot (2nd hot region)
+- How often does it happen? Depends on the temperature threshold.
+	It happens quite often [hotagain-ratio-by-temp-threshold.pdf]
+	- With the temperature threshold 20, which is the median initial-hot-region
+		max temperature, 2.02%
+	- With 10, half of the median initial-hot-region max temperature, 5.59%
+	- Since these objects are likely to be already migrated to cold storage, they
+		account for the high tail latency.
+	- You want to get rid of them. Record re-insertion!
+- TODO: How long is the second hot region?
+- TODO: How much accesses by volume does it account for? How much record
+	reinsertion would benefit.
+
+n-th hot region
+- TODO: How often the n-th hot-region happen?
+- TODO: How much volume does it account for?
+	- I'm guessing both the frequency and the volume is small enough to be
+		neglected.
+
+- Found a good example and plotted.
+
+
+TODO: Show SSTable temperature progression
+- Define temperature. We use Newton's cooling law
+- Show the progression: aggregate stat and individual stat
+	- Does it get reversed (cold one becomes hot again)? Highly unlikely, since a
+		SsTable consists of many (160 MB / 1KB = 160 K) records.
+
+
+Model the temperature of a record
+- Assume ambient temperature is 0. Then the delta becomes equal to the record temperature.
+- Newton's law of cooling
+	- http://www.ugrad.math.ubc.ca/coursedoc/math100/notes/diffeqs/cool.html
+- With alpha=0.9, the temperature drops from 1 to 0.1 in 23 mins.
+
+
+Stats
+- Number of unique objects (users): 2,047,471
+- Number of reads and writes (initial write + updates) per object
+					reads     writes
+		avg     335.033     11.8982
+		sd     1201.39      54.5346
+		min       1          1
+		max 4305829      60334
+		 1p       1          1
+		 5p       1          1
+		10p       1          1
+		25p       2          2
+		50p       8          4
+		75p      41         10
+		90p     194         27
+		95p     515         42
+		99p    3422        125
+- By time plot. To see the burstiness
+	- Bucket size: 2 weeks / 1000 (x-axis resolution) = 14 * 24 * 3600 secs / 1000 = 1209.6 secs ~= 20 mins
+	- I see the diurnal pattern
+- Access frequencies by obj age since last write (or modification)
+	- The sharp drop after 1d so bothers me. Shouldn't affect Mutant though.
+		- Find an example of repeatedly getting accessed after 1 day.
+
+Do we need delete? Probably. Check if the packet capture already has it.
+- I don't see anything other than get/set. I guess you don't have to delete
+	items in memcached, which makes sense.
+
+Fix the timestamp conversion error. fix the unique obj id at a specific time
+error: there can be up to 2 for W and R.
+- ts range check. Check if all TSs in a file are in the correct range
+
+add-wallclock-ts-wo-dup.py doesn't terminate correctly. I wonder if there are
+some files not processed correctly. Try again after all files are ready. They
+are gone. I'm guessing it's when a thread gets an exception and not handles it
+the multiprocessing library.
+
+Construct the wallclock timestamp
+- Start from the ts in the file name (a): 2016-07-25 13:02:11
+- Add the packet timestamp delta to (a)
+- I hope the error is mostly within 1 sec.
+
+Packet timestamp
+	min: 342134
+	max: 346428
+	interval: 4294
+
+[http://www.wishful-project.eu/sites/default/files/images/review/WiSHFUL_D3.2_Lead_CNIT_R_PU_2015-12-23_Final.pdf]
+- "The unit of measurement is microseconds since the interface has been
+	started, the register size is 32bit (cycle on 4294 sec)"
+
+Duration: 38:30 + 8:29 = 46:59 = 2819 sec
+	00397_20160725 135131
+	00398_20160725 143830
+
+Packet timestamp of players_00397_20160725135131:
+	342484.762823
+	345303.646598
+	range: 2818.883775
+
+-rw-rw-r-- 1 hobin hobin 84527935 Nov 30 11:56 players_00396_20160725130211
+-rw-rw-r-- 1 hobin hobin 85944941 Nov 30 11:14 players_00397_20160725135131
+                                               players_00398_20160725143830.pcap
+
+Checking th min and max timestamp of a file
+	~/work/quizup/memcached-2w/data-set-get$ awk '{print $1}' players_00333_20160723090032 | sort -n | tail -5
+
+I see requests to the same objects at the same timestamp multiple times.
+Interesting.
