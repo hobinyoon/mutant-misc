@@ -20,6 +20,7 @@ def main(argv):
   Util.MkDirs(_dn_output)
   fn_plot_data = GetPlotData()
   fn_out = "%s/ycsb-d-read-thrp-vs-lat.pdf" % _dn_output
+  # TODO: rename to contain st1
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
@@ -38,7 +39,7 @@ def GetPlotData():
     # Parse YCSB log files and group by target IOPSes
     dt_ycsblog = {}
     targetiops_dt = {}
-    dn_log = Conf.Get("RocksDB with local SSD").replace("~", os.path.expanduser("~"))
+    dn_log = Conf.Get("RocksDB on st1").replace("~", os.path.expanduser("~"))
     for exp_id in os.listdir(dn_log):
       # exp_id: 170805-180831
       dn1 = "%s/%s/ycsb" % (dn_log, exp_id)
@@ -57,14 +58,51 @@ def GetPlotData():
     #Cons.P(pprint.pformat(dt_ycsblog))
     #Cons.P(pprint.pformat(targetiops_dt))
 
-    for ti, dts in sorted(targetiops_dt.iteritems()):
-      yas = YcsbAvgStat()
-      for dt in dts:
-        #Cons.P(dt_ycsblog[dt])
-        yas.Add(dt_ycsblog[dt])
-      yas.Calc()
-      Cons.P("%d %s" % (ti, yas))
-      sys.exit(0)
+
+    with open(fn_out, "w") as fo:
+      fmt = "%6d %6.0f" \
+          " %5.0f %2d %8d %2d %2d %2d %3d %4d %6d %7d %8d" \
+          " %5.0f %2d %8d %2d %2d %2d %3d %6d %6d %7d %8d" \
+          " %1d"
+      header = Util.BuildHeader(fmt, "target_iops iops" \
+          " r_avg r_min r_max r_1p r_5p r_50p r_90p r_95p r_99p r_99.9p r_99.99p" \
+          " w_avg w_min w_max w_1p w_5p w_50p w_90p w_95p w_99p w_99.9p w_99.99p" \
+          " num_exps" \
+          )
+      #Cons.P(header)
+      fo.write("# Latency in us\n")
+      fo.write("#\n")
+      fo.write(header + "\n")
+      for ti, dts in sorted(targetiops_dt.iteritems()):
+        yas = YcsbAvgStat()
+        for dt in dts:
+          yas.Add(dt_ycsblog[dt])
+        yas.Calc()
+        #Cons.P("%d %s" % (ti, yas))
+        fo.write((fmt + "\n") % (ti, yas.op_sec
+           , yas.r_avg, yas.r_min, yas.r_max, yas.r_1, yas.r_5, yas.r_50, yas.r_90, yas.r_95, yas.r_99, yas.r_999, yas.r_9999
+           , yas.w_avg, yas.w_min, yas.w_max, yas.w_1, yas.w_5, yas.w_50, yas.w_90, yas.w_95, yas.w_99, yas.w_999, yas.w_9999
+           , len(yas.logs)
+           ))
+    Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+    return fn_out
+
+
+
+
+
+
+
+#      for ti, v in sorted(ycsb_logs.iteritems()):
+#        r = v.ReadLat()
+#        w = v.WriteLat()
+#        fo.write((fmt + "\n") % (ti, v.op_sec
+#          , r.avg, r._1, r._25, r._50, r._75, r._90, r._99, r._999, r._9999
+#          , w.avg, w._1, w._25, w._50, w._75, w._90, w._99, w._999, w._9999
+#          ))
+
+
+      # TODO: Individual stats too
 
 
 
