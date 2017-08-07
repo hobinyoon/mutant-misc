@@ -14,43 +14,42 @@ if (1) {
   set noytics
   set noborder
   f(x) = x
-  set label 1 at screen 0.05, screen 0.90 \
+  set label 1 at screen 0.025, screen 0.90 \
     "1: read latency" \
-    . "\n2: with individual exps\n3: write latency" \
+    . "\n2: read latency (1p, 5p, 50p, 90p, 99p)" \
+    . "\n3: write latency" \
     left
   plot f(x) lc rgb "#F0F0F0" not
 }
 
 unset label 1
 
-set xtics nomirror tc rgb "black" ( \
-   "0"      0 \
-,  "2"  20000 \
-,  "4"  40000 \
-,  "6"  60000 \
-,  "8"  80000 \
-, "10" 100000 \
-, "12" 120000 \
-, "14" 140000 \
-)
+set grid xtics mxtics ytics back lc rgb "#808080"
+set border (1+2+4+8) back lc rgb "#808080"
 
-#y_scale = "linear"
-y_scale = "log"
+set xlabel "IOPS (10K IOs/sec)"
+set ylabel "Latency (ms)" offset -0.5, 0
 
-if (y_scale eq "linear") {
-	set ytics nomirror tc rgb "black" ( \
-		 "0"     0 \
-	,  "2"  2000 \
-	,  "4"  4000 \
-	,  "6"  6000 \
-	,  "8"  8000 \
-	, "10" 10000 \
-	, "12" 12000 \
-	, "14" 14000 \
-	)
-	set yrange [0:20000]
-} else { if (y_scale eq "log") {
+# Read latency. Linear
+if (1) {
+  unset logscale y
+	unset ytics
+  set xtics nomirror tc rgb "black"
+	set ytics nomirror tc rgb "black"
+  set xrange [0:11]
+	set yrange [0:12]
+
+	col_base = 3
+  plot FN_IN u ($2/1000):(column(col_base + 0) / 1000) w lp pt 7 ps 0.4 lc rgb "blue" not
+}
+
+# Read latency. Log scale. Whisker plot.
+if (1) {
 	set logscale y
+	#unset yrange
+  #set xrange [0:12000]
+	set yrange [1:1000000]
+
 	set ytics nomirror tc rgb "black" ( \
 		"1"          1 \
 	, "10"        10 \
@@ -60,74 +59,24 @@ if (y_scale eq "linear") {
 	, "10^5"  100000 \
 	, "10^6" 1000000 \
 	)
-	set yrange [1:]
-} }
 
-set grid xtics mxtics ytics back lc rgb "#808080"
-set border (1+2+4+8) back lc rgb "#808080"
-
-set xlabel "IOPS (10K IOs/sec)"
-set ylabel "Latency (ms)" offset -0.5, 0
-
-set xrange [0:10000]
-
-#plot_type = "dot"
-plot_type = "whisker"
-
-# Read latency
-if (1) {
 	col_base = 3
+  plot \
+  FN_IN u ($2/1000):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
+  FN_IN u ($2/1000):(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
+  FN_IN u ($2/1000):(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "red" not
 
-	if (plot_type eq "dot") {
-		plot \
-		FN_IN u 2:(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "blue" t "RocksDB on EBS Mag"
-	} else { if (plot_type eq "whisker") {
-		plot \
-		FN_IN u 2:(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
-		FN_IN u 2:(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
-
-		# Avg is not very useful
-		#FN_IN u 2:(column(col_base + 0)) w p pt 7 ps 0.4 lc rgb "red" not
-
-		# candlesticks
-		# x  box_min  whisker_min  whisker_high  box_high
-		# iops    5p           1p           99p       90p
-		# 2        7            6            11         9
-	} }
+  # candlesticks
+  # x  box_min  whisker_min  whisker_high  box_high
+  # iops    5p           1p           99p       90p
+  # 2        7            6            11         9
 }
 
-# Read individual
-if (1) {
-	col_base = 3
-
-	if (plot_type eq "dot") {
-		plot \
-		FN_IN u 2:(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "blue" t "RocksDB on EBS Mag"
-	} else { if (plot_type eq "whisker") {
-		plot \
-		FN_IN u 2:(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
-		FN_IN u 2:(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
-
-		# Avg is not very useful
-		#FN_IN u 2:(column(col_base + 0)) w p pt 7 ps 0.4 lc rgb "red" not
-
-		# candlesticks
-		# x  box_min  whisker_min  whisker_high  box_high
-		# iops    5p           1p           99p       90p
-		# 2        7            6            11         9
-	} }
-}
-
-# Write latency
+# Write latency. Log scale. Whisker plot.
 if (1) {
 	col_base = 14
-
-	if (plot_type eq "dot") {
-		plot \
-		FN_IN u 2:(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "blue" t "RocksDB on EBS Mag"
-	} else { if (plot_type eq "whisker") {
-		plot \
-		FN_IN u 2:(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
-		FN_IN u 2:(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
-	} }
+  plot \
+  FN_IN u ($2/1000):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
+  FN_IN u ($2/1000):(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
+  FN_IN u ($2/1000):(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "red" not
 }
