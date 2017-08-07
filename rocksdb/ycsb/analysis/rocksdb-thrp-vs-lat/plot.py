@@ -17,7 +17,10 @@ _dn_output = "%s/.output" % os.path.dirname(__file__)
 
 def main(argv):
   Util.MkDirs(_dn_output)
-  (fn_plot_data, fn_plot_data_ind) = GetPlotData()
+  (fn_plot_data, fn_plot_data_ind) = GetPlotData("st1", "~/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-st1")
+
+  # TODO
+  #(fn_plot_data, fn_plot_data_ind) = GetPlotData("localssd", )
   fn_out = "%s.pdf" % fn_plot_data
 
   with Cons.MT("Plotting ..."):
@@ -28,14 +31,13 @@ def main(argv):
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
-def GetPlotData():
-  fn_out = "%s/ycsb-d-rockdb-st1" % _dn_output
-  fn_out_ind = "%s/ycsb-d-rockdb-st1-individual" % _dn_output
+def GetPlotData(dev_type, dn):
+  fn_out = "%s/ycsb-d-rockdb-%s" % (_dn_output, dev_type)
+  fn_out_ind = "%s/ycsb-d-rockdb-%s-individual" % (_dn_output, dev_type)
   if os.path.isfile(fn_out) and os.path.isfile(fn_out_ind):
     return (fn_out, fn_out_ind)
 
   with Cons.MT("Generating plot data ..."):
-    dn = "~/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-st1/step-by-1000"
     dn = dn.replace("~", os.path.expanduser("~"))
     fn_manifest = "%s/manifest.yaml" % dn
     targetiops_exps = None
@@ -106,7 +108,6 @@ def GetPlotData():
 
 class YcsbLog:
   def __init__(self, fn):
-    # /home/hobin/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-st1/good/170805-180831/ycsb/170805-224531.277-d
     self.fn = fn
     fn0 = os.path.basename(fn)
     #Cons.P(fn0)

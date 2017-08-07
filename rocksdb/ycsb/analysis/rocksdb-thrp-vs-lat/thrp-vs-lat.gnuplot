@@ -20,9 +20,8 @@ if (1) {
     . "\n3: write latency" \
     left
   plot f(x) lc rgb "#F0F0F0" not
+  unset label 1
 }
-
-unset label 1
 
 set grid xtics mxtics ytics back lc rgb "#808080"
 set border (1+2+4+8) back lc rgb "#808080"
