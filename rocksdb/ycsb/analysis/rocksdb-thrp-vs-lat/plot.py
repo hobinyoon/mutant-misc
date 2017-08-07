@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
-import math
 import os
 import pprint
 import re
 import sys
+import yaml
 
 sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~"))
 import Cons
 import Util
 
-import Conf
 import Stat
 
 _dn_output = "%s/.output" % os.path.dirname(__file__)
@@ -18,132 +17,91 @@ _dn_output = "%s/.output" % os.path.dirname(__file__)
 
 def main(argv):
   Util.MkDirs(_dn_output)
-  fn_plot_data = GetPlotData()
-  fn_out = "%s/ycsb-d-read-thrp-vs-lat.pdf" % _dn_output
-  # TODO: rename to contain st1
+  (fn_plot_data, fn_plot_data_ind) = GetPlotData()
+  fn_out = "%s.pdf" % fn_plot_data
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
     env["FN_IN"] = fn_plot_data
     env["FN_OUT"] = fn_out
-    Util.RunSubp("gnuplot %s/ycsb-thrp-vs-lat.gnuplot" % os.path.dirname(__file__), env=env)
+    Util.RunSubp("gnuplot %s/thrp-vs-lat.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
 def GetPlotData():
-  fn_out = "%s/ycsb-d-by-iops" % _dn_output
-  if os.path.isfile(fn_out):
-    return fn_out
+  fn_out = "%s/ycsb-d-rockdb-st1" % _dn_output
+  fn_out_ind = "%s/ycsb-d-rockdb-st1-individual" % _dn_output
+  if os.path.isfile(fn_out) and os.path.isfile(fn_out_ind):
+    return (fn_out, fn_out_ind)
 
   with Cons.MT("Generating plot data ..."):
-    # Parse YCSB log files and group by target IOPSes
-    dt_ycsblog = {}
-    targetiops_dt = {}
-    dn_log = Conf.Get("RocksDB on st1").replace("~", os.path.expanduser("~"))
-    for exp_id in os.listdir(dn_log):
-      # exp_id: 170805-180831
-      dn1 = "%s/%s/ycsb" % (dn_log, exp_id)
-      for fn0 in os.listdir(dn1):
-        fn = "%s/%s" % (dn1, fn0)
-        if fn.endswith(".bz2"):
-          fn1 = fn[:-4]
-          if not os.path.exists(fn1):
-            Util.RunSubp("pbzip2 -k -d %s" % fn)
-          ycsb_log = YcsbLog(fn1)
+    dn = "~/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-st1/step-by-1000"
+    dn = dn.replace("~", os.path.expanduser("~"))
+    fn_manifest = "%s/manifest.yaml" % dn
+    targetiops_exps = None
+    with open(fn_manifest) as fo:
+      targetiops_exps = yaml.load(fo)
+    #Cons.P(pprint.pformat(targetiops_exps, width=230))
+
+    exp_ycsblog = {}
+    with Cons.MT("Parsing YCSB log files ..."):
+      for ti, exps in targetiops_exps.iteritems():
+        for e in exps:
+          fn = "%s/%s" % (dn, e)
+          #Cons.P(fn)
+          if not os.path.exists(fn):
+            Util.RunSubp("pbzip2 -k -d %s.bz2" % fn)
+          ycsb_log = YcsbLog(fn)
+          exp_ycsblog[e] = ycsb_log
           #Cons.P(ycsb_log)
-          dt_ycsblog[ycsb_log.exp_dt] = ycsb_log
-          if ycsb_log.target_iops not in targetiops_dt:
-            targetiops_dt[ycsb_log.target_iops] = []
-          targetiops_dt[ycsb_log.target_iops].append(ycsb_log.exp_dt)
-    #Cons.P(pprint.pformat(dt_ycsblog))
-    #Cons.P(pprint.pformat(targetiops_dt))
 
+    with Cons.MT("Gen avg stat by target IOPSes ..."):
+      # Gen individual stat
+      with open(fn_out_ind, "w") as fo:
+        fmt = "%5d %17s %5.0f" \
+            " %5.0f %3.0f %8.0f %2.0f %2.0f %2.0f %3.0f %6.0f %6.0f %7.0f %7.0f" \
+            " %5.0f %3.0f %8.0f %2.0f %2.0f %2.0f %3.0f %6.0f %6.0f %7.0f %7.0f"
+        fo.write("# Latency in us\n")
+        fo.write("%s\n" % Util.BuildHeader(fmt, "target_iops exp_dt iops" \
+            " r_avg r_min r_max r_1 r_5 r_50 r_90 r_95 r_99 r_99.9 r_99.99" \
+            " w_avg w_min w_max w_1 w_5 w_50 w_90 w_95 w_99 w_99.9 w_99.99"))
+        for ti, exps in sorted(targetiops_exps.iteritems()):
+          for e in exps:
+            y = exp_ycsblog[e]
+            fo.write((fmt + "\n") % (ti, y.exp_dt, y.op_sec
+               , y.r_avg, y.r_min, y.r_max, y.r_1, y.r_5, y.r_50, y.r_90, y.r_95, y.r_99, y.r_999, y.r_9999
+               , y.w_avg, y.w_min, y.w_max, y.w_1, y.w_5, y.w_50, y.w_90, y.w_95, y.w_99, y.w_999, y.w_9999
+               ))
+        Cons.P("Created %s %d" % (fn_out_ind, os.path.getsize(fn_out_ind)))
 
-    with open(fn_out, "w") as fo:
-      fmt = "%6d %6.0f" \
-          " %5.0f %2d %8d %2d %2d %2d %3d %4d %6d %7d %8d" \
-          " %5.0f %2d %8d %2d %2d %2d %3d %6d %6d %7d %8d" \
-          " %1d"
-      header = Util.BuildHeader(fmt, "target_iops iops" \
-          " r_avg r_min r_max r_1p r_5p r_50p r_90p r_95p r_99p r_99.9p r_99.99p" \
-          " w_avg w_min w_max w_1p w_5p w_50p w_90p w_95p w_99p w_99.9p w_99.99p" \
-          " num_exps" \
-          )
-      #Cons.P(header)
-      fo.write("# Latency in us\n")
-      fo.write("#\n")
-      fo.write(header + "\n")
-      for ti, dts in sorted(targetiops_dt.iteritems()):
-        yas = YcsbAvgStat()
-        for dt in dts:
-          yas.Add(dt_ycsblog[dt])
-        yas.Calc()
-        #Cons.P("%d %s" % (ti, yas))
-        fo.write((fmt + "\n") % (ti, yas.op_sec
-           , yas.r_avg, yas.r_min, yas.r_max, yas.r_1, yas.r_5, yas.r_50, yas.r_90, yas.r_95, yas.r_99, yas.r_999, yas.r_9999
-           , yas.w_avg, yas.w_min, yas.w_max, yas.w_1, yas.w_5, yas.w_50, yas.w_90, yas.w_95, yas.w_99, yas.w_999, yas.w_9999
-           , len(yas.logs)
-           ))
-    Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-    return fn_out
+      # Gen average stat
+      with open(fn_out, "w") as fo:
+        fmt = "%6d %6.0f" \
+            " %5.0f %2d %8d %2d %2d %2d %3d %4d %6d %7d %8d" \
+            " %5.0f %2d %8d %2d %2d %2d %3d %6d %6d %7d %8d" \
+            " %1d"
+        header = Util.BuildHeader(fmt, "target_iops iops" \
+            " r_avg r_min r_max r_1p r_5p r_50p r_90p r_95p r_99p r_99.9p r_99.99p" \
+            " w_avg w_min w_max w_1p w_5p w_50p w_90p w_95p w_99p w_99.9p w_99.99p" \
+            " num_exps" \
+            )
+        fo.write("# Latency in us\n")
+        fo.write("#\n")
+        fo.write(header + "\n")
 
-
-
-
-
-
-
-#      for ti, v in sorted(ycsb_logs.iteritems()):
-#        r = v.ReadLat()
-#        w = v.WriteLat()
-#        fo.write((fmt + "\n") % (ti, v.op_sec
-#          , r.avg, r._1, r._25, r._50, r._75, r._90, r._99, r._999, r._9999
-#          , w.avg, w._1, w._25, w._50, w._75, w._90, w._99, w._999, w._9999
-#          ))
-
-
-      # TODO: Individual stats too
-
-
-
-
-    sys.exit(0)
-
-
-
-
-    sys.exit(0)
-
-    fns_log = Conf.Get("RocksDB with local SSD")
-    #Cons.P(pprint.pformat(fns_log))
-    for fn in fns_log:
-      fn = fn.replace("~", os.path.expanduser("~"))
-      if not os.path.isfile(fn):
-        if not os.path.isfile("%s.bz2" % fn):
-          raise RuntimeError("Unexpected")
-        Util.RunSubp("cd && pbzip2 -d %s.bz2" % (os.path.dirname(fn), fn))
-      ycsb_log = YcsbLog(fn)
-      #Cons.P(ycsb_log)
-      ycsb_logs[ycsb_log.target_iops] = ycsb_log
-    #Cons.P(pprint.pformat(ycsb_logs))
-
-    fmt = "%6d %10.3f" \
-        " %8.3f %3.0f %5.0f %5.0f %5.0f %6.0f %6.0f %6.0f %6.0f" \
-        " %8.3f %3.0f %5.0f %5.0f %5.0f %6.0f %6.0f %6.0f %6.0f"
-    with open(fn_out, "w") as fo:
-      fo.write("# Latency in us\n")
-      fo.write("%s\n" % Util.BuildHeader(fmt, "target_iops iops" \
-          " r_avg r_1 r_25 r_50 r_75 r_90 r_99 r_99.9 r_99.99" \
-          " w_avg w_1 w_25 w_50 w_75 w_90 w_99 w_99.9 w_99.99"))
-      for ti, v in sorted(ycsb_logs.iteritems()):
-        r = v.ReadLat()
-        w = v.WriteLat()
-        fo.write((fmt + "\n") % (ti, v.op_sec
-          , r.avg, r._1, r._25, r._50, r._75, r._90, r._99, r._999, r._9999
-          , w.avg, w._1, w._25, w._50, w._75, w._90, w._99, w._999, w._9999
-          ))
-    Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-    return fn_out
+        for ti, exps in sorted(targetiops_exps.iteritems()):
+          yas = YcsbAvgStat()
+          for e in exps:
+            yas.Add(exp_ycsblog[e])
+          yas.Calc()
+          #Cons.P(yas)
+          fo.write((fmt + "\n") % (ti, yas.op_sec
+             , yas.r_avg, yas.r_min, yas.r_max, yas.r_1, yas.r_5, yas.r_50, yas.r_90, yas.r_95, yas.r_99, yas.r_999, yas.r_9999
+             , yas.w_avg, yas.w_min, yas.w_max, yas.w_1, yas.w_5, yas.w_50, yas.w_90, yas.w_95, yas.w_99, yas.w_999, yas.w_9999
+             , len(yas.logs)
+             ))
+      Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+      return (fn_out, fn_out_ind)
 
 
 class YcsbLog:
@@ -376,62 +334,6 @@ class YcsbAvgStat:
       if k.startswith("r_") or k.startswith("w_"):
         kv[k] = v
     return " ".join("%s=%s" % (k, v) for k, v in sorted(kv.iteritems()))
-
-
-class StatPerSec:
-  fmt = "%5d %5d %8.2f %5d %8.2f %5d"
-
-  def __init__(self, line):
-    #Cons.P(line)
-    # 2016-09-12 23:50:15:208 1 sec: 1950 operations; 1948.05 current ops/sec;
-    # est completion in 14 hours 15 minutes [READ: Count=1842, Max=120063,
-    # Min=6640, Avg=24343.08, 90=43007, 99=114687, 99.9=118527, 99.99=120063]
-    # [INSERT: Count=112, Max=118655, Min=8216, Avg=25360.89, 90=43807,
-    # 99=117951, 99.9=118655, 99.99=118655]
-    mo = re.match(r"\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d:\d\d\d (?P<timestamp>\d+) sec: \d+ operations; (\d|\.)+ current ops/sec; .+" \
-        "READ: Count=(?P<read_iops>\d+), Max=\d+, Min=\d+, Avg=(?P<read_lat_avg>\S+) .+" \
-        "INSERT: Count=(?P<ins_iops>\d+).+ Avg=(?P<ins_lat_avg>\S+)"
-        , line)
-    if mo is None:
-      raise RuntimeError("Unexpected [%s]" % line)
-
-    self.timestamp = int(mo.group("timestamp"))
-    self.read_iops = int(mo.group("read_iops"))
-    if self.read_iops == 0:
-      self.read_lat_avg = 0
-    else:
-      try:
-        self.read_lat_avg = float(mo.group("read_lat_avg")[:-1])
-      except ValueError as e:
-        Cons.P("%s [%s]" % (e, line))
-        sys.exit(0)
-    self.ins_iops = int(mo.group("ins_iops"))
-    if self.ins_iops == 0:
-      self.ins_lat_avg = 0
-    else:
-      self.ins_lat_avg = float(mo.group("ins_lat_avg")[:-1])
-    self.iops = self.read_iops + self.ins_iops
-
-  @staticmethod
-  def WriteHeader(fo):
-    fo.write("%s\n" % Util.BuildHeader(StatPerSec.fmt,
-      "timestamp_in_sec"
-      " read_iops"
-      " read_lat_avg_in_us"
-      " ins_iops"
-      " ins_lat_avg_in_us"
-      " iops"
-      ))
-
-  def __str__(self):
-    return StatPerSec.fmt % \
-        (self.timestamp
-            , self.read_iops
-            , self.read_lat_avg
-            , self.ins_iops
-            , self.ins_lat_avg
-            , self.iops
-            )
 
 
 if __name__ == "__main__":

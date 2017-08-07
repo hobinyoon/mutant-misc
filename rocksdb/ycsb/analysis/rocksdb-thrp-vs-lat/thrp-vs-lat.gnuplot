@@ -14,9 +14,10 @@ if (1) {
   set noytics
   set noborder
   f(x) = x
-  set label 1 at screen 0.5, screen 0.5 \
-    "1: read latency\n2: write latency" \
-    center
+  set label 1 at screen 0.05, screen 0.90 \
+    "1: read latency" \
+    . "\n2: with individual exps\n3: write latency" \
+    left
   plot f(x) lc rgb "#F0F0F0" not
 }
 
@@ -74,6 +75,28 @@ set xrange [0:10000]
 plot_type = "whisker"
 
 # Read latency
+if (1) {
+	col_base = 3
+
+	if (plot_type eq "dot") {
+		plot \
+		FN_IN u 2:(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "blue" t "RocksDB on EBS Mag"
+	} else { if (plot_type eq "whisker") {
+		plot \
+		FN_IN u 2:(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
+		FN_IN u 2:(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
+
+		# Avg is not very useful
+		#FN_IN u 2:(column(col_base + 0)) w p pt 7 ps 0.4 lc rgb "red" not
+
+		# candlesticks
+		# x  box_min  whisker_min  whisker_high  box_high
+		# iops    5p           1p           99p       90p
+		# 2        7            6            11         9
+	} }
+}
+
+# Read individual
 if (1) {
 	col_base = 3
 

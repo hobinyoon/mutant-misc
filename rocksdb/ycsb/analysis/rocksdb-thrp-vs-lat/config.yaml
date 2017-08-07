@@ -1,7 +1,0 @@
-
-rocksdb-st1:
-  dn:
-
-
-
-"RocksDB on st1": ~/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-st1/step-by-1000
