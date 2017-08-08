@@ -1,6 +1,7 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
-FN_IN = system("echo $FN_IN")
+FN_ROCKSDB_ST1 = system("echo $FN_ROCKSDB_ST1")
+FN_ROCKSDB_LOCALSSD = system("echo $FN_ROCKSDB_LOCALSSD")
 FN_OUT = system("echo $FN_OUT")
 
 set print "-"
@@ -16,6 +17,7 @@ if (1) {
   f(x) = x
   set label 1 at screen 0.025, screen 0.90 \
     "1: read latency" \
+    . "\n    (Blue: EBS Mag, Red: Local SSD)" \
     . "\n2: read latency (1p, 5p, 50p, 90p, 99p)" \
     . "\n3: write latency" \
     left
@@ -26,28 +28,54 @@ if (1) {
 set grid xtics mxtics ytics back lc rgb "#808080"
 set border (1+2+4+8) back lc rgb "#808080"
 
-set xlabel "IOPS (10K IOs/sec)"
-set ylabel "Latency (ms)" offset -0.5, 0
-
-# Read latency. Linear
+# Read latency. Linear scale.
 if (1) {
+  set xlabel "IOPS (100K IOs/sec)"
+  set ylabel "Latency (ms)" offset 1, 0
   unset logscale y
 	unset ytics
   set xtics nomirror tc rgb "black"
 	set ytics nomirror tc rgb "black"
-  set xrange [0:11]
+  set xrange [0:12]
 	set yrange [0:12]
 
 	col_base = 3
-  plot FN_IN u ($2/1000):(column(col_base + 0) / 1000) w lp pt 7 ps 0.4 lc rgb "blue" not
+  plot \
+  FN_ROCKSDB_ST1 u ($2/10000):(column(col_base + 0) / 1000) w lp pt 7 ps 0.4 lc rgb "blue" not, \
+  FN_ROCKSDB_LOCALSSD u ($2/10000):(column(col_base + 0) / 1000) w lp pt 7 ps 0.4 lc rgb "red" not
 }
 
 # Read latency. Log scale. Whisker plot.
 if (1) {
+  set xlabel "IOPS"
+  set ylabel "Latency (ms)" offset -1, 0
+	set logscale x
 	set logscale y
 	#unset yrange
-  #set xrange [0:12000]
+  set xrange [10/1.1:1200]
 	set yrange [1:1000000]
+
+	set xtics nomirror tc rgb "black" ( \
+	  "10K"   10 \
+	, ""      20 \
+	, ""      30 \
+	, ""      40 \
+	, ""      50 \
+	, ""      60 \
+	, ""      70 \
+	, ""      80 \
+	, ""      90 \
+	, "100K" 100 \
+	, ""     200 \
+	, ""     300 \
+	, ""     400 \
+	, ""     500 \
+	, ""     600 \
+	, ""     700 \
+	, ""     800 \
+	, ""     900 \
+	, "1M"  1000 \
+	)
 
 	set ytics nomirror tc rgb "black" ( \
 		"1"          1 \
@@ -61,9 +89,12 @@ if (1) {
 
 	col_base = 3
   plot \
-  FN_IN u ($2/1000):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
-  FN_IN u ($2/1000):(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
-  FN_IN u ($2/1000):(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "red" not
+  FN_ROCKSDB_ST1 u ($2/100):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
+  FN_ROCKSDB_ST1 u ($2/100):(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
+  FN_ROCKSDB_ST1 u ($2/100):(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "blue" not, \
+  FN_ROCKSDB_LOCALSSD u ($2/100):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "red" not, \
+  FN_ROCKSDB_LOCALSSD u ($2/100):(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "red" not, \
+  FN_ROCKSDB_LOCALSSD u ($2/100):(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "red" not
 
   # candlesticks
   # x  box_min  whisker_min  whisker_high  box_high
@@ -75,7 +106,10 @@ if (1) {
 if (1) {
 	col_base = 14
   plot \
-  FN_IN u ($2/1000):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
-  FN_IN u ($2/1000):(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
-  FN_IN u ($2/1000):(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "red" not
+  FN_ROCKSDB_ST1 u ($2/100):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "blue" not, \
+  FN_ROCKSDB_ST1 u ($2/100):(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "blue" not, \
+  FN_ROCKSDB_ST1 u ($2/100):(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "blue" not, \
+  FN_ROCKSDB_LOCALSSD u ($2/100):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)):(column(col_base + 5)) w candlesticks lw 2 lc rgb "red" not, \
+  FN_ROCKSDB_LOCALSSD u ($2/100):(column(col_base + 4)):(column(col_base + 3)):(column(col_base + 8)):(column(col_base + 6)) w candlesticks whiskerbars lw 2 lc rgb "red" not, \
+  FN_ROCKSDB_LOCALSSD u ($2/100):(column(col_base + 0)) w lp pt 7 ps 0.4 lc rgb "red" not
 }

@@ -17,15 +17,14 @@ _dn_output = "%s/.output" % os.path.dirname(__file__)
 
 def main(argv):
   Util.MkDirs(_dn_output)
-  (fn_plot_data, fn_plot_data_ind) = GetPlotData("st1", "~/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-st1")
-
-  # TODO
-  #(fn_plot_data, fn_plot_data_ind) = GetPlotData("localssd", )
-  fn_out = "%s.pdf" % fn_plot_data
+  (fn_plot_data_r_st1, fn_plot_data_ind) = GetPlotData("st1", "~/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-st1")
+  (fn_plot_data_r_localssd, fn_plot_data_ind) = GetPlotData("localssd", "~/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-localssd")
+  fn_out = "%s/ycsb-d-thp-vs-latency.pdf" % _dn_output
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
-    env["FN_IN"] = fn_plot_data
+    env["FN_ROCKSDB_ST1"] = fn_plot_data_r_st1
+    env["FN_ROCKSDB_LOCALSSD"] = fn_plot_data_r_localssd
     env["FN_OUT"] = fn_out
     Util.RunSubp("gnuplot %s/thrp-vs-lat.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
@@ -37,7 +36,7 @@ def GetPlotData(dev_type, dn):
   if os.path.isfile(fn_out) and os.path.isfile(fn_out_ind):
     return (fn_out, fn_out_ind)
 
-  with Cons.MT("Generating plot data ..."):
+  with Cons.MT("Generating plot data for %s ..." % dev_type):
     dn = dn.replace("~", os.path.expanduser("~"))
     fn_manifest = "%s/manifest.yaml" % dn
     targetiops_exps = None
@@ -57,7 +56,7 @@ def GetPlotData(dev_type, dn):
           exp_ycsblog[e] = ycsb_log
           #Cons.P(ycsb_log)
 
-    with Cons.MT("Gen avg stat by target IOPSes ..."):
+    with Cons.MT("Gen individual/avg stat by target IOPSes ..."):
       # Gen individual stat
       with open(fn_out_ind, "w") as fo:
         fmt = "%5d %17s %5.0f" \
@@ -74,7 +73,7 @@ def GetPlotData(dev_type, dn):
                , y.r_avg, y.r_min, y.r_max, y.r_1, y.r_5, y.r_50, y.r_90, y.r_95, y.r_99, y.r_999, y.r_9999
                , y.w_avg, y.w_min, y.w_max, y.w_1, y.w_5, y.w_50, y.w_90, y.w_95, y.w_99, y.w_999, y.w_9999
                ))
-        Cons.P("Created %s %d" % (fn_out_ind, os.path.getsize(fn_out_ind)))
+      Cons.P("Created %s %d" % (fn_out_ind, os.path.getsize(fn_out_ind)))
 
       # Gen average stat
       with open(fn_out, "w") as fo:
