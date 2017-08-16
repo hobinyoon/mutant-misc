@@ -35,19 +35,6 @@ def main(argv):
   params = json.loads(zlib.decompress(base64.b64decode(argv[1])))
   #Cons.P(pprint.pformat(params))
 
-  # TODO: Not sure if you will need this for now
-  ## Set fast dev paths, e.g., "/mnt/local-ssd1/rocksdb-data" and symlink ~/work/rocksdb-data to it
-  #with Cons.MT("Setting up fast_dev_db_path:", print_time=False):
-  #  if socket.gethostname() == "node3":
-  #    pass
-  #  else:
-  #    Cons.P(params["fast_dev_db_path"])
-  #    sys.exit(0)
-  #    # We don't delete content in the fast_dev to save the rsync time.
-  #    Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (params["fast_dev_db_path"], params["fast_dev_db_path"]))
-  #    Util.RunSubp("rm %s/work/rocksdb-data || true" % os.path.expanduser("~"))
-  #    Util.RunSubp("ln -s %s %s/work/rocksdb-data" % (params["fast_dev_db_path"], os.path.expanduser("~")))
-
   for r in params["runs"]:
     if "load" in r:
       YcsbLoad(params, r)
@@ -84,15 +71,15 @@ def YcsbLoad(params, r):
     _dn_log_rocksdb = "%s/rocksdb" % _dn_log_root
     Util.MkDirs(_dn_log_rocksdb)
 
-    if "unzip-preloaded-db" in r["load"]:
-      cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["unzip-preloaded-db"], params["fast_dev_db_path"])
+    if ("use-preloaded-db" in r["load"]) and len(r["load"]["use-preloaded-db"]) > 0:
+      cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use-preloaded-db"], params["db_path"])
       Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
     else:
       # Delete existing data
       if socket.gethostname() == "node3":
-        Util.RunSubp("rm -rf %s || true" % params["fast_dev_db_path"])
+        Util.RunSubp("rm -rf %s || true" % params["db_path"])
       else:
-        Util.RunSubp("sudo rm -rf %s || true" % params["fast_dev_db_path"])
+        Util.RunSubp("sudo rm -rf %s || true" % params["db_path"])
 
       ycsb_params = \
           " -s" \
@@ -103,7 +90,7 @@ def YcsbLoad(params, r):
           " -p fieldcount=10" \
           " -p fieldlength=100" \
           " %s" \
-          % (params["workload_type"], params["fast_dev_db_path"], r["load"]["ycsb_params"])
+          % (params["workload_type"], params["db_path"], r["load"]["ycsb_params"])
 
       # -P file        Specify workload file
       # -cp path       Additional Java classpath entries
@@ -113,10 +100,12 @@ def YcsbLoad(params, r):
       # -target n      Target ops/sec (default: unthrottled)
       # -threads n     Number of client threads (default: 1)
 
+      mutant_options = base64.b64encode(zlib.compress(json.dumps(r["run"]["mutant_options"])))
+
       # The ycsb log directory contains 2 files when the load phase is included. 1, otherwise.
       cur_datetime = datetime.datetime.now().strftime("%y%m%d-%H%M%S.%f")[:-3]
       fn_ycsb_log = "%s/%s-%s" % (_dn_log_root_ycsb, cur_datetime, params["workload_type"])
-      cmd = "cd %s && bin/ycsb load rocksdb %s > %s 2>&1" % (_dn_ycsb, ycsb_params, fn_ycsb_log)
+      cmd = "cd %s && bin/ycsb load rocksdb %s -m %s > %s 2>&1" % (_dn_ycsb, ycsb_params, mutant_options, fn_ycsb_log)
       Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
       Cons.P("Created %s %d" % (fn_ycsb_log, os.path.getsize(fn_ycsb_log)))
       Util.RunSubp("pbzip2 -k %s" % fn_ycsb_log)
@@ -124,7 +113,7 @@ def YcsbLoad(params, r):
 
       # Archive rocksdb log
       fn1 = "%s/%s" % (_dn_log_rocksdb, cur_datetime)
-      cmd = "cp %s/LOG %s" % (params["fast_dev_db_path"], fn1)
+      cmd = "cp %s/LOG %s" % (params["db_path"], fn1)
       Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
       Util.RunSubp("pbzip2 -k %s" % fn1)
       UploadToS3("%s.bz2" % fn1)
@@ -151,7 +140,7 @@ def YcsbRun(params, r):
       " -p readproportion=0.95" \
       " -p insertproportion=0.05" \
       " %s" \
-      % (params["workload_type"], params["fast_dev_db_path"], r["run"]["ycsb_params"])
+      % (params["workload_type"], params["db_path"], r["run"]["ycsb_params"])
 
   mutant_options = base64.b64encode(zlib.compress(json.dumps(r["run"]["mutant_options"])))
   cmd0 = "cd %s && bin/ycsb run rocksdb %s -m %s > %s 2>&1" % (_dn_ycsb, ycsb_params, mutant_options, fn_ycsb_log)
@@ -174,14 +163,13 @@ def YcsbRun(params, r):
         , measure_time=True, shell=True, gen_exception=False)
   else:
     Util.RunSubp(cmd0, measure_time=True, shell=True, gen_exception=False)
-
   Cons.P("Created %s %d" % (fn_ycsb_log, os.path.getsize(fn_ycsb_log)))
   Util.RunSubp("pbzip2 -k %s" % fn_ycsb_log)
   UploadToS3("%s.bz2" % fn_ycsb_log)
 
   # Archive rocksdb log
   fn1 = "%s/%s" % (_dn_log_rocksdb, _ycsb_run_dt)
-  cmd = "cp %s/LOG %s" % (params["fast_dev_db_path"], fn1)
+  cmd = "cp %s/LOG %s" % (params["db_path"], fn1)
   Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
   Util.RunSubp("pbzip2 -k %s" % fn1)
   UploadToS3("%s.bz2" % fn1)
