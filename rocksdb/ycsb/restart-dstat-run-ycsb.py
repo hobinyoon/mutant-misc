@@ -74,12 +74,19 @@ def YcsbLoad(params, r):
     if ("use-preloaded-db" in r["load"]) and len(r["load"]["use-preloaded-db"]) > 0:
       cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use-preloaded-db"], params["db_path"])
       Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
+      paths = params["db_stg_dev_paths"]
+      for i in range(1, len(paths)):
+        Util.RunSubp("rm -rf %s || true" % paths[i])
+        Util.MkDirs(paths[i])
     else:
       # Delete existing data
       if socket.gethostname() == "node3":
         Util.RunSubp("rm -rf %s || true" % params["db_path"])
       else:
         Util.RunSubp("sudo rm -rf %s || true" % params["db_path"])
+
+      for p in params["db_stg_dev_paths"]:
+        Util.MkDirs(p)
 
       ycsb_params = \
           " -s" \
@@ -132,7 +139,7 @@ def YcsbRun(params, r):
       " -P workloads/workload%s" \
       " -p rocksdb.dir=%s" \
       " -p measurementtype=raw" \
-      " -p measurement.raw.output_file=/tmp/ycsb-lat-raw" \
+      " -p measurement.raw.output_file=/mnt/local-ssd0/ycsb-lat-raw" \
       " -threads 100" \
       " -p status.interval=1" \
       " -p fieldcount=10" \
@@ -141,6 +148,8 @@ def YcsbRun(params, r):
       " -p insertproportion=0.05" \
       " %s" \
       % (params["workload_type"], params["db_path"], r["run"]["ycsb_params"])
+  # YCSB raw output shouldn't go to the root file system, which is heavily rate limited.
+  #   -p measurement.raw.output_file=/tmp/ycsb-lat-raw
 
   mutant_options = base64.b64encode(zlib.compress(json.dumps(r["run"]["mutant_options"])))
   cmd0 = "cd %s && bin/ycsb run rocksdb %s -m %s > %s 2>&1" % (_dn_ycsb, ycsb_params, mutant_options, fn_ycsb_log)
