@@ -180,8 +180,8 @@ def YcsbRun(params, r):
 
   # Append parameters. Useful for post processing.
   with open(fn_ycsb_log, "a") as fo:
-    fo.write("params = %s\n", params)
-    fo.write("run = %s\n", r)
+    fo.write("params = %s\n" % params)
+    fo.write("run = %s\n" % r)
   Cons.P("Created %s %d" % (fn_ycsb_log, os.path.getsize(fn_ycsb_log)))
 
   Util.RunSubp("pbzip2 -k %s" % fn_ycsb_log)
