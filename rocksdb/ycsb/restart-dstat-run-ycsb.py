@@ -115,6 +115,7 @@ def YcsbLoad(params, r):
       cmd = "cd %s && bin/ycsb load rocksdb %s -m %s > %s 2>&1" % (_dn_ycsb, ycsb_params, mutant_options, fn_ycsb_log)
       Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
       Cons.P("Created %s %d" % (fn_ycsb_log, os.path.getsize(fn_ycsb_log)))
+      # No need to upload these to S3
       #Util.RunSubp("pbzip2 -k %s" % fn_ycsb_log)
       #UploadToS3("%s.bz2" % fn_ycsb_log)
 
@@ -172,7 +173,13 @@ def YcsbRun(params, r):
         , measure_time=True, shell=True, gen_exception=False)
   else:
     Util.RunSubp(cmd0, measure_time=True, shell=True, gen_exception=False)
+
+  # Append parameters. Useful for post processing.
+  with open(fn_ycsb_log, "a") as fo:
+    fo.write("params = %s\n", params)
+    fo.write("run = %s\n", r)
   Cons.P("Created %s %d" % (fn_ycsb_log, os.path.getsize(fn_ycsb_log)))
+
   Util.RunSubp("pbzip2 -k %s" % fn_ycsb_log)
   UploadToS3("%s.bz2" % fn_ycsb_log)
 
