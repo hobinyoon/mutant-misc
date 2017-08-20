@@ -38,16 +38,16 @@ def main(argv):
   for r in params["runs"]:
     if "load" in r:
       YcsbLoad(params, r)
+    if "run" in r:
+      if r["run"]["evict_cached_data"].lower() == "true":
+        if socket.gethostname() == "node3":
+          pass
+        else:
+          _EvictCache()
 
-    if r["run"]["evict_cached_data"].lower() == "true":
-      if socket.gethostname() == "node3":
-        pass
-      else:
-        _EvictCache()
-
-    Dstat.Restart()
-    YcsbRun(params, r)
-    Dstat.Stop()
+      Dstat.Restart()
+      YcsbRun(params, r)
+      Dstat.Stop()
 
   UploadCloudInitLog()
 
@@ -107,7 +107,7 @@ def YcsbLoad(params, r):
       # -target n      Target ops/sec (default: unthrottled)
       # -threads n     Number of client threads (default: 1)
 
-      mutant_options = base64.b64encode(zlib.compress(json.dumps(r["run"]["mutant_options"])))
+      mutant_options = base64.b64encode(zlib.compress(json.dumps(r["mutant_options"])))
 
       # The ycsb log directory contains 2 files when the load phase is included. 1, otherwise.
       cur_datetime = datetime.datetime.now().strftime("%y%m%d-%H%M%S.%f")[:-3]
@@ -152,7 +152,7 @@ def YcsbRun(params, r):
   # YCSB raw output shouldn't go to the root file system, which is heavily rate limited.
   #   -p measurement.raw.output_file=/tmp/ycsb-lat-raw
 
-  mutant_options = base64.b64encode(zlib.compress(json.dumps(r["run"]["mutant_options"])))
+  mutant_options = base64.b64encode(zlib.compress(json.dumps(r["mutant_options"])))
   cmd0 = "cd %s && bin/ycsb run rocksdb %s -m %s > %s 2>&1" % (_dn_ycsb, ycsb_params, mutant_options, fn_ycsb_log)
   cmd1 = "bin/ycsb run rocksdb %s -m %s > %s 2>&1" % (ycsb_params, mutant_options, fn_ycsb_log)
 
