@@ -71,8 +71,8 @@ def YcsbLoad(params, r):
     _dn_log_rocksdb = "%s/rocksdb" % _dn_log_root
     Util.MkDirs(_dn_log_rocksdb)
 
-    if ("use-preloaded-db" in r["load"]) and len(r["load"]["use-preloaded-db"]) > 0:
-      cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use-preloaded-db"], params["db_path"])
+    if ("use_preloaded_db" in r["load"]) and len(r["load"]["use_preloaded_db"]) > 0:
+      cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use_preloaded_db"], params["db_path"])
       Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
       paths = params["db_stg_dev_paths"]
       for i in range(1, len(paths)):
@@ -126,6 +126,10 @@ def YcsbLoad(params, r):
       #Util.RunSubp("pbzip2 -k %s" % fn1)
       #UploadToS3("%s.bz2" % fn1)
       CheckRocksDBLog(fn1)
+
+    # Stop after loading the DB. Useful for taking a snapshot.
+    if ("stop_after_load" in r["load"]) and (r["load"]["stop_after_load"] == "true"):
+      sys.exit(1)
 
 
 _ycsb_run_dt = None
