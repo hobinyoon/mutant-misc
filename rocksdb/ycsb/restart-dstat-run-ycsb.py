@@ -115,15 +115,15 @@ def YcsbLoad(params, r):
       cmd = "cd %s && bin/ycsb load rocksdb %s -m %s > %s 2>&1" % (_dn_ycsb, ycsb_params, mutant_options, fn_ycsb_log)
       Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
       Cons.P("Created %s %d" % (fn_ycsb_log, os.path.getsize(fn_ycsb_log)))
-      Util.RunSubp("pbzip2 -k %s" % fn_ycsb_log)
-      UploadToS3("%s.bz2" % fn_ycsb_log)
+      #Util.RunSubp("pbzip2 -k %s" % fn_ycsb_log)
+      #UploadToS3("%s.bz2" % fn_ycsb_log)
 
       # Archive rocksdb log
       fn1 = "%s/%s" % (_dn_log_rocksdb, cur_datetime)
       cmd = "cp %s/LOG %s" % (params["db_path"], fn1)
       Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
-      Util.RunSubp("pbzip2 -k %s" % fn1)
-      UploadToS3("%s.bz2" % fn1)
+      #Util.RunSubp("pbzip2 -k %s" % fn1)
+      #UploadToS3("%s.bz2" % fn1)
       CheckRocksDBLog(fn1)
 
 
