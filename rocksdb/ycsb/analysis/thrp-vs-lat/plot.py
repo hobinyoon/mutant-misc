@@ -17,22 +17,112 @@ _dn_output = "%s/.output" % os.path.dirname(__file__)
 
 def main(argv):
   Util.MkDirs(_dn_output)
-  (fn_plot_data_r_st1, fn_plot_data_ind) = GetPlotData("st1", "~/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-st1")
-  (fn_plot_data_r_localssd, fn_plot_data_ind) = GetPlotData("localssd", "~/work/mutant/log/ycsb/d-thrp-vs-lat/rocksdb-localssd")
+  (fn_plot_data_r_st1, fn_plot_data_ind) = GetPlotDataRocksdb("st1", "~/work/mutant/log/ycsb/workload-d/rocksdb-st1")
+  (fn_plot_data_r_ls, fn_plot_data_ind)  = GetPlotDataRocksdb("ls", "~/work/mutant/log/ycsb/workload-d/rocksdb-ls")
+  (fn_plot_data_m_ls_st1, fn_plot_data_ind) = GetPlotDataMutant("ls-st1", "~/work/mutant/log/ycsb/workload-d/mutant-ls-st1")
+
   fn_out = "%s/ycsb-d-thp-vs-latency.pdf" % _dn_output
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
     env["FN_ROCKSDB_ST1"] = fn_plot_data_r_st1
-    env["FN_ROCKSDB_LOCALSSD"] = fn_plot_data_r_localssd
+    env["FN_ROCKSDB_LS"] = fn_plot_data_r_ls
+    env["FN_MUTANT_LS_ST1"] = fn_plot_data_m_ls_st1
     env["FN_OUT"] = fn_out
     Util.RunSubp("gnuplot %s/thrp-vs-lat.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
-def GetPlotData(dev_type, dn):
-  fn_out = "%s/ycsb-d-rockdb-%s" % (_dn_output, dev_type)
-  fn_out_ind = "%s/ycsb-d-rockdb-%s-individual" % (_dn_output, dev_type)
+def GetPlotDataMutant(dev_type, dn):
+  fn_out = "%s/ycsb-d-%s" % (_dn_output, dev_type)
+  fn_out_ind = "%s/ycsb-d-%s-individual" % (_dn_output, dev_type)
+  if os.path.isfile(fn_out) and os.path.isfile(fn_out_ind):
+    return (fn_out, fn_out_ind)
+
+  with Cons.MT("Generating plot data for %s ..." % dev_type):
+    dn = dn.replace("~", os.path.expanduser("~"))
+    fn_manifest = "%s/manifest.yaml" % dn
+    sstott_targetiops_exps = None
+    with open(fn_manifest) as fo:
+      sstott_targetiops_exps = yaml.load(fo)
+    #Cons.P(pprint.pformat(sstott_targetiops_exps, width=230))
+
+    exp_ycsblog = {}
+    with Cons.MT("Parsing YCSB log files ..."):
+      for sst_ott, v in sstott_targetiops_exps.iteritems():
+        for ti, exps in v.iteritems():
+          for e in exps:
+            fn = "%s/%s" % (dn, e)
+            #Cons.P(fn)
+            if not os.path.exists(fn):
+              Util.RunSubp("pbzip2 -k -d %s.bz2" % fn)
+            ycsb_log = YcsbLog(fn)
+            exp_ycsblog[e] = ycsb_log
+            #Cons.P(ycsb_log)
+
+    with Cons.MT("Gen individual/avg stat by target IOPSes ..."):
+      # Gen individual stat
+      fmt = "%9.4f %6d %17s %5.0f" \
+          " %5.0f %2.0f %8.0f %2.0f %2.0f %2.0f %4.0f %6.0f %6.0f %7.0f %8.0f" \
+          " %5.0f %3.0f %8.0f %2.0f %2.0f %3.0f %5.0f %6.0f %6.0f %7.0f %7.0f"
+      header = Util.BuildHeader(fmt, "sst_ott target_iops exp_dt iops" \
+          " r_avg r_min r_max r_1 r_5 r_50 r_90 r_95 r_99 r_99.9 r_99.99" \
+          " w_avg w_min w_max w_1 w_5 w_50 w_90 w_95 w_99 w_99.9 w_99.99")
+      with open(fn_out_ind, "w") as fo:
+        fo.write("# Latency in us\n")
+        i = 0
+        for sst_ott, v in sorted(sstott_targetiops_exps.iteritems()):
+          for ti, exps in sorted(v.iteritems()):
+            for e in exps:
+              if i % 40 == 0:
+                fo.write(header + "\n")
+              y = exp_ycsblog[e]
+              #Cons.P(e)
+              fo.write((fmt + "\n") % (sst_ott, ti, y.exp_dt, y.op_sec
+                 , y.r_avg, y.r_min, y.r_max, y.r_1, y.r_5, y.r_50, y.r_90, y.r_95, y.r_99, y.r_999, y.r_9999
+                 , y.w_avg, y.w_min, y.w_max, y.w_1, y.w_5, y.w_50, y.w_90, y.w_95, y.w_99, y.w_999, y.w_9999
+                 ))
+              i += 1
+      Cons.P("Created %s %d" % (fn_out_ind, os.path.getsize(fn_out_ind)))
+
+      # Gen average stat
+      with open(fn_out, "w") as fo:
+        fmt = "%9.4f %6d %6.0f" \
+            " %5.0f %2d %8d %2d %2d %2d %4d %5d %6d %7d %7d" \
+            " %4.0f %2d %8d %2d %2d %3d %4d %5d %5d %7d %7d" \
+            " %1d"
+        header = Util.BuildHeader(fmt, "sst_ott target_iops iops" \
+            " r_avg r_min r_max r_1p r_5p r_50p r_90p r_95p r_99p r_99.9p r_99.99p" \
+            " w_avg w_min w_max w_1p w_5p w_50p w_90p w_95p w_99p w_99.9p w_99.99p" \
+            " num_exps" \
+            )
+        fo.write("# Latency in us\n")
+        fo.write("#\n")
+
+        i = 0
+        for sst_ott, v in sorted(sstott_targetiops_exps.iteritems()):
+          for ti, exps in sorted(v.iteritems()):
+            if i % 40 == 0:
+              fo.write(header + "\n")
+            yas = YcsbAvgStat()
+            for e in exps:
+              yas.Add(exp_ycsblog[e])
+            yas.Calc()
+            #Cons.P(yas)
+            fo.write((fmt + "\n") % (sst_ott, ti, yas.op_sec
+               , yas.r_avg, yas.r_min, yas.r_max, yas.r_1, yas.r_5, yas.r_50, yas.r_90, yas.r_95, yas.r_99, yas.r_999, yas.r_9999
+               , yas.w_avg, yas.w_min, yas.w_max, yas.w_1, yas.w_5, yas.w_50, yas.w_90, yas.w_95, yas.w_99, yas.w_999, yas.w_9999
+               , len(yas.logs)
+               ))
+            i += 1
+          fo.write("\n")
+      Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+      return (fn_out, fn_out_ind)
+
+
+def GetPlotDataRocksdb(dev_type, dn):
+  fn_out = "%s/ycsb-d-%s" % (_dn_output, dev_type)
+  fn_out_ind = "%s/ycsb-d-%s-individual" % (_dn_output, dev_type)
   if os.path.isfile(fn_out) and os.path.isfile(fn_out_ind):
     return (fn_out, fn_out_ind)
 
@@ -60,8 +150,8 @@ def GetPlotData(dev_type, dn):
       # Gen individual stat
       with open(fn_out_ind, "w") as fo:
         fmt = "%5d %17s %5.0f" \
-            " %5.0f %3.0f %8.0f %2.0f %2.0f %2.0f %3.0f %6.0f %6.0f %7.0f %7.0f" \
-            " %5.0f %3.0f %8.0f %2.0f %2.0f %2.0f %3.0f %6.0f %6.0f %7.0f %7.0f"
+            " %5.0f %3.0f %8.0f %2.0f %2.0f %2.0f %4.0f %6.0f %6.0f %7.0f %7.0f" \
+            " %5.0f %3.0f %8.0f %2.0f %2.0f %2.0f %5.0f %6.0f %6.0f %7.0f %7.0f"
         fo.write("# Latency in us\n")
         fo.write("%s\n" % Util.BuildHeader(fmt, "target_iops exp_dt iops" \
             " r_avg r_min r_max r_1 r_5 r_50 r_90 r_95 r_99 r_99.9 r_99.99" \
@@ -69,6 +159,7 @@ def GetPlotData(dev_type, dn):
         for ti, exps in sorted(targetiops_exps.iteritems()):
           for e in exps:
             y = exp_ycsblog[e]
+            #Cons.P(e)
             fo.write((fmt + "\n") % (ti, y.exp_dt, y.op_sec
                , y.r_avg, y.r_min, y.r_max, y.r_1, y.r_5, y.r_50, y.r_90, y.r_95, y.r_99, y.r_999, y.r_9999
                , y.w_avg, y.w_min, y.w_max, y.w_1, y.w_5, y.w_50, y.w_90, y.w_95, y.w_99, y.w_999, y.w_9999
@@ -78,8 +169,8 @@ def GetPlotData(dev_type, dn):
       # Gen average stat
       with open(fn_out, "w") as fo:
         fmt = "%6d %6.0f" \
-            " %5.0f %2d %8d %2d %2d %2d %3d %4d %6d %7d %8d" \
-            " %5.0f %2d %8d %2d %2d %2d %3d %6d %6d %7d %8d" \
+            " %5.0f %2d %8d %2d %2d %2d %5d %6d %7d %7d %8d" \
+            " %5.0f %2d %8d %2d %2d %2d %5d %6d %7d %7d %7d" \
             " %1d"
         header = Util.BuildHeader(fmt, "target_iops iops" \
             " r_avg r_min r_max r_1p r_5p r_50p r_90p r_95p r_99p r_99.9p r_99.99p" \
@@ -120,6 +211,12 @@ class YcsbLog:
         if line.startswith("Command line: "):
           self._ParseOptions(line)
           continue
+        elif "sst_ott" in line:
+          # "sst_ott" : 64
+          mo = re.match(r"\t+\"sst_ott\" : (?P<v>(\d|\.)+)", line)
+          if mo is None:
+            raise RuntimeError("Unexpected")
+          self.sst_ott = float(mo.group("v"))
         elif line.startswith("[READ], "):
           # In us
           # [READ], Average, 9720.066147407726
