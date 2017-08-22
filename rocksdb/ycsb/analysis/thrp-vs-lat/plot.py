@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import ast
 import os
 import pprint
 import re
@@ -16,12 +17,17 @@ _dn_output = "%s/.output" % os.path.dirname(__file__)
 
 
 def main(argv):
-  Util.MkDirs(_dn_output)
-  (fn_plot_data_r_st1, fn_plot_data_ind) = GetPlotDataRocksdb("st1", "~/work/mutant/log/ycsb/workload-d/rocksdb-st1")
-  (fn_plot_data_r_ls, fn_plot_data_ind)  = GetPlotDataRocksdb("ls", "~/work/mutant/log/ycsb/workload-d/rocksdb-ls")
-  (fn_plot_data_m_ls_st1, fn_plot_data_ind) = GetPlotDataMutant("ls-st1", "~/work/mutant/log/ycsb/workload-d/mutant-ls-st1")
+  PlotWorkload("a")
+  #PlotWorkload("d")
 
-  fn_out = "%s/ycsb-d-thp-vs-latency.pdf" % _dn_output
+
+def PlotWorkload(workload_type):
+  Util.MkDirs(_dn_output)
+  (fn_plot_data_r_st1, fn_plot_data_ind) = GetPlotDataRocksdb(workload_type, "st1", "~/work/mutant/log/ycsb/workload-%s/rocksdb-st1" % workload_type)
+  (fn_plot_data_r_ls, fn_plot_data_ind)  = GetPlotDataRocksdb(workload_type, "ls", "~/work/mutant/log/ycsb/workload-%s/rocksdb-ls" % workload_type)
+  (fn_plot_data_m_ls_st1, fn_plot_data_ind) = GetPlotDataMutant(workload_type, "ls-st1", "~/work/mutant/log/ycsb/workload-%s/mutant-ls-st1" % workload_type)
+
+  fn_out = "%s/ycsb-%s-thp-vs-latency.pdf" % (_dn_output, workload_type)
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
@@ -33,9 +39,9 @@ def main(argv):
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
-def GetPlotDataMutant(dev_type, dn):
-  fn_out = "%s/ycsb-d-%s" % (_dn_output, dev_type)
-  fn_out_ind = "%s/ycsb-d-%s-individual" % (_dn_output, dev_type)
+def GetPlotDataMutant(workload_type, dev_type, dn):
+  fn_out = "%s/ycsb-%s-%s" % (_dn_output, workload_type, dev_type)
+  fn_out_ind = "%s/ycsb-%s-%s-individual" % (_dn_output, workload_type, dev_type)
   if os.path.isfile(fn_out) and os.path.isfile(fn_out_ind):
     return (fn_out, fn_out_ind)
 
@@ -120,15 +126,16 @@ def GetPlotDataMutant(dev_type, dn):
       return (fn_out, fn_out_ind)
 
 
-def GetPlotDataRocksdb(dev_type, dn):
-  fn_out = "%s/ycsb-d-%s" % (_dn_output, dev_type)
-  fn_out_ind = "%s/ycsb-d-%s-individual" % (_dn_output, dev_type)
+def GetPlotDataRocksdb(workload_type, dev_type, dn):
+  fn_out = "%s/ycsb-%s-%s" % (_dn_output, workload_type, dev_type)
+  fn_out_ind = "%s/ycsb-%s-%s-individual" % (_dn_output, workload_type, dev_type)
   if os.path.isfile(fn_out) and os.path.isfile(fn_out_ind):
     return (fn_out, fn_out_ind)
 
   with Cons.MT("Generating plot data for %s ..." % dev_type):
     dn = dn.replace("~", os.path.expanduser("~"))
     fn_manifest = "%s/manifest.yaml" % dn
+    Cons.P(fn_manifest)
     targetiops_exps = None
     with open(fn_manifest) as fo:
       targetiops_exps = yaml.load(fo)
@@ -201,9 +208,11 @@ class YcsbLog:
     self.fn = fn
     fn0 = os.path.basename(fn)
     #Cons.P(fn0)
-    if fn0.endswith("-d"):
-      self.exp_dt = fn0[:-2]
-      #Cons.P(self.exp_dt)
+
+    mo = re.match(r"(?P<v>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)-[a-f]", fn0)
+    if mo is None:
+      raise RuntimeError("Unexpected")
+    self.exp_dt = mo.group("v")
 
     with open(fn) as fo:
       for line in fo:
@@ -211,12 +220,14 @@ class YcsbLog:
         if line.startswith("Command line: "):
           self._ParseOptions(line)
           continue
-        elif "sst_ott" in line:
-          # "sst_ott" : 64
-          mo = re.match(r"\t+\"sst_ott\" : (?P<v>(\d|\.)+)", line)
-          if mo is None:
-            raise RuntimeError("Unexpected")
-          self.sst_ott = float(mo.group("v"))
+
+        elif line.startswith("params = {"):
+          pass
+
+        elif line.startswith("run = {"):
+          self.run_options = ast.literal_eval(line[6:])
+          self.sst_ott = float(self.run_options["mutant_options"]["sst_ott"])
+
         elif line.startswith("[READ], "):
           # In us
           # [READ], Average, 9720.066147407726
@@ -329,11 +340,10 @@ class YcsbLog:
     # -db com.yahoo.ycsb.db.RocksDBClient -s -P workloads/workloadd -p rocksdb.dir=/mnt/local-ssd1/rocksdb-data/ycsb -threads 100 -p
     # status.interval=1 -p fieldcount=10 -p fieldlength=100 -p readproportion=0.95 -p insertproportion=0.05 -p recordcount=10000000 -p
     # operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target 130000 -t
-    mo = re.match(r".+ -P (?P<workload_type>(\w|\/)+)" \
+    mo = re.match(r".+ -P workloads/workload(?P<workload_type>[a-f])" \
         ".* -target (?P<target_iops>\d+).*", line)
     # Make sure it's workload d
-    if mo.group("workload_type") != "workloads/workloadd":
-      raise RuntimeError("Unexpected")
+    self.workload_type = mo.group("workload_type")
     self.target_iops = int(mo.group("target_iops"))
 
   def __repr__(self):
