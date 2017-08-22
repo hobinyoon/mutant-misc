@@ -21,7 +21,7 @@ if (1) {
     . "\n    (Blue: EBS Mag, Red: Local SSD)" \
     . "\n2: read latency (1p, 5p, 50p, 90p, 99p)" \
     . "\n3: write latency" \
-    left
+    left front
   plot f(x) lc rgb "#F0F0F0" not
   unset label 1
 }
@@ -39,7 +39,7 @@ if (1) {
 	set ytics nomirror tc rgb "black"
   # TODO
   #set xrange [0:12]
-  set xrange [0:5]
+  set xrange [0:6]
 	set yrange [0:25]
 
 	col_base0 = 3

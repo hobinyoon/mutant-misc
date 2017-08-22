@@ -17,15 +17,17 @@ _dn_output = "%s/.output" % os.path.dirname(__file__)
 
 
 def main(argv):
-  PlotWorkload("a")
-  #PlotWorkload("d")
+  #PlotWorkload("a")
+  PlotWorkload("d")
 
 
 def PlotWorkload(workload_type):
   Util.MkDirs(_dn_output)
+  #(fn_plot_data_m_ls_st1, fn_plot_data_ind) = GetPlotDataMutant(workload_type, "ls-st1", "~/work/mutant/log/ycsb/workload-%s/mutant-ls-st1" % workload_type)
+  (fn_plot_data_m_ls_st1, fn_plot_data_ind) = GetPlotDataMutant(workload_type, "ls-st1", "~/work/mutant/log/ycsb/workload-%s/170822-022606-d-ls-st1-short-exps" % workload_type)
+  sys.exit(1)
   (fn_plot_data_r_st1, fn_plot_data_ind) = GetPlotDataRocksdb(workload_type, "st1", "~/work/mutant/log/ycsb/workload-%s/rocksdb-st1" % workload_type)
   (fn_plot_data_r_ls, fn_plot_data_ind)  = GetPlotDataRocksdb(workload_type, "ls", "~/work/mutant/log/ycsb/workload-%s/rocksdb-ls" % workload_type)
-  (fn_plot_data_m_ls_st1, fn_plot_data_ind) = GetPlotDataMutant(workload_type, "ls-st1", "~/work/mutant/log/ycsb/workload-%s/mutant-ls-st1" % workload_type)
 
   fn_out = "%s/ycsb-%s-thp-vs-latency.pdf" % (_dn_output, workload_type)
 
