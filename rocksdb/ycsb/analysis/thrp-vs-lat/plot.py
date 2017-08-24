@@ -178,7 +178,7 @@ def GetPlotDataRocksdb(workload_type, dev_type, dn):
       # Gen average stat
       with open(fn_out, "w") as fo:
         fmt = "%6d %6.0f" \
-            " %5.0f %2d %8d %2d %2d %2d %5d %6d %7d %7d %8d" \
+            " %6.0f %2d %8d %2d %2d %2d %5d %6d %7d %7d %8d" \
             " %5.0f %2d %8d %2d %2d %2d %5d %6d %7d %7d %7d" \
             " %1d"
         header = Util.BuildHeader(fmt, "target_iops iops" \
