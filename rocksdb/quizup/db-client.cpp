@@ -72,15 +72,15 @@ void Init() {
 	options.table_factory.reset(NewBlockBasedTableFactory(bbto));
 
 	// Mutant options
-	options.cache_filter_index_at_all_levels = Conf::Get("cache_filter_index_at_all_levels").as<bool>();
-	options.monitor_temp = Conf::Get("monitor_temp").as<bool>();
-	options.migrate_sstables = Conf::Get("migrate_sstables").as<bool>();
-	options.sst_ott = Conf::Get("sst_ott").as<double>();
-	options.replaying = true;
-	options.simulation_time_dur_sec = Conf::Get("simulation_time_dur_in_sec").as<double>();
+	options.mutant_options.cache_filter_index_at_all_levels = Conf::Get("cache_filter_index_at_all_levels").as<bool>();
+	options.mutant_options.monitor_temp = Conf::Get("monitor_temp").as<bool>();
+	options.mutant_options.migrate_sstables = Conf::Get("migrate_sstables").as<bool>();
+	options.mutant_options.sst_ott = Conf::Get("sst_ott").as<double>();
+	options.mutant_options.replaying = true;
+	options.mutant_options.simulation_time_dur_sec = Conf::Get("simulation_time_dur_in_sec").as<double>();
 	// The QuizUp workload was collected for
 	//   calc "1365709.587 / 24 / 3600" = 15.8 days.
-	options.simulated_time_dur_sec  = 1365709.587;
+	options.mutant_options.simulated_time_dur_sec  = 1365709.587;
 
 	// Open DB
 	Status s = DB::Open(options, db_path, &_db);
