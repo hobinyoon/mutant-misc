@@ -55,8 +55,8 @@ namespace Conf {
 			("cache_filter_index_at_all_levels", po::value<bool>()->default_value(Get("cache_filter_index_at_all_levels").as<bool>()))
 			("monitor_temp", po::value<bool>()->default_value(Get("monitor_temp").as<bool>()))
 			("migrate_sstables", po::value<bool>()->default_value(Get("migrate_sstables").as<bool>()))
-			("sst_migration_temperature_threshold",
-			 po::value<double>()->default_value(Get("sst_migration_temperature_threshold").as<double>()))
+			("sst_ott",
+			 po::value<double>()->default_value(Get("sst_ott").as<double>()))
 			("db_path", po::value<string>()->default_value(GetStr("db_path")))
 			("slow_dev1_path", po::value<string>()->default_value(GetStr("slow_dev1_path")))
 			("slow_dev2_path", po::value<string>()->default_value(GetStr("slow_dev2_path")))
@@ -81,7 +81,7 @@ namespace Conf {
 		__EditYaml<bool>("cache_filter_index_at_all_levels", vm);
 		__EditYaml<bool>("monitor_temp", vm);
 		__EditYaml<bool>("migrate_sstables", vm);
-		__EditYaml<double>("sst_migration_temperature_threshold", vm);
+		__EditYaml<double>("sst_ott", vm);
 		__EditYaml<string>("db_path", vm);
 		__EditYaml<string>("slow_dev1_path", vm);
 		__EditYaml<string>("slow_dev2_path", vm);

@@ -51,7 +51,7 @@ def main():
 	parser.add_option("--workload_start_from", help="Where the workload data is to be played. In percentage.")
 	parser.add_option("--workload_stop_at", help="Where the workload data is to be played. In percentage.")
 	parser.add_option("--simulation_time_dur_in_sec", help="Simulation time duration.")
-	parser.add_option("--sst_migration_temperature_threshold", help="SSTable migration temperature threshold")
+	parser.add_option("--sst_ott", help="SSTable organization temperature threshold")
 
 	parser.add_option("--record_size", help="Record size")
 
@@ -138,7 +138,7 @@ def main():
 			, "migrate_sstables" \
 			, "workload_start_from", "workload_stop_at" \
 			, "simulation_time_dur_in_sec" \
-			, "sst_migration_temperature_threshold" \
+			, "sst_ott" \
 			]:
 		if (hasattr(options, k)) and (getattr(options, k) is not None):
 			args0.append("--%s=%s" % (k, getattr(options, k)))

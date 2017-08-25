@@ -5,7 +5,7 @@ migrate_sstables: true
 # temperatures of the unmodified RocksDB
 migrate_sstables: true
 
-sst_migration_temperature_threshold: 20.0
+sst_ott: 20.0
 
 cache_filter_index_at_all_levels: true
 
