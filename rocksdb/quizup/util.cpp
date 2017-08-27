@@ -79,7 +79,7 @@ namespace Util {
 	string ToString(const boost::posix_time::ptime& pt) {
 		{
 			if (pt.is_not_a_date_time()) {
-				return "not-a-date-tie";
+				return "not-a-date-time";
 			} else {
 				string s = boost::posix_time::to_iso_string(pt);
 				// 20161217T122028.890289
