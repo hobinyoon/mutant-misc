@@ -55,8 +55,7 @@ namespace Conf {
 			("cache_filter_index_at_all_levels", po::value<bool>()->default_value(Get("cache_filter_index_at_all_levels").as<bool>()))
 			("monitor_temp", po::value<bool>()->default_value(Get("monitor_temp").as<bool>()))
 			("migrate_sstables", po::value<bool>()->default_value(Get("migrate_sstables").as<bool>()))
-			("sst_ott",
-			 po::value<double>()->default_value(Get("sst_ott").as<double>()))
+			("sst_ott", po::value<double>()->default_value(Get("sst_ott").as<double>()))
 			("db_path", po::value<string>()->default_value(GetStr("db_path")))
 			("slow_dev1_path", po::value<string>()->default_value(GetStr("slow_dev1_path")))
 			("slow_dev2_path", po::value<string>()->default_value(GetStr("slow_dev2_path")))
@@ -65,6 +64,7 @@ namespace Conf {
 			("workload_stop_at", po::value<double>()->default_value(Get("workload_stop_at").as<double>()))
 			("simulation_time_dur_in_sec", po::value<int>()->default_value(Get("simulation_time_dur_in_sec").as<int>()))
 			("record_size", po::value<int>()->default_value(Get("record_size").as<int>()))
+			("121x_speed_replay", po::value<bool>()->default_value(Get("121x_speed_replay").as<bool>()))
 			;
 
 		po::variables_map vm;

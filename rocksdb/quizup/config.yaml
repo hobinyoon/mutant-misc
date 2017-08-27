@@ -105,3 +105,9 @@ simulation_time_dur_in_sec: 60000
 #   With 4000 secs, about 85% CPU idle.
 #   With 2000 secs, about 55% CPU idle. This is probably the fastest you can go without overloading the system.
 #simulation_time_dur_in_sec: 2000
+
+# To see how the SLA admin works
+#   1x speed replay to the 91% of the workload
+#   2x speed replay to the 92% of the workload
+#   1x speed replay to the end
+121x_speed_replay: false

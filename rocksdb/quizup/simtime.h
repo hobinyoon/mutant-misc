@@ -13,6 +13,7 @@ namespace SimTime {
 			, ProgMon::WorkerStat* ws);
 	void WakeupSleepingThreads();
 
+	// TODO: update
 	boost::posix_time::ptime SimulationTimeBegin();
 	boost::posix_time::ptime SimulationTimeEnd();
 	boost::posix_time::ptime SimulatedTimeBegin();
