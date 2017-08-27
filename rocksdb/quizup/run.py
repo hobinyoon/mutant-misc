@@ -47,11 +47,12 @@ def main():
 	parser.add_option("--cache_filter_index_at_all_levels", help="Cache metadata")
 	parser.add_option("--monitor_temp", help="Monitor temperature")
 	parser.add_option("--migrate_sstables", help="Migrate SSTables")
+	parser.add_option("--sst_ott", help="SSTable organization temperature threshold")
+	parser.add_option("--121x_speed_replay", help="1x-2x-1x speed replay")
 
 	parser.add_option("--workload_start_from", help="Where the workload data is to be played. In percentage.")
 	parser.add_option("--workload_stop_at", help="Where the workload data is to be played. In percentage.")
 	parser.add_option("--simulation_time_dur_in_sec", help="Simulation time duration.")
-	parser.add_option("--sst_ott", help="SSTable organization temperature threshold")
 
 	parser.add_option("--record_size", help="Record size")
 
@@ -139,6 +140,7 @@ def main():
 			, "workload_start_from", "workload_stop_at" \
 			, "simulation_time_dur_in_sec" \
 			, "sst_ott" \
+			, "121x_speed_replay" \
 			]:
 		if (hasattr(options, k)) and (getattr(options, k) is not None):
 			args0.append("--%s=%s" % (k, getattr(options, k)))

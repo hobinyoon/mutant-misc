@@ -90,6 +90,7 @@ namespace Conf {
 		__EditYaml<double>("workload_stop_at", vm);
 		__EditYaml<int>("simulation_time_dur_in_sec", vm);
 		__EditYaml<int>("record_size", vm);
+		__EditYaml<bool>("121x_speed_replay", vm);
 	}
 
 	void Init(int argc, char* argv[]) {
