@@ -357,15 +357,15 @@ def UploadToS3(job_id):
 
 	fn = "quizup/%s.7z" % (_latest_client_log_dt)
 	fn_local = "%s/work/mutant/misc/rocksdb/log/%s" % (os.path.expanduser("~"), fn)
-	Util.RunSubp("aws s3 cp %s s3://mutant-log/%s/%s" % (fn_local, job_id, fn))
+	Util.RunSubp("aws s3 cp %s s3://mutant-log/quizup/%s/%s" % (fn_local, job_id, fn))
 
 	fn = "dstat/%s.csv.7z" % (_latest_client_log_dt)
 	fn_local = "%s/work/mutant/misc/rocksdb/log/%s" % (os.path.expanduser("~"), fn)
-	Util.RunSubp("aws s3 cp %s s3://mutant-log/%s/%s" % (fn_local, job_id, fn))
+	Util.RunSubp("aws s3 cp %s s3://mutant-log/quizup/%s/%s" % (fn_local, job_id, fn))
 
 	fn = "rocksdb/%s.7z" % (_latest_client_log_dt)
 	fn_local = "%s/work/mutant/misc/rocksdb/log/%s" % (os.path.expanduser("~"), fn)
-	Util.RunSubp("aws s3 cp %s s3://mutant-log/%s/%s" % (fn_local, job_id, fn))
+	Util.RunSubp("aws s3 cp %s s3://mutant-log/quizup/%s/%s" % (fn_local, job_id, fn))
 
 
 class Conf:

@@ -317,7 +317,7 @@ namespace WorkloadPlayer {
 
     // QuizUp client log
     const string& fn_c0 = ProgMon::FnClientLog();
-    dn1 = str(boost::format("%s/client") % Conf::GetDir("log_archive_dn"));
+    dn1 = str(boost::format("%s/quizup") % Conf::GetDir("log_archive_dn"));
     string fn_c1 = str(boost::format("%s/%s") % dn1 % sbt);
     boost::filesystem::create_directories(dn1);
     boost::filesystem::copy_file(fn_c0, fn_c1);
