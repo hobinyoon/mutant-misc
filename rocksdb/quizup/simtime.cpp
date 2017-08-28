@@ -93,10 +93,11 @@ void Init2() {
 	Cons::P(boost::format("simulation_time_2: %s") % Util::ToString(_simulation_time_2));
 	Cons::P(boost::format("simulation_time_3: %s") % Util::ToString(_simulation_time_3));
 	Cons::P(boost::format("simulated_time_0 : %s") % Util::ToString(_simulated_time_0));
+	Cons::P(boost::format("simulated_time_1 : %s") % Util::ToString(_simulated_time_1));
+	Cons::P(boost::format("simulated_time_2 : %s") % Util::ToString(_simulated_time_2));
 	Cons::P(boost::format("simulated_time_3 : %s") % Util::ToString(_simulated_time_3));
 
 	// workload_stop_at needs to be calculated before the simulated time interval is shrunk.
-	// TODO: I may want to set this too
 	_stop_at_defined = Conf::Get("workload_stop_at").IsDefined()
 		&& (Conf::Get("workload_stop_at").as<double>() != -1.0);
 	if (_stop_at_defined) {
@@ -136,53 +137,99 @@ void Init2() {
 }
 
 
+boost::posix_time::ptime _InterpolateSimulationTime(
+		const boost::posix_time::ptime& simulated0
+		, const boost::posix_time::ptime& simulated1
+		, const boost::posix_time::ptime& simulated
+		, const boost::posix_time::ptime& simulation0
+		, const boost::posix_time::ptime& simulation1) {
+	// simulation0 : a (simulation, output) : simulation1
+	// simulated0  : b (simulated, input)   : simulated1
+	//
+	// a - simulation0 : b - simulated0 = simulation1 - simulation0 : simulated1 - simulated0
+	// a - simulation0 = (b - simulated0) * (simulation1 - simulation0) / (simulated1 - simulated0)
+	// a = (b - simulated0) * (simulation1 - simulation0) / (simulated1 - simulated0) + simulation0
+	auto td = boost::posix_time::time_duration(0, 0, 0,
+			double((simulated - simulated0).total_nanoseconds())
+			* double((simulation1 - simulation0).total_nanoseconds())
+			/ double((simulated1 - simulated0).total_nanoseconds())
+			/ 1000.0
+			);
+	return simulation0 + td;
+}
+
+
+boost::posix_time::ptime _InterpolateSimulatedTime(
+		const boost::posix_time::ptime& simulated0
+		, const boost::posix_time::ptime& simulated1
+		, const boost::posix_time::ptime& simulation0
+		, const boost::posix_time::ptime& simulation1
+		, const boost::posix_time::ptime& simulation) {
+	// simulation0 : a (ts_simulation, input) : simulation1
+	// simulated0  : b (ts_simulated, output) : simulated1
+	//
+	// b - simulated0 = (a - simulation0) * (simulated1 - simulated0) / (simulation1 - simulation0)
+	// b = (a - simulation0) * (simulated1 - simulated0) / (simulation1 - simulation0) + simulated0
+	//
+	// The default time_duration precision seems to be microsecond from an
+	// experiment. Not sure how to change it. Might be a system-wide
+	// configuration.
+	//   boost::posix_time::time_duration td(0, 0, 0, 1);
+	//   cout << td << "\n";
+	auto td = boost::posix_time::time_duration(0, 0, 0,
+				double((simulation - simulation0).total_nanoseconds())
+				* double((simulated1 - simulated0).total_nanoseconds())
+				/ double((simulation1 - simulation0).total_nanoseconds())
+				/ 1000.0
+				);
+	return simulated0 + td;
+}
+
+
 void MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, ProgMon::WorkerStat* ws) {
 	// With a ns resolution, long can contain up to 292 years. Good enough.
 	//   calc "(2^63 - 1) / (10^9) / 3600 / 24 / 365.25"
 	//   = 292 years
 
+	boost::posix_time::ptime ts_simulation;
 	if (_121x_speed_replay) {
 		// _simulation_time_0 : _simulation_time_1 : _simulation_time_2 : _simulation_time_3
 		//  _simulated_time_0 :  _simulated_time_1 :  _simulated_time_2 :  _simulated_time_3
 		//
 		// Figure out a given b
 		//   b (ts_simulated, input)
-		//   a (ts_simulation)
-		// TODO
-	} else {
-		// _simulation_time_0 : a (ts_simulation) : _simulation_time_3
-		// _simulated_time_0  : b (ts_simulated)  : _simulated_time_3
-		//
-		// a - _simulation_time_0 : b - _simulated_time_0 = _simulation_time_3 - _simulation_time_0 : _simulated_time_3 - _simulated_time_0
-		// a - _simulation_time_0 = (b - _simulated_time_0) * (_simulation_time_3 - _simulation_time_0) / (_simulated_time_3 - _simulated_time_0)
-		// a = (b - _simulated_time_0) * (_simulation_time_3 - _simulation_time_0) / (_simulated_time_3 - _simulated_time_0) + _simulation_time_0
-		//
-		// Note: Pre-calculate the constants if needed
-		auto td = boost::posix_time::time_duration(0, 0, 0,
-				double((ts_simulated - _simulated_time_0).total_nanoseconds())
-				* double((_simulation_time_3 - _simulation_time_0).total_nanoseconds())
-				/ double((_simulated_time_3 - _simulated_time_0).total_nanoseconds())
-				/ 1000.0
-				);
-		auto ts_simulation = _simulation_time_0 + td;
-
-		boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-		if (now < ts_simulation) {
-			auto sleep_dur = (ts_simulation - now).total_nanoseconds();
-			{
-				// I'm hoping this is reentrant by multiple worker threads. Looks like
-				// because wait_for() unlocks the mutex.
-				unique_lock<mutex> lk(_stop_requested_mutex);
-				_stop_requested_cv.wait_for(lk, chrono::nanoseconds(sleep_dur), [](){return _stop_requested;});
-			}
-
-			ws->RunningOnTime();
-		} else if (now > ts_simulation) {
-			// Not sure how much synchronization overhead is there
-			ws->RunningBehind(now - ts_simulation);
+		//   a (ts_simulation, output)
+		if (ts_simulated < _simulated_time_0) {
+			THROW("Unexpected");
+		} else if (ts_simulated < _simulated_time_1) {
+			ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_1, ts_simulated, _simulation_time_0, _simulation_time_1);
+		} else if (ts_simulated < _simulated_time_2) {
+			ts_simulation = _InterpolateSimulationTime(_simulated_time_1, _simulated_time_2, ts_simulated, _simulation_time_1, _simulation_time_2);
+		} else if (ts_simulated <= _simulated_time_3) {
+			ts_simulation = _InterpolateSimulationTime(_simulated_time_2, _simulated_time_3, ts_simulated, _simulation_time_2, _simulation_time_3);
 		} else {
-			ws->RunningOnTime();
+			// This can happen when the system is saturated
+			//THROW(boost::format("Unexpected: simulated_3=%s simulated=%s") % Util::ToString(_simulated_time_3) % Util::ToString(_simulated_time_3));
 		}
+	} else {
+		ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_3, ts_simulated, _simulation_time_0, _simulation_time_3);
+	}
+
+	boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+	if (now < ts_simulation) {
+		auto sleep_dur = (ts_simulation - now).total_nanoseconds();
+		{
+			// I'm hoping this is reentrant by multiple worker threads. Looks like, because wait_for() unlocks the mutex.
+			unique_lock<mutex> lk(_stop_requested_mutex);
+			_stop_requested_cv.wait_for(lk, chrono::nanoseconds(sleep_dur), [](){return _stop_requested;});
+		}
+
+		ws->RunningOnTime();
+	} else if (now > ts_simulation) {
+		// Not sure how much synchronization overhead is there
+		ws->RunningBehind(now - ts_simulation);
+	} else {
+		ws->RunningOnTime();
 	}
 }
 
@@ -210,27 +257,27 @@ boost::posix_time::ptime SimulatedTimeEnd() {
 }
 
 
-// _simulation_time_0 : a (ts_simulation) : _simulation_time_3
-// _simulated_time_0  : b (ts_simulated)  : _simulated_time_3
-//
-// b - _simulated_time_0 = (a - _simulation_time_0) * (_simulated_time_3 - _simulated_time_0) / (_simulation_time_3 - _simulation_time_0)
-// b = (a - _simulation_time_0) * (_simulated_time_3 - _simulated_time_0) / (_simulation_time_3 - _simulation_time_0) + _simulated_time_0
-//
-// Note: Pre-calculate the constants if needed
-boost::posix_time::ptime ToSimulatedTime(const boost::posix_time::ptime& simulation_time0) {
-	// The default time_duration precision seems to be microsecond from an
-	// experiment. Not sure how to change it. Might be a system-wide
-	// configuration.
-	//   boost::posix_time::time_duration td(0, 0, 0, 1);
-	//   cout << td << "\n";
-	auto td = boost::posix_time::time_duration(0, 0, 0,
-				double((simulation_time0 - _simulation_time_0).total_nanoseconds())
-				* double((_simulated_time_3 - _simulated_time_0).total_nanoseconds())
-				/ double((_simulation_time_3 - _simulation_time_0).total_nanoseconds())
-				/ 1000.0
-				);
-	auto t = _simulated_time_0 + td;
-	return t;
+boost::posix_time::ptime ToSimulatedTime(const boost::posix_time::ptime& simulation_time) {
+	boost::posix_time::ptime simulated_time;
+
+	if (_121x_speed_replay) {
+		if (simulation_time < _simulation_time_0) {
+			THROW("Unexpected");
+		} else if (simulation_time < _simulation_time_1) {
+			simulated_time = _InterpolateSimulatedTime(_simulated_time_0, _simulated_time_1, _simulation_time_0, _simulation_time_1, simulation_time);
+		} else if (simulation_time < _simulation_time_2) {
+			simulated_time = _InterpolateSimulatedTime(_simulated_time_1, _simulated_time_2, _simulation_time_1, _simulation_time_2, simulation_time);
+		} else if (simulation_time <= _simulation_time_3) {
+			simulated_time = _InterpolateSimulatedTime(_simulated_time_2, _simulated_time_3, _simulation_time_2, _simulation_time_3, simulation_time);
+		} else {
+			// This can happen
+			//THROW(boost::format("Unexpected: simulation_3=%s simulation=%s") % Util::ToString(_simulation_time_3) % Util::ToString(_simulation_time));
+		}
+	} else {
+		simulated_time = _InterpolateSimulatedTime(_simulated_time_0, _simulated_time_3, _simulation_time_0, _simulation_time_3, simulation_time);
+	}
+
+	return simulated_time;
 }
 
 
