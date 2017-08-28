@@ -236,7 +236,7 @@ class Dstat:
 		# the simulator.
 		if _cur_datetime is not None:
 			with Cons.MT("Renaming the log file and zipping ..."):
-				dn_client = "%s/client" % Conf.GetDir("log_archive_dn")
+				dn_client = "%s/quizup" % Conf.GetDir("log_archive_dn")
 				global _latest_client_log_dt
 				_latest_client_log_dt = None
 				for f in os.listdir(dn_client):
@@ -343,7 +343,7 @@ def AppendAllOptionsToClientLogFileAndZip(options):
 	if _latest_client_log_dt is None:
 		raise RuntimeError("Unexpected")
 
-	fn = "%s/client/%s" % (Conf.GetDir("log_archive_dn"), _latest_client_log_dt)
+	fn = "%s/quizup/%s" % (Conf.GetDir("log_archive_dn"), _latest_client_log_dt)
 	with open(fn, "a") as fo:
 		fo.write("# Quizup run script options: %s" % pprint.pformat(options))
 		fo.write("# Quizup run script options.desc: %s" % (base64.b64decode(options.exp_desc) if options.exp_desc is not None else ""))
