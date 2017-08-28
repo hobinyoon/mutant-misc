@@ -16,7 +16,7 @@ def ParseArgs():
 
 	parser.add_argument("--log_dir"
 			, type=str
-			, default="~/work/mutant/misc/rocksdb/log"
+			, default="~/work/mutant/misc/log/quizup/thrp-vs-lat"
 			, help="Mutant simulation log directory")
 
 	parser.add_argument("--output_dir"
