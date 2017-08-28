@@ -32,6 +32,7 @@ def sigint_handler(signal, frame):
 def main():
 	parser = optparse.OptionParser(usage="usage: %prog [options]",
 			version="%prog 0.1")
+	parser.add_option("--job_id", help="Job ID. Unique to an EC2 instance")
 	parser.add_option("--fast_dev_path", help="Fast dev path")
 	parser.add_option("--slow_dev1_path", help="Slow dev1 path")
 	parser.add_option("--slow_dev2_path", help="Slow dev1 path")
@@ -171,7 +172,7 @@ def main():
 
 	AppendAllOptionsToClientLogFileAndZip(options)
 
-	UploadToS3()
+	UploadToS3(options.job_id)
 
 
 def _EvictCache():
@@ -349,22 +350,22 @@ def AppendAllOptionsToClientLogFileAndZip(options):
 	Util.RunSubp("7z a -mx %s.7z %s" % (fn, fn))
 
 
-def UploadToS3():
+def UploadToS3(job_id):
 	global _latest_client_log_dt
 	if _latest_client_log_dt is None:
 		raise RuntimeError("Unexpected")
 
-	fn = "client/%s.7z" % (_latest_client_log_dt)
+	fn = "quizup/%s.7z" % (_latest_client_log_dt)
 	fn_local = "%s/work/mutant/misc/rocksdb/log/%s" % (os.path.expanduser("~"), fn)
-	Util.RunSubp("aws s3 cp %s s3://mutant-log/%s" % (fn_local, fn))
+	Util.RunSubp("aws s3 cp %s s3://mutant-log/%s/%s" % (fn_local, job_id, fn))
 
 	fn = "dstat/%s.csv.7z" % (_latest_client_log_dt)
 	fn_local = "%s/work/mutant/misc/rocksdb/log/%s" % (os.path.expanduser("~"), fn)
-	Util.RunSubp("aws s3 cp %s s3://mutant-log/%s" % (fn_local, fn))
+	Util.RunSubp("aws s3 cp %s s3://mutant-log/%s/%s" % (fn_local, job_id, fn))
 
 	fn = "rocksdb/%s.7z" % (_latest_client_log_dt)
 	fn_local = "%s/work/mutant/misc/rocksdb/log/%s" % (os.path.expanduser("~"), fn)
-	Util.RunSubp("aws s3 cp %s s3://mutant-log/%s" % (fn_local, fn))
+	Util.RunSubp("aws s3 cp %s s3://mutant-log/%s/%s" % (fn_local, job_id, fn))
 
 
 class Conf:

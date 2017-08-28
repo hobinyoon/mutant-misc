@@ -322,9 +322,9 @@ namespace WorkloadPlayer {
     boost::filesystem::create_directories(dn1);
     boost::filesystem::copy_file(fn_c0, fn_c1);
 
-    // Zip them. Client log will be zipped by the calling script after the
-    // configuration parameters added.
+    // Zip them
     Util::RunSubprocess(str(boost::format("7z a -mx %s.7z %s >/dev/null 2>&1") % fn_db1 % fn_db1));
+    // Quizup client log will be zipped by the calling script after the configuration parameters added.
     //Util::RunSubprocess(str(boost::format("7z a -mx %s.7z %s >/dev/null 2>&1") % fn_c1 % fn_c1));
   }
 
