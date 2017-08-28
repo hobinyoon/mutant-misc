@@ -309,14 +309,18 @@ void _ArchiveLogs() {
 	string sbt = Util::ToString(SimTime::SimulationTimeBegin());
 
 	// DB LOG
-	string fn_db0 = str(boost::format("%s/LOG") % Conf::GetDir("db_path"));
-	string fn_db1 = str(boost::format("%s/rocksdb/%s") % Conf::GetDir("log_archive_dn") % sbt);
-	boost::filesystem::copy_file(fn_db0, fn_db1);
+  string fn_db0 = str(boost::format("%s/LOG") % Conf::GetDir("db_path"));
+  string dn1 = str(boost::format("%s/rocksdb") % Conf::GetDir("log_archive_dn"));
+  string fn_db1 = str(boost::format("%s/%s") % dn1 % sbt);
+  boost::filesystem::create_directories(dn1);
+  boost::filesystem::copy_file(fn_db0, fn_db1);
 
 	// QuizUp client log
-	const string& fn_c0 = ProgMon::FnClientLog();
-	string fn_c1 = str(boost::format("%s/client/%s") % Conf::GetDir("log_archive_dn") % sbt);
-	boost::filesystem::copy_file(fn_c0, fn_c1);
+  const string& fn_c0 = ProgMon::FnClientLog();
+  dn1 = str(boost::format("%s/client") % Conf::GetDir("log_archive_dn"));
+  string fn_c1 = str(boost::format("%s/%s") % dn1 % sbt);
+  boost::filesystem::create_directories(dn1);
+  boost::filesystem::copy_file(fn_c0, fn_c1);
 
 	// Zip them. Client log will be zipped by the calling script after the
 	// configuration parameters added.
