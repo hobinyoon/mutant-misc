@@ -9,15 +9,20 @@ namespace SimTime {
 	void Init2();
 	void Cleanup();
 
-	void MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated
+	int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated
 			, ProgMon::WorkerStat* ws);
 	void WakeupSleepingThreads();
 
-	// TODO: update
-	boost::posix_time::ptime SimulationTimeBegin();
-	boost::posix_time::ptime SimulationTimeEnd();
-	boost::posix_time::ptime SimulatedTimeBegin();
-	boost::posix_time::ptime SimulatedTimeEnd();
+	boost::posix_time::ptime SimulationTime0();
+	boost::posix_time::ptime SimulationTime1();
+	boost::posix_time::ptime SimulationTime2();
+	boost::posix_time::ptime SimulationTime3();
+	boost::posix_time::ptime SimulationTime4();
+	boost::posix_time::ptime SimulatedTime0();
+	boost::posix_time::ptime SimulatedTime1();
+	boost::posix_time::ptime SimulatedTime2();
+	boost::posix_time::ptime SimulatedTime3();
+	boost::posix_time::ptime SimulatedTime4();
 
 	boost::posix_time::ptime ToSimulatedTime(const boost::posix_time::ptime& simulation_time0);
 	std::string ToSimulatedTimeStr(const boost::posix_time::ptime& simulation_time0);

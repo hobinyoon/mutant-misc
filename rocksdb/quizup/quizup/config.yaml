@@ -7,6 +7,8 @@ migrate_sstables: true
 
 sst_ott: 20.0
 
+organize_L0_sstables: false
+
 cache_filter_index_at_all_levels: true
 
 db_path: ~/work/rocksdb-data/quizup
@@ -111,3 +113,5 @@ simulation_time_dur_in_sec: 60000
 #   2x speed replay to the 92% of the workload
 #   1x speed replay to the end
 121x_speed_replay: false
+
+report_interval_in_ms: 500
