@@ -1,5 +1,4 @@
 monitor_temp: true
-migrate_sstables: true
 
 # Set mutant_enabled=true, migrate_sstables=false for checking the SSTable
 # temperatures of the unmodified RocksDB
