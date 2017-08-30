@@ -56,6 +56,7 @@ namespace Conf {
 			("monitor_temp", po::value<bool>()->default_value(Get("monitor_temp").as<bool>()))
 			("migrate_sstables", po::value<bool>()->default_value(Get("migrate_sstables").as<bool>()))
 			("sst_ott", po::value<double>()->default_value(Get("sst_ott").as<double>()))
+			("organize_L0_sstables", po::value<bool>()->default_value(Get("organize_L0_sstables").as<bool>()))
 			("db_path", po::value<string>()->default_value(GetStr("db_path")))
 			("slow_dev1_path", po::value<string>()->default_value(GetStr("slow_dev1_path")))
 			("slow_dev2_path", po::value<string>()->default_value(GetStr("slow_dev2_path")))
@@ -82,6 +83,7 @@ namespace Conf {
 		__EditYaml<bool>("monitor_temp", vm);
 		__EditYaml<bool>("migrate_sstables", vm);
 		__EditYaml<double>("sst_ott", vm);
+		__EditYaml<bool>("organize_L0_sstables", vm);
 		__EditYaml<string>("db_path", vm);
 		__EditYaml<string>("slow_dev1_path", vm);
 		__EditYaml<string>("slow_dev2_path", vm);

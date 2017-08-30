@@ -260,6 +260,10 @@ namespace WorkloadPlayer {
     //string fn1 = boost::filesystem::path(fn).filename().string();
     //TRACE << boost::format("%d %s\n") % tid % fn1;
 
+    // For the super read mode
+    //   Extra memory estimation: (8 + 8 + 8) * 10000 * 1000 = 240 MB
+    //deque<long> latest_keys;
+
     // Make requests
     while (i < s) {
       // Note: The first call to this by 1000 threads might be the bottleneck:
@@ -277,20 +281,40 @@ namespace WorkloadPlayer {
         }
       }
 
-      SimTime::MaySleepUntilSimulatedTime(too_ts, ws);
+      int rw_mode = SimTime::MaySleepUntilSimulatedTime(too_ts, ws);
+      if (_stop_requested)
+        break;
 
       char k[20];
       sprintf(k, "%ld", too.oid);
-      if (_stop_requested)
-        break;
 
       if (too.op == 'S') {
         string v;
         RandomAsciiString(_value_len, v);
-        DbClient::Put(k, v, ws);
+        if (rw_mode & 1) {
+          DbClient::Put(k, v, ws);
+        }
       } else if (too.op == 'G') {
         string v;
-        DbClient::Get(k, v, ws);
+        if (rw_mode & 2) {
+          DbClient::Get(k, v, ws);
+        }
+        // Super read mode. Make 10x more read of the yougnest records
+        //if (rw_mode & 4) {
+        //  DbClient::Get(k, v, ws);
+
+        //  latest_keys.push_front(too.oid);
+        //  if (latest_keys.size() > 10000)
+        //    latest_keys.pop_back();
+
+        //  size_t s = latest_keys.size();
+        //  for (int i = 0; i < 8; i ++) {
+        //    long oid = latest_keys[rand() % s];
+        //    char k[20];
+        //    sprintf(k, "%ld", oid);
+        //    DbClient::Get(k, v, ws);
+        //  }
+        //}
       } else {
         THROW(boost::format("Unexpected op %c") % too.op);
       }
@@ -306,7 +330,7 @@ namespace WorkloadPlayer {
   void _ArchiveLogs() {
     Cons::MT _("Archiving logs ...");
 
-    string sbt = Util::ToString(SimTime::SimulationTimeBegin());
+    string sbt = Util::ToString(SimTime::SimulationTime0());
 
     // DB LOG
     string fn_db0 = str(boost::format("%s/LOG") % Conf::GetDir("db_path"));

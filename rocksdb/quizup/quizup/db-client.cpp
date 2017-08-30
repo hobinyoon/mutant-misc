@@ -76,6 +76,7 @@ void Init() {
 	options.mutant_options.monitor_temp = Conf::Get("monitor_temp").as<bool>();
 	options.mutant_options.migrate_sstables = Conf::Get("migrate_sstables").as<bool>();
 	options.mutant_options.sst_ott = Conf::Get("sst_ott").as<double>();
+	options.mutant_options.organize_L0_sstables = Conf::Get("organize_L0_sstables").as<bool>();
 	options.mutant_options.replaying = true;
 	options.mutant_options.simulation_time_dur_sec = Conf::Get("simulation_time_dur_in_sec").as<double>();
 	// The QuizUp workload was collected for
