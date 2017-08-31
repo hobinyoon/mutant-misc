@@ -139,14 +139,6 @@ void Init2() {
 		{
 			double a = 1000;
 			double b = a + 1;
-			//double c = b + 2; // I don't see any latency jump
-			//double c = b + 4; // Too much jump from 15:56
-			//double c = b + 3;	// Still no latency jump. The jump was only when there are write IOs.
-
-			//double c = b + 1;	// Let's try "super read" to reduce the write IO effect. Not writing anything doesn't work since you need to read the record.
-			// Super read didn't work. I guess the temporal locality was too strong even with the last 10000 records.
-
-			// Playing with faster replay didn't work. Go back to the super read mode. In a really smaller simulated time range. with more data. like 2x more data.
 			double c = b + 2;
 			double d = c + 4;
 			_simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a/d));
@@ -222,6 +214,72 @@ boost::posix_time::ptime _InterpolateSimulatedTime(
 }
 
 
+//int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, ProgMon::WorkerStat* ws) {
+//	// With a ns resolution, long can contain up to 292 years. Good enough.
+//	//   calc "(2^63 - 1) / (10^9) / 3600 / 24 / 365.25"
+//	//   = 292 years
+//
+//	boost::posix_time::ptime ts_simulation;
+//
+//	// RW mode bit mask. Useful when going through phases during experiment such as loading or read-only phase.
+//	//   1: write
+//	//   2: read
+//	//   4: super read
+//	int rw_mode = 1 + 2;
+//
+//	if (_121x_speed_replay) {
+//		// _simulation_time_0 : _simulation_time_1 : _simulation_time_2 : _simulation_time_4
+//		//  _simulated_time_0 :  _simulated_time_1 :  _simulated_time_2 :  _simulated_time_4
+//		//
+//		// Figure out a given b
+//		//   b (ts_simulated, input)
+//		//   a (ts_simulation, output)
+//		if (ts_simulated < _simulated_time_0) {
+//			rw_mode = 1;
+//			// This can happen with a small offset. Probably due to the floating point calculation errors.
+//			//THROW(boost::format("Unexpected: simulated=%s simulated_0=%s") % Util::ToString(ts_simulated) % Util::ToString(_simulated_time_0));
+//		} else if (ts_simulated < _simulated_time_1) {
+//			rw_mode = 1;
+//			ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_1, ts_simulated, _simulation_time_0, _simulation_time_1);
+//		} else if (ts_simulated < _simulated_time_2) {
+//			rw_mode = 1 + 4;
+//			ts_simulation = _InterpolateSimulationTime(_simulated_time_1, _simulated_time_2, ts_simulated, _simulation_time_1, _simulation_time_2);
+//		} else if (ts_simulated < _simulated_time_3) {
+//			rw_mode = 1 + 4;
+//			ts_simulation = _InterpolateSimulationTime(_simulated_time_2, _simulated_time_3, ts_simulated, _simulation_time_2, _simulation_time_3);
+//		} else if (ts_simulated <= _simulated_time_4) {
+//			rw_mode = 1 + 4;
+//			ts_simulation = _InterpolateSimulationTime(_simulated_time_3, _simulated_time_4, ts_simulated, _simulation_time_3, _simulation_time_4);
+//		} else {
+//			rw_mode = 1 + 4;
+//			// This can happen when the system is saturated
+//			//THROW(boost::format("Unexpected: simulated_3=%s simulated=%s") % Util::ToString(_simulated_time_4) % Util::ToString(ts_simulated));
+//		}
+//	} else {
+//		ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_4, ts_simulated, _simulation_time_0, _simulation_time_4);
+//	}
+//
+//	boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+//	if (now < ts_simulation) {
+//		auto sleep_dur = (ts_simulation - now).total_nanoseconds();
+//		{
+//			// I'm hoping this is reentrant by multiple worker threads. Looks like, because wait_for() unlocks the mutex.
+//			unique_lock<mutex> lk(_stop_requested_mutex);
+//			_stop_requested_cv.wait_for(lk, chrono::nanoseconds(sleep_dur), [](){return _stop_requested;});
+//		}
+//
+//		ws->RunningOnTime();
+//	} else if (now > ts_simulation) {
+//		// Not sure how much synchronization overhead is there
+//		ws->RunningBehind(now - ts_simulation);
+//	} else {
+//		ws->RunningOnTime();
+//	}
+//
+//	return rw_mode;
+//}
+
+
 int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, ProgMon::WorkerStat* ws) {
 	// With a ns resolution, long can contain up to 292 years. Good enough.
 	//   calc "(2^63 - 1) / (10^9) / 3600 / 24 / 365.25"
@@ -229,11 +287,10 @@ int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, Pro
 
 	boost::posix_time::ptime ts_simulation;
 
-	// RW mode bit mask. Useful when going through phases during experiment such as loading or read-only phase.
-	//   1: write
-	//   2: read
-	//   4: super read
-	int rw_mode = 1 + 2;
+	// Experiment phase
+	//   0: load: All writes. no reads. Enqueue the read operations.
+	//   1: read: All reads. no writes.
+	int phase = 0;
 
 	if (_121x_speed_replay) {
 		// _simulation_time_0 : _simulation_time_1 : _simulation_time_2 : _simulation_time_4
@@ -243,23 +300,23 @@ int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, Pro
 		//   b (ts_simulated, input)
 		//   a (ts_simulation, output)
 		if (ts_simulated < _simulated_time_0) {
-			rw_mode = 1;
+			phase = 0;
 			// This can happen with a small offset. Probably due to the floating point calculation errors.
 			//THROW(boost::format("Unexpected: simulated=%s simulated_0=%s") % Util::ToString(ts_simulated) % Util::ToString(_simulated_time_0));
 		} else if (ts_simulated < _simulated_time_1) {
-			rw_mode = 1;
+			phase = 0;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_1, ts_simulated, _simulation_time_0, _simulation_time_1);
 		} else if (ts_simulated < _simulated_time_2) {
-			rw_mode = 1 + 4;
+			phase = 1;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_1, _simulated_time_2, ts_simulated, _simulation_time_1, _simulation_time_2);
 		} else if (ts_simulated < _simulated_time_3) {
-			rw_mode = 1 + 4;
+			phase = 1;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_2, _simulated_time_3, ts_simulated, _simulation_time_2, _simulation_time_3);
 		} else if (ts_simulated <= _simulated_time_4) {
-			rw_mode = 1 + 4;
+			phase = 1;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_3, _simulated_time_4, ts_simulated, _simulation_time_3, _simulation_time_4);
 		} else {
-			rw_mode = 1 + 4;
+			phase = 1;
 			// This can happen when the system is saturated
 			//THROW(boost::format("Unexpected: simulated_3=%s simulated=%s") % Util::ToString(_simulated_time_4) % Util::ToString(ts_simulated));
 		}
@@ -284,7 +341,7 @@ int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, Pro
 		ws->RunningOnTime();
 	}
 
-	return rw_mode;
+	return phase;
 }
 
 

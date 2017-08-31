@@ -284,7 +284,7 @@ namespace WorkloadPlayer {
         }
       }
 
-      int rw_mode = SimTime::MaySleepUntilSimulatedTime(too_ts, ws);
+      int phase = SimTime::MaySleepUntilSimulatedTime(too_ts, ws);
       if (_stop_requested)
         break;
 
@@ -294,18 +294,14 @@ namespace WorkloadPlayer {
       if (too.op == 'S') {
         string v;
         RandomAsciiString(_value_len, v);
-        if (rw_mode & 1) {
+        if (phase == 0) {
           DbClient::Put(k, v, ws);
-        }
+        } else if (phase == 1) {
+					// No writes in phase 1
+				}
       } else if (too.op == 'G') {
         string v;
-        if (rw_mode & 2) {
-          DbClient::Get(k, v, ws);
-        }
-        // Super read mode. Make 10x more read of the yougnest records
-        if (rw_mode & 4) {
-          DbClient::Get(k, v, ws);
-
+        if (phase == 0) {
           if (latest_keys_set.find(too.oid) == latest_keys_set.end()) {
             latest_keys_set.insert(too.oid);
             latest_keys_q.push_front(too.oid);
@@ -315,15 +311,15 @@ namespace WorkloadPlayer {
               latest_keys_q.pop_back();
             }
           }
-
+				} else if (phase == 1) {
           size_t s = latest_keys_q.size();
-          for (int i = 0; i < 20; i ++) {
+          for (int i = 0; i < 40; i ++) {
             long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
             DbClient::Get(k1, v, ws);
           }
-        }
+				}
       } else {
         THROW(boost::format("Unexpected op %c") % too.op);
       }
