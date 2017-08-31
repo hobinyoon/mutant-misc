@@ -266,6 +266,7 @@ namespace WorkloadPlayer {
     //                                  (for both deque and set)
     deque<long> latest_keys_q;
     set<long> latest_keys_set;
+    bool queue_size_printed = false;
 
     // Make requests
     while (i < s) {
@@ -297,8 +298,8 @@ namespace WorkloadPlayer {
         if (phase == 0) {
           DbClient::Put(k, v, ws);
         } else {
-					// No writes in the other phases
-				}
+          // No writes in the other phases
+        }
       } else if (too.op == 'G') {
         string v;
         if (phase == 0) {
@@ -311,15 +312,21 @@ namespace WorkloadPlayer {
               latest_keys_q.pop_back();
             }
           }
-				} else if (phase >= 1) {
+        } else if (phase >= 1) {
           size_t s = latest_keys_q.size();
-          for (int i = 0; i < phase * 10; i ++) {
+
+          if (! queue_size_printed) {
+            Cons::P(boost::format("latest_keys_q.size()=%d") % s);
+            queue_size_printed = true;
+          }
+
+          for (int i = 0; i < phase * 2; i ++) {
             long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
             DbClient::Get(k1, v, ws);
           }
-				}
+        }
       } else {
         THROW(boost::format("Unexpected op %c") % too.op);
       }
