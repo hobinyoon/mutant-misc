@@ -320,7 +320,7 @@ namespace WorkloadPlayer {
           //  queue_size_printed = true;
           //}
 
-          if (rand() % 4 == 0) {
+          if (rand() % 16 == 0) {
             for (int i = 0; i < phase * 1; i ++) {
               long oid = latest_keys_q[rand() % s];
               char k1[20];

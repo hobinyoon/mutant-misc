@@ -127,7 +127,7 @@ void Init2() {
 		// Starting from the beginning
 		// When new SSTables are created
 		{
-			double a = 14;	// fast loading
+			double a = 7.5;	// fast loading
 			double b = a + 3;	// with different levels of load from here
 			double c = b + 1;
 			double d = c + 1;
@@ -137,7 +137,7 @@ void Init2() {
 			//_simulation_time_4 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * 1.0);
 		}
 		{
-			double a = 1000;
+			double a = 1000 * 7.5 / 14;
 			double b = a + 3;
 			double c = b + 1;
 			double d = c + 1;
