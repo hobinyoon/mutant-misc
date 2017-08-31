@@ -265,7 +265,7 @@ namespace WorkloadPlayer {
     //     (8 + 8 + 8) * 10000 * 1000 * 2 = 480 MB
     //                                  (for both deque and set)
     deque<long> latest_keys_q;
-    set<long> latest_keys_set;
+    //set<long> latest_keys_set;
     bool queue_size_printed = false;
 
     // Make requests
@@ -298,21 +298,33 @@ namespace WorkloadPlayer {
         if (phase == 0) {
           DbClient::Put(k, v, ws);
         } else {
-          // No writes in the other phases
+          DbClient::Put(k, v, ws);
+
+          // Tried and dropped. No writes in the other phases. Didn't like pure random accesses.
+					//   Cause it didn't show the proportionality between target_iops and latency. EBS st1 must have some internal cache.
         }
       } else if (too.op == 'G') {
         string v;
+
+				latest_keys_q.push_front(too.oid);
+				// Restrict the queue size
+				if (latest_keys_q.size() > 10000) {
+					latest_keys_q.pop_back();
+				}
+
         if (phase == 0) {
-          if (latest_keys_set.find(too.oid) == latest_keys_set.end()) {
-            latest_keys_set.insert(too.oid);
-            latest_keys_q.push_front(too.oid);
-            // Restrict the queue size
-            if (latest_keys_q.size() > 20000) {
-              latest_keys_set.erase(*latest_keys_q.rbegin());
-              latest_keys_q.pop_back();
-            }
-          }
+          //if (latest_keys_set.find(too.oid) == latest_keys_set.end()) {
+          //  latest_keys_set.insert(too.oid);
+          //  latest_keys_q.push_front(too.oid);
+          //  // Restrict the queue size
+          //  if (latest_keys_q.size() > 20000) {
+          //    latest_keys_set.erase(*latest_keys_q.rbegin());
+          //    latest_keys_q.pop_back();
+          //  }
+          //}
         } else if (phase >= 1) {
+					DbClient::Get(k, v, ws);
+
           size_t s = latest_keys_q.size();
 
           if (phase == 1) {
@@ -329,7 +341,7 @@ namespace WorkloadPlayer {
           //}
 
           //for (int i = 0; i < phase * 1; i ++) {
-          for (int i = 0; i < 1; i ++) {
+          for (int i = 0; i < 50; i ++) {
             long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
