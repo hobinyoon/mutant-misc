@@ -308,7 +308,7 @@ namespace WorkloadPlayer {
 
 				latest_keys_q.push_front(too.oid);
 				// Restrict the queue size
-				if (latest_keys_q.size() > 10000) {
+				if (latest_keys_q.size() > 2000) {
 					latest_keys_q.pop_back();
 				}
 
@@ -328,11 +328,11 @@ namespace WorkloadPlayer {
           size_t s = latest_keys_q.size();
 
           if (phase == 1) {
-            DbClient::SetSstOtt(1.0);
+            DbClient::SetSstOtt(10.0);
           } else if (phase == 2) {
-            DbClient::SetSstOtt(20.0);
+            DbClient::SetSstOtt(100.0);
           } else if (phase >= 3) {
-            DbClient::SetSstOtt(40.0);
+            DbClient::SetSstOtt(400.0);
           }
 
           //if (! queue_size_printed) {
