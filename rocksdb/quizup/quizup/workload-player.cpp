@@ -317,7 +317,7 @@ namespace WorkloadPlayer {
           }
 
           size_t s = latest_keys_q.size();
-          for (int i = 0; i < 5; i ++) {
+          for (int i = 0; i < 1; i ++) {
             long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
