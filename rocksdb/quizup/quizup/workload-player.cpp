@@ -261,8 +261,11 @@ namespace WorkloadPlayer {
     //TRACE << boost::format("%d %s\n") % tid % fn1;
 
     // For the super read mode
-    //   Extra memory estimation: (8 + 8 + 8) * 10000 * 1000 = 240 MB
-    deque<long> latest_keys;
+    //   Extra memory estimation:
+    //     (8 + 8 + 8) * 10000 * 1000 * 2 = 480 MB
+    //                                  (for both deque and set)
+    deque<long> latest_keys_q;
+    set<long> latest_keys_set;
 
     // Make requests
     while (i < s) {
@@ -303,13 +306,19 @@ namespace WorkloadPlayer {
         if (rw_mode & 4) {
           DbClient::Get(k, v, ws);
 
-          latest_keys.push_front(too.oid);
-          if (latest_keys.size() > 10000)
-            latest_keys.pop_back();
+          if (latest_keys_set.find(too.oid) == latest_keys_set.end()) {
+            latest_keys_set.insert(too.oid);
+            latest_keys_q.push_front(too.oid);
+            // Restrict the queue size
+            if (latest_keys_q.size() > 10000) {
+              latest_keys_set.erase(*latest_keys_q.rbegin());
+              latest_keys_q.pop_back();
+            }
+          }
 
-          size_t s = latest_keys.size();
+          size_t s = latest_keys_q.size();
           for (int i = 0; i < 20; i ++) {
-            long oid = latest_keys[rand() % s];
+            long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
             DbClient::Get(k1, v, ws);
