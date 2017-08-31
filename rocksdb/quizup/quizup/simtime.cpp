@@ -127,8 +127,8 @@ void Init2() {
 		// Starting from the beginning
 		// When new SSTables are created
 		{
-			double a = 2.5;	// fast loading
-			double b = a + 1;	// with different levels of load from here
+			double a = 10;	// fast loading
+			double b = a + 1.5;	// with different levels of load from here
 			double c = b + 1;
 			double d = c + 1;
 			_simulation_time_1 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (a/d));
@@ -138,9 +138,9 @@ void Init2() {
 		}
 		{
 			double a = 1000;
-			double b = a + 1;
-			double c = b + 2;
-			double d = c + 4;
+			double b = a + 1.5;
+			double c = b + 1;
+			double d = c + 1;
 			_simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a/d));
 			_simulated_time_2 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (b/d));
 			_simulated_time_3 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (c/d));
@@ -310,13 +310,13 @@ int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, Pro
 			phase = 1;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_1, _simulated_time_2, ts_simulated, _simulation_time_1, _simulation_time_2);
 		} else if (ts_simulated < _simulated_time_3) {
-			phase = 1;
+			phase = 2;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_2, _simulated_time_3, ts_simulated, _simulation_time_2, _simulation_time_3);
 		} else if (ts_simulated <= _simulated_time_4) {
-			phase = 1;
+			phase = 3;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_3, _simulated_time_4, ts_simulated, _simulation_time_3, _simulation_time_4);
 		} else {
-			phase = 1;
+			phase = 3;
 			// This can happen when the system is saturated
 			//THROW(boost::format("Unexpected: simulated_3=%s simulated=%s") % Util::ToString(_simulated_time_4) % Util::ToString(ts_simulated));
 		}

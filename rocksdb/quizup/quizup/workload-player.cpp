@@ -296,8 +296,8 @@ namespace WorkloadPlayer {
         RandomAsciiString(_value_len, v);
         if (phase == 0) {
           DbClient::Put(k, v, ws);
-        } else if (phase == 1) {
-					// No writes in phase 1
+        } else {
+					// No writes in the other phases
 				}
       } else if (too.op == 'G') {
         string v;
@@ -306,14 +306,14 @@ namespace WorkloadPlayer {
             latest_keys_set.insert(too.oid);
             latest_keys_q.push_front(too.oid);
             // Restrict the queue size
-            if (latest_keys_q.size() > 10000) {
+            if (latest_keys_q.size() > 20000) {
               latest_keys_set.erase(*latest_keys_q.rbegin());
               latest_keys_q.pop_back();
             }
           }
-				} else if (phase == 1) {
+				} else if (phase >= 1) {
           size_t s = latest_keys_q.size();
-          for (int i = 0; i < 40; i ++) {
+          for (int i = 0; i < phase * 10; i ++) {
             long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
