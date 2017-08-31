@@ -262,7 +262,7 @@ namespace WorkloadPlayer {
 
     // For the super read mode
     //   Extra memory estimation: (8 + 8 + 8) * 10000 * 1000 = 240 MB
-    //deque<long> latest_keys;
+    deque<long> latest_keys;
 
     // Make requests
     while (i < s) {
@@ -300,21 +300,21 @@ namespace WorkloadPlayer {
           DbClient::Get(k, v, ws);
         }
         // Super read mode. Make 10x more read of the yougnest records
-        //if (rw_mode & 4) {
-        //  DbClient::Get(k, v, ws);
+        if (rw_mode & 4) {
+          DbClient::Get(k, v, ws);
 
-        //  latest_keys.push_front(too.oid);
-        //  if (latest_keys.size() > 10000)
-        //    latest_keys.pop_back();
+          latest_keys.push_front(too.oid);
+          if (latest_keys.size() > 10000)
+            latest_keys.pop_back();
 
-        //  size_t s = latest_keys.size();
-        //  for (int i = 0; i < 8; i ++) {
-        //    long oid = latest_keys[rand() % s];
-        //    char k[20];
-        //    sprintf(k, "%ld", oid);
-        //    DbClient::Get(k, v, ws);
-        //  }
-        //}
+          size_t s = latest_keys.size();
+          for (int i = 0; i < 20; i ++) {
+            long oid = latest_keys[rand() % s];
+            char k1[20];
+            sprintf(k1, "%ld", oid);
+            DbClient::Get(k1, v, ws);
+          }
+        }
       } else {
         THROW(boost::format("Unexpected op %c") % too.op);
       }

@@ -128,17 +128,17 @@ void Init2() {
 		// When new SSTables are created
 		{
 			double a = 2.5;	// fast loading
-			double b = a + 1;	// regular speed
-			double c = b + 1;	// go faster
-			double d = c + 1;	// regular speed
+			double b = a + 1;	// with different levels of load from here
+			double c = b + 1;
+			double d = c + 1;
 			_simulation_time_1 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (a/d));
 			_simulation_time_2 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (b/d));
 			_simulation_time_3 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (c/d));
 			//_simulation_time_4 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * 1.0);
 		}
 		{
-			double a = 87.5;
-			double b = a + 2;
+			double a = 1000;
+			double b = a + 1;
 			//double c = b + 2; // I don't see any latency jump
 			//double c = b + 4; // Too much jump from 15:56
 			//double c = b + 3;	// Still no latency jump. The jump was only when there are write IOs.
@@ -146,8 +146,9 @@ void Init2() {
 			//double c = b + 1;	// Let's try "super read" to reduce the write IO effect. Not writing anything doesn't work since you need to read the record.
 			// Super read didn't work. I guess the temporal locality was too strong even with the last 10000 records.
 
-			double c = b + 2.75;
-			double d = c + 3.5;
+			// Playing with faster replay didn't work. Go back to the super read mode. In a really smaller simulated time range. with more data. like 2x more data.
+			double c = b + 2;
+			double d = c + 4;
 			_simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a/d));
 			_simulated_time_2 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (b/d));
 			_simulated_time_3 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (c/d));
@@ -249,16 +250,16 @@ int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, Pro
 			rw_mode = 1;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_1, ts_simulated, _simulation_time_0, _simulation_time_1);
 		} else if (ts_simulated < _simulated_time_2) {
-			rw_mode = 1 + 2;
+			rw_mode = 1 + 4;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_1, _simulated_time_2, ts_simulated, _simulation_time_1, _simulation_time_2);
 		} else if (ts_simulated < _simulated_time_3) {
-			rw_mode = 1 + 2;
+			rw_mode = 1 + 4;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_2, _simulated_time_3, ts_simulated, _simulation_time_2, _simulation_time_3);
 		} else if (ts_simulated <= _simulated_time_4) {
-			rw_mode = 1 + 2;
+			rw_mode = 1 + 4;
 			ts_simulation = _InterpolateSimulationTime(_simulated_time_3, _simulated_time_4, ts_simulated, _simulation_time_3, _simulation_time_4);
 		} else {
-			rw_mode = 1 + 2;
+			rw_mode = 1 + 4;
 			// This can happen when the system is saturated
 			//THROW(boost::format("Unexpected: simulated_3=%s simulated=%s") % Util::ToString(_simulated_time_4) % Util::ToString(ts_simulated));
 		}
