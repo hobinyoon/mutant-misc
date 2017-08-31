@@ -315,18 +315,25 @@ namespace WorkloadPlayer {
         } else if (phase >= 1) {
           size_t s = latest_keys_q.size();
 
+          if (phase == 1) {
+            DbClient::SetSstOtt(1.0);
+          } else if (phase == 2) {
+            DbClient::SetSstOtt(20.0);
+          } else if (phase >= 3) {
+            DbClient::SetSstOtt(40.0);
+          }
+
           //if (! queue_size_printed) {
           //  Cons::P(boost::format("latest_keys_q.size()=%d") % s);
           //  queue_size_printed = true;
           //}
 
-          if (rand() % 16 == 0) {
-            for (int i = 0; i < phase * 1; i ++) {
-              long oid = latest_keys_q[rand() % s];
-              char k1[20];
-              sprintf(k1, "%ld", oid);
-              DbClient::Get(k1, v, ws);
-            }
+          //for (int i = 0; i < phase * 1; i ++) {
+          for (int i = 0; i < 1; i ++) {
+            long oid = latest_keys_q[rand() % s];
+            char k1[20];
+            sprintf(k1, "%ld", oid);
+            DbClient::Get(k1, v, ws);
           }
         }
       } else {

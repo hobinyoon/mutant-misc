@@ -7,6 +7,7 @@
 #include "rocksdb/options.h"
 #include "rocksdb/slice.h"
 #include "rocksdb/table.h"
+#include "mutant.h"
 
 #include "conf.h"
 #include "cons.h"
@@ -23,108 +24,115 @@ rocksdb::DB* _db = NULL;
 bool _request_db;
 
 void Init() {
-	_request_db = Conf::Get("request_db").as<bool>();
-	if (! _request_db)
-		return;
+  _request_db = Conf::Get("request_db").as<bool>();
+  if (! _request_db)
+    return;
 
-	if (_db)
-		return;
+  if (_db)
+    return;
 
-	string db_path = Conf::GetDir("db_path");
-	// Create parent directories, in case any of them is missing. DB::Open()
-	// creates only the directory requested.
-	boost::filesystem::create_directories(db_path);
+  string db_path = Conf::GetDir("db_path");
+  // Create parent directories, in case any of them is missing. DB::Open()
+  // creates only the directory requested.
+  boost::filesystem::create_directories(db_path);
 
-	Options options;
-	// Optimize RocksDB. This is the easiest way to get RocksDB to perform well
-	options.IncreaseParallelism();
+  Options options;
+  // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
+  options.IncreaseParallelism();
 
-	// Default memtable memory budget is 512 MB
-	options.OptimizeLevelStyleCompaction();
+  // Default memtable memory budget is 512 MB
+  options.OptimizeLevelStyleCompaction();
 
-	// If non-zero, we perform bigger reads when doing compaction. If you're
-	// running RocksDB on spinning disks, you should set this to at least 2MB.
-	// That way RocksDB's compaction is doing sequential instead of random reads.
-	//
-	// When non-zero, we also force new_table_reader_for_compaction_inputs to
-	// true.
-	//
-	// Default: 0
-	options.compaction_readahead_size = 2 * 1024 * 1024;
+  // If non-zero, we perform bigger reads when doing compaction. If you're
+  // running RocksDB on spinning disks, you should set this to at least 2MB.
+  // That way RocksDB's compaction is doing sequential instead of random reads.
+  //
+  // When non-zero, we also force new_table_reader_for_compaction_inputs to
+  // true.
+  //
+  // Default: 0
+  options.compaction_readahead_size = 2 * 1024 * 1024;
 
-	// create the DB if it's not already present
-	options.create_if_missing = true;
+  // create the DB if it's not already present
+  options.create_if_missing = true;
 
-	// 200 GB for each of the db_paths.
-	options.db_paths.emplace_back(db_path + "/t0", 200L*1024*1024*1024);
-	options.db_paths.emplace_back(Conf::GetStr("slow_dev1_path"), 200L*1024*1024*1024);
-	options.db_paths.emplace_back(Conf::GetStr("slow_dev2_path"), 200L*1024*1024*1024);
-	options.db_paths.emplace_back(Conf::GetStr("slow_dev3_path"), 200L*1024*1024*1024);
+  // 200 GB for each of the db_paths.
+  options.db_paths.emplace_back(db_path + "/t0", 200L*1024*1024*1024);
+  options.db_paths.emplace_back(Conf::GetStr("slow_dev1_path"), 200L*1024*1024*1024);
+  options.db_paths.emplace_back(Conf::GetStr("slow_dev2_path"), 200L*1024*1024*1024);
+  options.db_paths.emplace_back(Conf::GetStr("slow_dev3_path"), 200L*1024*1024*1024);
 
-	options.compression = kNoCompression;
-	options.compression_per_level.clear();
-	for (int i = 0; i < 7; i ++)
-		options.compression_per_level.emplace_back(kNoCompression);
+  options.compression = kNoCompression;
+  options.compression_per_level.clear();
+  for (int i = 0; i < 7; i ++)
+    options.compression_per_level.emplace_back(kNoCompression);
 
-	BlockBasedTableOptions bbto;
-	bbto.pin_l0_filter_and_index_blocks_in_cache = true;
-	bbto.cache_index_and_filter_blocks=true;
-	options.table_factory.reset(NewBlockBasedTableFactory(bbto));
+  BlockBasedTableOptions bbto;
+  bbto.pin_l0_filter_and_index_blocks_in_cache = true;
+  bbto.cache_index_and_filter_blocks=true;
+  options.table_factory.reset(NewBlockBasedTableFactory(bbto));
 
-	// Mutant options
-	options.mutant_options.cache_filter_index_at_all_levels = Conf::Get("cache_filter_index_at_all_levels").as<bool>();
-	options.mutant_options.monitor_temp = Conf::Get("monitor_temp").as<bool>();
-	options.mutant_options.migrate_sstables = Conf::Get("migrate_sstables").as<bool>();
-	options.mutant_options.sst_ott = Conf::Get("sst_ott").as<double>();
-	options.mutant_options.organize_L0_sstables = Conf::Get("organize_L0_sstables").as<bool>();
-	options.mutant_options.replaying = true;
-	options.mutant_options.simulation_time_dur_sec = Conf::Get("simulation_time_dur_in_sec").as<double>();
-	// The QuizUp workload was collected for
-	//   calc "1365709.587 / 24 / 3600" = 15.8 days.
-	options.mutant_options.simulated_time_dur_sec  = 1365709.587;
+  // Mutant options
+  options.mutant_options.cache_filter_index_at_all_levels = Conf::Get("cache_filter_index_at_all_levels").as<bool>();
+  options.mutant_options.monitor_temp = Conf::Get("monitor_temp").as<bool>();
+  options.mutant_options.migrate_sstables = Conf::Get("migrate_sstables").as<bool>();
+  options.mutant_options.sst_ott = Conf::Get("sst_ott").as<double>();
+  options.mutant_options.organize_L0_sstables = Conf::Get("organize_L0_sstables").as<bool>();
 
-	// Open DB
-	Status s = DB::Open(options, db_path, &_db);
-	if (! s.ok())
-		THROW(boost::format("DB::Open failed: %s") % s.ToString());
+  // True for the SLA admin evaluation
+  //options.mutant_options.replaying = true;
+
+  options.mutant_options.simulation_time_dur_sec = Conf::Get("simulation_time_dur_in_sec").as<double>();
+  // The QuizUp workload was collected for
+  //   calc "1365709.587 / 24 / 3600" = 15.8 days.
+  options.mutant_options.simulated_time_dur_sec  = 1365709.587;
+
+  // Open DB
+  Status s = DB::Open(options, db_path, &_db);
+  if (! s.ok())
+    THROW(boost::format("DB::Open failed: %s") % s.ToString());
 }
 
 void Cleanup() {
-	if (! _request_db)
-		return;
+  if (! _request_db)
+    return;
 
-	if (_db) {
-		delete _db;
-		_db = NULL;
-	}
+  if (_db) {
+    delete _db;
+    _db = NULL;
+  }
 }
 
 void Put(const string& k, const string& v, ProgMon::WorkerStat* ws) {
-	auto begin = chrono::high_resolution_clock::now();
+  auto begin = chrono::high_resolution_clock::now();
 
-	if (_request_db) {
-		static const auto wo = WriteOptions();
-		Status s = _db->Put(wo, k, v);
-		if (! s.ok())
-			THROW(boost::format("Put failed: %s") % s.ToString());
-	}
+  if (_request_db) {
+    static const auto wo = WriteOptions();
+    Status s = _db->Put(wo, k, v);
+    if (! s.ok())
+      THROW(boost::format("Put failed: %s") % s.ToString());
+  }
 
-	ws->LatencyPut(chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count());
+  ws->LatencyPut(chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count());
 }
 
 void Get(const string& k, string& v, ProgMon::WorkerStat* ws) {
-	auto begin = chrono::high_resolution_clock::now();
+  auto begin = chrono::high_resolution_clock::now();
 
-	if (_request_db) {
-		static const auto ro = ReadOptions();
-		Status s = _db->Get(ro, k, &v);
-		if (s.IsNotFound())
-			THROW(boost::format("Key %s not found") % k);
-		if (! s.ok())
-			THROW(boost::format("Get failed: %s") % s.ToString());
-	}
+  if (_request_db) {
+    static const auto ro = ReadOptions();
+    Status s = _db->Get(ro, k, &v);
+    if (s.IsNotFound())
+      THROW(boost::format("Key %s not found") % k);
+    if (! s.ok())
+      THROW(boost::format("Get failed: %s") % s.ToString());
+  }
 
-	ws->LatencyGet(chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count());
+  ws->LatencyGet(chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count());
+}
+
+void SetSstOtt(double sst_ott) {
+  rocksdb::Mutant::SetSstOtt(sst_ott);
 }
 
 // Atomically apply a set of updates

@@ -20,7 +20,7 @@ override CXXFLAGS += -O2 -std=c++11 -DBOOST_NO_CXX11_SCOPED_ENUMS
 all: quizup
 
 .cpp.o:
-	$(CXX) $(CXXFLAGS) $(PLATFORM_CXXFLAGS) -c $< -o $@ -I$(rocksdb_dir)/include
+	$(CXX) $(CXXFLAGS) $(PLATFORM_CXXFLAGS) -c $< -o $@ -I$(rocksdb_dir)/include -I$(rocksdb_dir)/mutant
 
 objs = main.o conf.o cons.o db-client.o prog-mon.o simtime.o util.o workload-player.o
 
