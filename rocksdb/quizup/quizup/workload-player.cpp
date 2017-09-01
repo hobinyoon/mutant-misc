@@ -332,7 +332,7 @@ namespace WorkloadPlayer {
           } else if (phase == 2) {
             DbClient::SetSstOtt(100.0);
           } else if (phase >= 3) {
-            DbClient::SetSstOtt(400.0);
+            DbClient::SetSstOtt(1000.0);
           }
 
           //if (! queue_size_printed) {
@@ -341,7 +341,7 @@ namespace WorkloadPlayer {
           //}
 
           //for (int i = 0; i < phase * 1; i ++) {
-          for (int i = 0; i < 50; i ++) {
+          for (int i = 0; i < 25; i ++) {
             long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
