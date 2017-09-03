@@ -20,7 +20,7 @@ if (1) {
   set xlabel "Time (minute)"
   set ylabel "Read latency (ms)" tc rgb "black"
 
-  set yrange[0:1000]
+  set yrange[0:50]
 
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
