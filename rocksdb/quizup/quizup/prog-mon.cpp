@@ -423,7 +423,8 @@ void _ReportPerTimeIntervalStat(ofstream& ofs, const string& fmt1, const string&
   Cons::P(s2);
 
   if (_start_sla_admin_report_latency) {
-    rocksdb::Mutant::SlaAdminAdjust(latency_get_stat.avg);
+    // Latency in milliseconds
+    rocksdb::Mutant::SlaAdminAdjust(latency_get_stat.avg / 1000.0);
   }
 }
 
