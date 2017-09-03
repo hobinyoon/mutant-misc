@@ -8,6 +8,8 @@
 #include "simtime.h"
 #include "util.h"
 
+#include "mutant.h"
+
 using namespace std;
 
 
@@ -50,10 +52,12 @@ std::vector<long> _latency_get;
 long _total_put_cnt = 0;
 long _total_get_cnt = 0;
 
+bool _start_sla_admin_report_latency = false;
+
 
 void ReporterThread();
 void _ReporterThread();
-void _ReportPerSecStat(ofstream& ofs, const string& fmt1, const string& fmt2);
+void _ReportPerTimeIntervalStat(ofstream& ofs, const string& fmt1, const string& fmt2);
 void _GetAndReset(
 		long& running_on_time_cnt,
 		long& running_behind_cnt,
@@ -61,6 +65,55 @@ void _GetAndReset(
 		vector<long>& latency_put,
 		vector<long>& latency_get);
 Stat GenStat(vector<long>& v);
+
+
+void WorkerStat::RunningOnTime() {
+	lock_guard<mutex> _(_mutex_running_on_time);
+	_running_on_time_cnt ++;
+}
+
+
+void WorkerStat::RunningBehind(const boost::posix_time::time_duration& td) {
+	lock_guard<mutex> _(_mutex_running_behind);
+	// This is not likely to overflow
+	_running_behind_cnt ++;
+	_running_behind_dur += td.total_microseconds();
+}
+
+
+void WorkerStat::LatencyPut(const long d) {
+	lock_guard<mutex> _(_mutex_latency_put);
+	_latency_put.push_back(d);
+}
+
+
+void WorkerStat::LatencyGet(const long d) {
+	lock_guard<mutex> _(_mutex_latency_get);
+	_latency_get.push_back(d);
+}
+
+
+void WorkerStat::GetAndReset(
+		long& running_on_time_cnt,
+		long& running_behind_cnt,
+		long& running_behind_dur,
+		vector<long>& latency_put,
+		vector<long>& latency_get) {
+	{ lock_guard<mutex> _(_mutex_running_on_time);
+		running_on_time_cnt += _running_on_time_cnt;
+		_running_on_time_cnt = 0; }
+	{ lock_guard<mutex> _(_mutex_running_behind);
+		running_behind_cnt += _running_behind_cnt;
+		running_behind_dur += _running_behind_dur;
+		_running_behind_cnt = 0;
+		_running_behind_dur = 0; }
+	{ lock_guard<mutex> _(_mutex_latency_put);
+		latency_put.insert(latency_put.end(), _latency_put.begin(), _latency_put.end());
+		vector<long>().swap(_latency_put); }
+	{ lock_guard<mutex> _(_mutex_latency_get);
+		latency_get.insert(latency_get.end(), _latency_get.begin(), _latency_get.end());
+		vector<long>().swap(_latency_get); }
+}
 
 
 // This is called while a lock is held.
@@ -239,7 +292,7 @@ void _ReporterThread() {
 		}
 
 		if (_reporter_stop) {
-			_ReportPerSecStat(ofs, fmt1, fmt2);
+			_ReportPerTimeIntervalStat(ofs, fmt1, fmt2);
 
 			// Report overall stat
 			auto s1 = boost::format("# %d / %d operations requested. %d puts, %d gets.")
@@ -250,7 +303,7 @@ void _ReporterThread() {
 			Cons::P(s1);
 			break;
 		} else {
-			_ReportPerSecStat(ofs, fmt1, fmt2);
+			_ReportPerTimeIntervalStat(ofs, fmt1, fmt2);
 		}
 	}
 
@@ -259,7 +312,7 @@ void _ReporterThread() {
 }
 
 
-void _ReportPerSecStat(ofstream& ofs, const string& fmt1, const string& fmt2) {
+void _ReportPerTimeIntervalStat(ofstream& ofs, const string& fmt1, const string& fmt2) {
 	boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
 	string lap_time;
 	{
@@ -368,6 +421,10 @@ void _ReportPerSecStat(ofstream& ofs, const string& fmt1, const string& fmt2) {
 
 	ofs << s1 << "\n";
 	Cons::P(s2);
+
+	if (_start_sla_admin_report_latency) {
+		rocksdb::Mutant::SlaAdminAdjust(latency_get_stat.avg);
+	}
 }
 
 
@@ -376,52 +433,17 @@ const string& FnClientLog() {
 }
 
 
-void WorkerStat::RunningOnTime() {
-	lock_guard<mutex> _(_mutex_running_on_time);
-	_running_on_time_cnt ++;
-}
-
-
-void WorkerStat::RunningBehind(const boost::posix_time::time_duration& td) {
-	lock_guard<mutex> _(_mutex_running_behind);
-	// This is not likely to overflow
-	_running_behind_cnt ++;
-	_running_behind_dur += td.total_microseconds();
-}
-
-
-void WorkerStat::LatencyPut(const long d) {
-	lock_guard<mutex> _(_mutex_latency_put);
-	_latency_put.push_back(d);
-}
-
-
-void WorkerStat::LatencyGet(const long d) {
-	lock_guard<mutex> _(_mutex_latency_get);
-	_latency_get.push_back(d);
-}
-
-
-void WorkerStat::GetAndReset(
-		long& running_on_time_cnt,
-		long& running_behind_cnt,
-		long& running_behind_dur,
-		vector<long>& latency_put,
-		vector<long>& latency_get) {
-	{ lock_guard<mutex> _(_mutex_running_on_time);
-		running_on_time_cnt += _running_on_time_cnt;
-		_running_on_time_cnt = 0; }
-	{ lock_guard<mutex> _(_mutex_running_behind);
-		running_behind_cnt += _running_behind_cnt;
-		running_behind_dur += _running_behind_dur;
-		_running_behind_cnt = 0;
-		_running_behind_dur = 0; }
-	{ lock_guard<mutex> _(_mutex_latency_put);
-		latency_put.insert(latency_put.end(), _latency_put.begin(), _latency_put.end());
-		vector<long>().swap(_latency_put); }
-	{ lock_guard<mutex> _(_mutex_latency_get);
-		latency_get.insert(latency_get.end(), _latency_get.begin(), _latency_get.end());
-		vector<long>().swap(_latency_get); }
+void StartReportingToSlaAdmin() {
+	static mutex m;
+	// Test and test-and-set.
+	if (! _start_sla_admin_report_latency) {
+		lock_guard<mutex> _(m);
+		if (! _start_sla_admin_report_latency) {
+			// Set the target latency to 19 ms
+			rocksdb::Mutant::SlaAdminInit(19, 1.0, 0.0, 0.0);
+			_start_sla_admin_report_latency = true;
+		}
+	}
 }
 
 

@@ -328,11 +328,8 @@ namespace WorkloadPlayer {
           size_t s = latest_keys_q.size();
 
           if (phase == 1) {
-            DbClient::SetSstOtt(10.0);
           } else if (phase == 2) {
-            DbClient::SetSstOtt(100.0);
-          } else if (phase >= 3) {
-            DbClient::SetSstOtt(1000.0);
+						ProgMon::StartReportingToSlaAdmin();
           }
 
           //if (! queue_size_printed) {

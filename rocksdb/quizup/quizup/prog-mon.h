@@ -43,4 +43,5 @@ void ReporterStop();
 
 const std::string& FnClientLog();
 
+void StartReportingToSlaAdmin();
 }

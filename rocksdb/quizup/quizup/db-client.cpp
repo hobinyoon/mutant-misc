@@ -131,9 +131,6 @@ void Get(const string& k, string& v, ProgMon::WorkerStat* ws) {
   ws->LatencyGet(chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count());
 }
 
-void SetSstOtt(double sst_ott) {
-  rocksdb::Mutant::SetSstOtt(sst_ott);
-}
 
 // Atomically apply a set of updates
 // Note: might be useful later for record reinsertions

@@ -10,6 +10,4 @@ namespace DbClient {
 
   void Put(const std::string& k, const std::string& v, ProgMon::WorkerStat* ws);
   void Get(const std::string& k, std::string& v, ProgMon::WorkerStat* ws);
-
-  void SetSstOtt(double sst_ott);
 }
