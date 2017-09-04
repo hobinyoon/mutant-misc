@@ -10,6 +10,7 @@ import Util
 import Conf
 import DstatLog
 from QuizupLog import QuizupLog
+import RocksdbLog
 import SimTime
 
 
@@ -77,8 +78,11 @@ def main(argv):
   #exp_dt = "170831-235527.718"
   #exp_dt = "170831-235625.159"
 
-  job_id = "170902-170944"
-  exp_dt = "170902-214840.754"
+  #job_id = "170902-170944"
+  #exp_dt = "170902-214840.754"
+
+  job_id = "170904-094142"
+  exp_dt = "170904-142142.187"
 
   dn_log_job = "%s/work/mutant/log/quizup/sla-admin/%s" % (os.path.expanduser("~"), job_id)
 
@@ -90,6 +94,8 @@ def main(argv):
   SimTime.Init(log_q.SimTime("simulated_time_0"), log_q.SimTime("simulated_time_4")
       , log_q.SimTime("simulation_time_0"), log_q.SimTime("simulation_time_4"))
 
+  (fn_rocksdb_sla_admin_log, target_lat) = RocksdbLog.GetSlaAdminLog(fn_log_rocksdb, exp_dt)
+
   fn_dstat = DstatLog.GenDataFileForGnuplot(fn_log_dstat, exp_dt)
 
   fn_out = "%s/sla-admin-by-time-%s.pdf" % (Conf.GetDir("output_dir"), exp_dt)
@@ -97,6 +103,8 @@ def main(argv):
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
     env["IN_FN_QZ"] = fn_log_quizup
+    env["IN_FN_SLA_ADMIN"] = fn_rocksdb_sla_admin_log
+    env["TARGET_LATENCY"] = str(target_lat)
     env["IN_FN_DS"] = fn_dstat
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/sla-admin-by-time.gnuplot" % os.path.dirname(__file__), env=env)
