@@ -440,8 +440,9 @@ void StartReportingToSlaAdmin() {
   if (! _start_sla_admin_report_latency) {
     lock_guard<mutex> _(m);
     if (! _start_sla_admin_report_latency) {
-      // Set the target latency to 19 ms
-      rocksdb::Mutant::SlaAdminInit(19, 1.0, 0.0, 0.0);
+      rocksdb::Mutant::SlaAdminInit(
+					22 // target latency in ms
+					, 1.0, 0.0, 0.0);
       _start_sla_admin_report_latency = true;
     }
   }
