@@ -3,6 +3,7 @@
 IN_FN_QZ = system("echo $IN_FN_QZ")
 IN_FN_SLA_ADMIN = system("echo $IN_FN_SLA_ADMIN")
 TARGET_LATENCY = system("echo $TARGET_LATENCY") + 0.0
+PID_PARAMS = system("echo $PID_PARAMS")
 IN_FN_DS = system("echo $IN_FN_DS")
 OUT_FN = system("echo $OUT_FN")
 
@@ -23,7 +24,12 @@ if (1) {
 
   set ylabel "Reads/0.5 sec" tc rgb "black"
   set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black" #autofreq 0, 500
+  set ytics nomirror tc rgb "black" ( \
+      "10^{3}"  1000 \
+    , "10^{2}"   100 \
+    , "10^{1}"    10 \
+    , "10^{0}"     1 \
+  )
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
 
@@ -40,7 +46,18 @@ if (1) {
 
   set border front lc rgb "#808080" back
   set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black" ( \
+      "10^{3}"  1000 \
+    , "10^{2}"   100 \
+    , "10^{1}"    10 \
+    , "10^{0}"     1 \
+    , "10^{-1}"    0.1 \
+    , "10^{-2}"    0.01 \
+    , "10^{-3}"    0.001 \
+    , "10^{-4}"    0.0001 \
+    , "10^{-5}"    0.00001 \
+    , "10^{-6}"    0.000001 \
+  )
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
 
@@ -50,6 +67,8 @@ if (1) {
 
   set xlabel "Time (minute)"
   set ylabel "EBS Mag IOPS"
+
+  set key left
 
   set logscale y
 
@@ -77,16 +96,16 @@ if (1) {
   t_l(x) = TARGET_LATENCY
   set yrange[0:TARGET_LATENCY * 2]
 
-  set key left
+  set label sprintf("target lattency: %.1f\nPID constants: %s", TARGET_LATENCY, PID_PARAMS) at graph 0.03, graph 0.9
 
   plot \
   IN_FN_QZ u 1:($30/1000) w p pt 7 ps 0.2 lc rgb "#FFB0B0" not, \
-  t_l(x) w l lt 1 lw 3 lc rgb "blue" t "Target latency", \
+  t_l(x) w l lt 1 lw 3 lc rgb "blue" not, \
   IN_FN_QZ u 1:($30/1000) w l smooth bezier lw 6 lc rgb "red" not
 }
 
 
-# Latency adjustment
+# sst_ott adjustment
 if (1) {
   reset
   set border front lc rgb "#808080" back
@@ -100,7 +119,7 @@ if (1) {
   set format x "%M"
 
   set xlabel "Time (minute)"
-  set ylabel "Latency adjustment (ms)"
+  set ylabel "sst\\_ott adjustment"
 
   set xrange ["00:00:00.000":]
   #set yrange [:50]
@@ -114,7 +133,18 @@ if (1) {
   reset
   set border front lc rgb "#808080" back
   set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black" ( \
+      "10^{3}"  1000 \
+    , "10^{2}"   100 \
+    , "10^{1}"    10 \
+    , "10^{0}"     1 \
+    , "10^{-1}"    0.1 \
+    , "10^{-2}"    0.01 \
+    , "10^{-3}"    0.001 \
+    , "10^{-4}"    0.0001 \
+    , "10^{-5}"    0.00001 \
+    , "10^{-6}"    0.000001 \
+  )
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
 
@@ -123,13 +153,16 @@ if (1) {
   set format x "%M"
 
   set xlabel "Time (minute)"
-  set ylabel "SST OTT"
+  set ylabel "sst\\_ott"
 
   set xrange ["00:00:00.000":]
-  #set yrange [:50]
+
+  set yrange [0.000001:]
+  set logscale y
 
   plot \
-  IN_FN_SLA_ADMIN u 1:4 w lp pt 7 ps 0.1 lc rgb "red" not
+  IN_FN_SLA_ADMIN u 1:4 w lp pt 7 ps 0.1 lc rgb "red" not, \
+  IN_FN_SLA_ADMIN u 1:4 w l smooth bezier lc rgb "red" not
 }
 
 # Number of SSTables what are/should be in the fast/slow devices

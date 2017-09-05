@@ -21,10 +21,10 @@ def GetSlaAdminLog(fn, exp_dt):
     raise RuntimeError("Unexpected")
 
   fn_out = "%s/rocksdb-sla-admin-%s" % (Conf.GetDir("output_dir"), exp_dt)
-  target_lat = -1
+  pid_params = None
 
   with open(fn) as fo, open(fn_out, "w") as fo_out:
-    fmt = "%12s %7.2f %8.2f %6.2f %3d %3d %3d %3d"
+    fmt = "%12s %7.2f %8.2f %10.6f %3d %3d %3d %3d"
     header = Util.BuildHeader(fmt, "ts cur_latency adj new_sst_ott" \
         " num_ssts_in_fast_dev num_ssts_in_slow_dev num_ssts_should_be_in_fast_dev num_ssts_should_be_in_slow_dev")
     i = 0
@@ -36,11 +36,12 @@ def GetSlaAdminLog(fn, exp_dt):
         # 19, "p": 1, "i": 0, "d": 0}}
         mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .+EVENT_LOG_v1 (?P<json>.+)", line)
         j = json.loads(mo.group("json"))
-        #Cons.P(mo.group("ts"))
-        #Cons.P(mo.group("json"))
-
-        target_lat = float(j["mutant_sla_admin_init"]["target_value"])
-        fo_out.write("# target_latency: %f\n" % target_lat)
+        j1 = j["mutant_sla_admin_init"]
+        pid_params = j1
+        fo_out.write("# target_latency: %s\n" % j1["target_value"])
+        fo_out.write("# k_p: %s\n" % j1["p"])
+        fo_out.write("# k_i: %s\n" % j1["i"])
+        fo_out.write("# k_d: %s\n" % j1["d"])
         fo_out.write("#\n")
       elif "mutant_sla_admin_adjust" in line:
         #Cons.P(line)
@@ -49,7 +50,15 @@ def GetSlaAdminLog(fn, exp_dt):
         # 1316:2:66.572:0:0 ...", "num_ssts_in_fast_dev": 126, "num_ssts_in_slow_dev": 6, "num_ssts_should_be_in_fast_dev": 132,
         # "num_ssts_should_be_in_slow_dev": 0}}
         mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .+EVENT_LOG_v1 (?P<json>.+)", line)
-        j = json.loads(mo.group("json"))
+        try:
+          j = json.loads(mo.group("json"))
+        except ValueError as e:
+          # This happens when the log file is not finialized.
+          Cons.P("Exception: %s" % e)
+          Cons.P("  fn: %s" % fn)
+          Cons.P("  time_micros: %s" % j["time_micros"])
+          Cons.P("  Ignoring ...")
+          continue
 
         # time_micros is in local time. ts seems to be in UTC. Quizup ts is in UTC.
         #ts = datetime.datetime.fromtimestamp(int(j["time_micros"]) / 1000000.0)
@@ -75,4 +84,4 @@ def GetSlaAdminLog(fn, exp_dt):
           ))
         i += 1
   Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-  return (fn_out, target_lat)
+  return (fn_out, pid_params)
