@@ -115,4 +115,5 @@ simulation_time_dur_in_sec: 60000
 
 pid_params: 23,0.1,0,0
 
-report_interval_in_ms: 500
+# This decides the SlaAdmin adjustment interval too.
+report_interval_in_ms: 1000
