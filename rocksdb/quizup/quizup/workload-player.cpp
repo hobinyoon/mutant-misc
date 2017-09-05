@@ -262,8 +262,10 @@ namespace WorkloadPlayer {
     //     (8 + 8 + 8) * 10000 * 1000 * 2 = 480 MB
     //                                  (for both deque and set)
     deque<long> latest_keys_q;
-    //set<long> latest_keys_set;
+    set<long> latest_keys_set;
     bool queue_size_printed = false;
+    // To increaes the disk IO
+    bool uniform_key_popularity = true;
 
     // Make requests
     while (i < s) {
@@ -301,25 +303,28 @@ namespace WorkloadPlayer {
           //   Cause it didn't show the proportionality between target_iops and latency. EBS st1 must have some internal cache.
         }
       } else if (too.op == 'G') {
-        string v;
-
+        if (uniform_key_popularity) {
+          if (latest_keys_set.find(too.oid) == latest_keys_set.end()) {
+            latest_keys_set.insert(too.oid);
+            latest_keys_q.push_front(too.oid);
+            // Restrict the queue size
+            if (latest_keys_q.size() > 10000) {
+              latest_keys_set.erase(*latest_keys_q.rbegin());
+              latest_keys_q.pop_back();
+            }
+          }
+        } else {
         latest_keys_q.push_front(too.oid);
-        // Restrict the queue size
-        if (latest_keys_q.size() > 10000) {
-          latest_keys_q.pop_back();
+          // Restrict the queue size
+          if (latest_keys_q.size() > 10000) {
+            latest_keys_q.pop_back();
+          }
         }
 
         if (phase == 0) {
-          //if (latest_keys_set.find(too.oid) == latest_keys_set.end()) {
-          //  latest_keys_set.insert(too.oid);
-          //  latest_keys_q.push_front(too.oid);
-          //  // Restrict the queue size
-          //  if (latest_keys_q.size() > 20000) {
-          //    latest_keys_set.erase(*latest_keys_q.rbegin());
-          //    latest_keys_q.pop_back();
-          //  }
-          //}
+          // No reads during the load phase
         } else if (phase >= 1) {
+          string v;
           DbClient::Get(k, v, ws);
 
           size_t s = latest_keys_q.size();
@@ -335,7 +340,8 @@ namespace WorkloadPlayer {
           //}
 
           //for (int i = 0; i < phase * 1; i ++) {
-          for (int i = 0; i < 125; i ++) {
+          //for (int i = 0; i < 25; i ++) {
+          for (int i = 0; i < 10; i ++) {
             long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
