@@ -440,9 +440,19 @@ void StartReportingToSlaAdmin() {
   if (! _start_sla_admin_report_latency) {
     lock_guard<mutex> _(m);
     if (! _start_sla_admin_report_latency) {
+			string pid_params = Conf::GetStr("pid_params");
+			vector<string> t;
+			static const auto sep = boost::is_any_of(",");
+			boost::split(t, pid_params, sep);
+			if (t.size() != 4)
+				THROW(boost::format("Unexpected: [%s]") % pid_params);
+
       rocksdb::Mutant::SlaAdminInit(
-					23 // target latency in ms
-					, 0.1, 0.0, 0.0);
+				atof(t[0].c_str()) // target latency in ms
+				, atof(t[1].c_str()) // P
+				, atof(t[2].c_str()) // I
+				, atof(t[3].c_str()) // D
+				);
       _start_sla_admin_report_latency = true;
     }
   }

@@ -51,6 +51,7 @@ def main():
 	parser.add_option("--sst_ott", help="SSTable organization temperature threshold")
 	parser.add_option("--organize_L0_sstables", help="Organize L0 SSTables")
 	parser.add_option("--121x_speed_replay", help="1x-2x-1x speed replay")
+	parser.add_option("--pid_params", help="PID controller parameters")
 
 	parser.add_option("--workload_start_from", help="Where the workload data is to be played. In percentage.")
 	parser.add_option("--workload_stop_at", help="Where the workload data is to be played. In percentage.")
@@ -144,6 +145,7 @@ def main():
 			, "sst_ott" \
 			, "organize_L0_sstables" \
 			, "121x_speed_replay" \
+			, "pid_params" \
 			]:
 		if (hasattr(options, k)) and (getattr(options, k) is not None):
 			args0.append("--%s=%s" % (k, getattr(options, k)))

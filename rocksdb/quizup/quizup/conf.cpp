@@ -66,6 +66,7 @@ namespace Conf {
 			("simulation_time_dur_in_sec", po::value<int>()->default_value(Get("simulation_time_dur_in_sec").as<int>()))
 			("record_size", po::value<int>()->default_value(Get("record_size").as<int>()))
 			("121x_speed_replay", po::value<bool>()->default_value(Get("121x_speed_replay").as<bool>()))
+			("pid_params", po::value<string>()->default_value(Get("pid_params").as<string>()))
 			;
 
 		po::variables_map vm;
@@ -93,6 +94,7 @@ namespace Conf {
 		__EditYaml<int>("simulation_time_dur_in_sec", vm);
 		__EditYaml<int>("record_size", vm);
 		__EditYaml<bool>("121x_speed_replay", vm);
+		__EditYaml<string>("pid_params", vm);
 	}
 
 	void Init(int argc, char* argv[]) {
