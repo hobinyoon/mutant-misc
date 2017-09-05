@@ -265,7 +265,7 @@ namespace WorkloadPlayer {
     set<long> latest_keys_set;
     bool queue_size_printed = false;
     // To increaes the disk IO
-    bool uniform_key_popularity = true;
+    bool uniform_key_popularity = false;
 
     // Make requests
     while (i < s) {
@@ -314,7 +314,7 @@ namespace WorkloadPlayer {
             }
           }
         } else {
-        latest_keys_q.push_front(too.oid);
+          latest_keys_q.push_front(too.oid);
           // Restrict the queue size
           if (latest_keys_q.size() > 10000) {
             latest_keys_q.pop_back();
@@ -339,15 +339,22 @@ namespace WorkloadPlayer {
           //  queue_size_printed = true;
           //}
 
-          //for (int i = 0; i < phase * 1; i ++) {
-          //for (int i = 0; i < 25; i ++) {
-          // free(): invalid next size. With uniform key popularity.
-          //for (int i = 0; i < 10; i ++) {
-          if (rand() % 16 == 0) {
-            long oid = latest_keys_q[rand() % s];
-            char k1[20];
-            sprintf(k1, "%ld", oid);
-            DbClient::Get(k1, v, ws);
+          if (uniform_key_popularity) {
+            // free(): invalid next size. With uniform key popularity.
+            //for (int i = 0; i < 10; i ++) {
+            if (rand() % 16 == 0) {
+              long oid = latest_keys_q[rand() % s];
+              char k1[20];
+              sprintf(k1, "%ld", oid);
+              DbClient::Get(k1, v, ws);
+            }
+          } else {
+            for (int i = 0; i < 25; i ++) {
+              long oid = latest_keys_q[rand() % s];
+              char k1[20];
+              sprintf(k1, "%ld", oid);
+              DbClient::Get(k1, v, ws);
+            }
           }
         }
       } else {
