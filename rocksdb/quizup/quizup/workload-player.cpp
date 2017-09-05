@@ -305,7 +305,7 @@ namespace WorkloadPlayer {
 
         latest_keys_q.push_front(too.oid);
         // Restrict the queue size
-        if (latest_keys_q.size() > 2000) {
+        if (latest_keys_q.size() > 10000) {
           latest_keys_q.pop_back();
         }
 
@@ -335,7 +335,7 @@ namespace WorkloadPlayer {
           //}
 
           //for (int i = 0; i < phase * 1; i ++) {
-          for (int i = 0; i < 25; i ++) {
+          for (int i = 0; i < 125; i ++) {
             long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
