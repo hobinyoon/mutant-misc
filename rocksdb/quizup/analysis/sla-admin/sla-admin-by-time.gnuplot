@@ -96,12 +96,12 @@ if (1) {
   t_l(x) = TARGET_LATENCY
   set yrange[0:TARGET_LATENCY * 2]
 
-  set label sprintf("target lattency: %.1f\nPID constants: %s", TARGET_LATENCY, PID_PARAMS) at graph 0.03, graph 0.9
+  set label sprintf("target latency: %.1f\nPID constants: %s", TARGET_LATENCY, PID_PARAMS) at graph 0.03, graph 0.9
 
   plot \
   IN_FN_QZ u 1:($30/1000) w p pt 7 ps 0.2 lc rgb "#FFB0B0" not, \
-  t_l(x) w l lt 1 lw 3 lc rgb "blue" not, \
-  IN_FN_QZ u 1:($30/1000) w l smooth bezier lw 6 lc rgb "red" not
+  IN_FN_QZ u 1:($30/1000) w l smooth bezier lw 6 lc rgb "red" not, \
+  t_l(x) w l lt 1 lc rgb "blue" not
 }
 
 
@@ -124,27 +124,40 @@ if (1) {
   set xrange ["00:00:00.000":]
   #set yrange [:50]
 
+  f(x) = 0
+
   plot \
-  IN_FN_SLA_ADMIN u 1:3 w lp pt 7 ps 0.1 lc rgb "red" not
+  IN_FN_SLA_ADMIN u 1:3 w filledcurves y1=0 lc rgb "#FFA0A0" not, \
+  f(x) w l lc rgb "black" not
+
+  #IN_FN_SLA_ADMIN u 1:3 w lp pt 7 ps 0.1 lc rgb "red" not, \
+
 }
 
 # sst_ott
 if (1) {
   reset
+
+  logscale_y = 0
+
   set border front lc rgb "#808080" back
   set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black" ( \
-      "10^{3}"  1000 \
-    , "10^{2}"   100 \
-    , "10^{1}"    10 \
-    , "10^{0}"     1 \
-    , "10^{-1}"    0.1 \
-    , "10^{-2}"    0.01 \
-    , "10^{-3}"    0.001 \
-    , "10^{-4}"    0.0001 \
-    , "10^{-5}"    0.00001 \
-    , "10^{-6}"    0.000001 \
-  )
+  if (logscale_y == 1) {
+    set ytics nomirror tc rgb "black" ( \
+        "10^{3}"  1000 \
+      , "10^{2}"   100 \
+      , "10^{1}"    10 \
+      , "10^{0}"     1 \
+      , "10^{-1}"    0.1 \
+      , "10^{-2}"    0.01 \
+      , "10^{-3}"    0.001 \
+      , "10^{-4}"    0.0001 \
+      , "10^{-5}"    0.00001 \
+      , "10^{-6}"    0.000001 \
+    )
+  } else {
+    set ytics nomirror tc rgb "black"
+  }
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
 
@@ -157,8 +170,10 @@ if (1) {
 
   set xrange ["00:00:00.000":]
 
-  set yrange [0.000001:]
-  set logscale y
+  if (logscale_y == 1) {
+    set yrange [0.000001:]
+    set logscale y
+  }
 
   plot \
   IN_FN_SLA_ADMIN u 1:4 w lp pt 7 ps 0.1 lc rgb "red" not, \
