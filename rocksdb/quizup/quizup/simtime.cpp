@@ -137,10 +137,10 @@ void Init2() {
       //_simulation_time_4 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * 1.0);
     }
     {
-      double a = 965;
-      double b = a + 35.0 *  50 / 1000;
-      double c = b + 35.0 * 475 / 1000;
-      double d = c + 35.0 * 475 / 1000;
+      double a = 985;
+      double b = a + 15.0 *  50 / 1000;
+      double c = b + 15.0 * 475 / 1000;
+      double d = c + 15.0 * 475 / 1000;
       _simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a/d));
       _simulated_time_2 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (b/d));
       _simulated_time_3 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (c/d));

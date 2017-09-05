@@ -343,7 +343,7 @@ namespace WorkloadPlayer {
           //for (int i = 0; i < 25; i ++) {
           // free(): invalid next size. With uniform key popularity.
           //for (int i = 0; i < 10; i ++) {
-          if (rand() % 8 == 0) {
+          if (rand() % 16 == 0) {
             long oid = latest_keys_q[rand() % s];
             char k1[20];
             sprintf(k1, "%ld", oid);
