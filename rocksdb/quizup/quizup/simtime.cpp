@@ -128,19 +128,25 @@ void Init2() {
     // When new SSTables are created
     {
       double a = 9;  // fast loading
-      double b = a + 25.0 *  50 / 1000;  // give some time for the latency to stabilize
-      double c = b + 25.0 * 475 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
-      double d = c + 25.0 * 475 / 1000;  // keep going.
+      double b = a + 175.0 *  50 / 1000;  // give some time for the latency to stabilize
+      double c = b + 175.0 * 475 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
+      double d = c + 175.0 * 475 / 1000;  // keep going.
       _simulation_time_1 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (a/d));
       _simulation_time_2 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (b/d));
       _simulation_time_3 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (c/d));
       //_simulation_time_4 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * 1.0);
     }
     {
-      double a = 975;
-      double b = a + 25.0 *  50 / 1000;
-      double c = b + 25.0 * 475 / 1000;
-      double d = c + 25.0 * 475 / 1000;
+      //double a = 975;
+      //double b = a + 25.0 *  50 / 1000;
+      //double c = b + 25.0 * 475 / 1000;
+      //double d = c + 25.0 * 475 / 1000;
+
+      // About 6 hours and 20 mins
+      double a = 825;
+      double b = a + 175.0 *  50 / 1000;
+      double c = b + 175.0 * 475 / 1000;
+      double d = c + 175.0 * 475 / 1000;
       _simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a/d));
       _simulated_time_2 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (b/d));
       _simulated_time_3 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (c/d));
