@@ -261,6 +261,7 @@ namespace WorkloadPlayer {
     //   Extra memory estimation:
     //     (8 + 8 + 8) * 10000 * 1000 * 2 = 480 MB
     //                                  (for both deque and set)
+    bool make_extra_reads = false;
     deque<long> latest_keys_q;
     set<long> latest_keys_set;
     bool queue_size_printed = false;
@@ -300,21 +301,23 @@ namespace WorkloadPlayer {
         // Tried and dropped. No writes in the other phases. Didn't like pure random accesses.
         //   Cause it didn't show the proportionality between target_iops and latency. EBS st1 must have some internal cache.
       } else if (too.op == 'G') {
-        if (uniform_key_popularity) {
-          if (latest_keys_set.find(too.oid) == latest_keys_set.end()) {
-            latest_keys_set.insert(too.oid);
+        if (make_extra_reads) {
+          if (uniform_key_popularity) {
+            if (latest_keys_set.find(too.oid) == latest_keys_set.end()) {
+              latest_keys_set.insert(too.oid);
+              latest_keys_q.push_front(too.oid);
+              // Restrict the queue size
+              if (latest_keys_q.size() > latest_keys_q_cap) {
+                latest_keys_set.erase(*latest_keys_q.rbegin());
+                latest_keys_q.pop_back();
+              }
+            }
+          } else {
             latest_keys_q.push_front(too.oid);
             // Restrict the queue size
             if (latest_keys_q.size() > latest_keys_q_cap) {
-              latest_keys_set.erase(*latest_keys_q.rbegin());
               latest_keys_q.pop_back();
             }
-          }
-        } else {
-          latest_keys_q.push_front(too.oid);
-          // Restrict the queue size
-          if (latest_keys_q.size() > latest_keys_q_cap) {
-            latest_keys_q.pop_back();
           }
         }
 
@@ -325,35 +328,37 @@ namespace WorkloadPlayer {
           // This is needed to keep the average latency low
           DbClient::Get(k, v, ws);
 
-          size_t s = latest_keys_q.size();
-
           if (phase == 1) {
           } else if (phase == 2) {
             ProgMon::StartReportingToSlaAdmin();
           }
 
-          //if (! queue_size_printed) {
-          //  Cons::P(boost::format("latest_keys_q.size()=%d") % s);
-          //  queue_size_printed = true;
-          //}
+          if (make_extra_reads) {
+            size_t s = latest_keys_q.size();
 
-          if (uniform_key_popularity) {
-            // free(): invalid next size. With uniform key popularity.
-            //for (int i = 0; i < 10; i ++)
-            if (rand() % 16 == 0) {
-              long oid = latest_keys_q[rand() % s];
-              char k1[20];
-              sprintf(k1, "%ld", oid);
-              DbClient::Get(k1, v, ws);
-            }
-          } else {
-            //for (int i = 0; i < 25; i ++)
-            // Full range
-            if (rand() % 2000 == 0) {
-              long oid = latest_keys_q[rand() % s];
-              char k1[20];
-              sprintf(k1, "%ld", oid);
-              DbClient::Get(k1, v, ws);
+            //if (! queue_size_printed) {
+            //  Cons::P(boost::format("latest_keys_q.size()=%d") % s);
+            //  queue_size_printed = true;
+            //}
+
+            if (uniform_key_popularity) {
+              // free(): invalid next size. With uniform key popularity.
+              //for (int i = 0; i < 10; i ++)
+              if (rand() % 16 == 0) {
+                long oid = latest_keys_q[rand() % s];
+                char k1[20];
+                sprintf(k1, "%ld", oid);
+                DbClient::Get(k1, v, ws);
+              }
+            } else {
+              //for (int i = 0; i < 25; i ++)
+              // Full range
+              if (rand() % 2000 == 0) {
+                long oid = latest_keys_q[rand() % s];
+                char k1[20];
+                sprintf(k1, "%ld", oid);
+                DbClient::Get(k1, v, ws);
+              }
             }
           }
         }
