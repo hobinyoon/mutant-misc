@@ -22,18 +22,27 @@ if (1) {
   set timefmt "%H:%M:%S"
   set format x "%M"
 
-  set ylabel "Reads/0.5 sec" tc rgb "black"
+  logscale_y = 0
+
+  set ylabel "Reads/sec" tc rgb "black"
   set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black" ( \
-      "10^{3}"  1000 \
-    , "10^{2}"   100 \
-    , "10^{1}"    10 \
-    , "10^{0}"     1 \
-  )
+
+  if (logscale_y == 1) {
+    set ytics nomirror tc rgb "black" ( \
+        "10^{3}"  1000 \
+      , "10^{2}"   100 \
+      , "10^{1}"    10 \
+      , "10^{0}"     1 \
+    )
+  } else {
+    set ytics nomirror tc rgb "black"
+  }
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
 
-  set logscale y
+  if (logscale_y == 1) {
+    set logscale y
+  }
 
   plot \
   IN_FN_QZ u 1:29 w p pt 7 ps 0.2 lc rgb "blue" t "read", \
@@ -94,7 +103,8 @@ if (1) {
   set border front lc rgb "#808080" back
 
   t_l(x) = TARGET_LATENCY
-  set yrange[0:TARGET_LATENCY * 2]
+  #set yrange[0:TARGET_LATENCY * 2]
+  set yrange[0:60]
 
   set label sprintf("target latency: %.1f\nPID constants: %s", TARGET_LATENCY, PID_PARAMS) at graph 0.03, graph 0.9
 
@@ -186,7 +196,8 @@ if (1) {
   set border front lc rgb "#808080" back
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black" ( \
-      "150"  150 \
+      "200"  200 \
+    , "150"  150 \
     , "100"  100 \
     ,  "50"   50 \
     ,  "0"     0 \
@@ -207,7 +218,7 @@ if (1) {
   set key left
 
   set xrange ["00:00:00.000":]
-  set yrange [-150:150]
+  #set yrange [-150:150]
 
   plot \
   IN_FN_SLA_ADMIN u 1:5 w filledcurves y1=0 lc rgb "#FFB0B0" t "Current", \
