@@ -266,7 +266,7 @@ namespace WorkloadPlayer {
     bool queue_size_printed = false;
     // To increaes the disk IO
     bool uniform_key_popularity = false;
-    const size_t latest_keys_q_cap = 1000;
+    const size_t latest_keys_q_cap = 500;
 
     // Make requests
     while (i < s) {
@@ -322,7 +322,8 @@ namespace WorkloadPlayer {
           // No reads during the load phase
         } else if (phase >= 1) {
           string v;
-          //DbClient::Get(k, v, ws);
+          // This is needed to keep the average latency low
+          DbClient::Get(k, v, ws);
 
           size_t s = latest_keys_q.size();
 
