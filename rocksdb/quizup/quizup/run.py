@@ -146,6 +146,7 @@ def main():
 			, "organize_L0_sstables" \
 			, "121x_speed_replay" \
 			, "pid_params" \
+			, "record_size" \
 			]:
 		if (hasattr(options, k)) and (getattr(options, k) is not None):
 			args0.append("--%s=%s" % (k, getattr(options, k)))
