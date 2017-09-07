@@ -349,8 +349,8 @@ def AppendAllOptionsToClientLogFileAndZip(options):
 
 	fn = "%s/quizup/%s" % (Conf.GetDir("log_archive_dn"), _latest_client_log_dt)
 	with open(fn, "a") as fo:
-		fo.write("# Quizup run script options: %s" % pprint.pformat(options))
-		fo.write("# Quizup run script options.desc: %s" % (base64.b64decode(options.exp_desc) if options.exp_desc is not None else ""))
+		fo.write("# Quizup run script options: %s\n" % pprint.pformat(options))
+		fo.write("# Quizup run script options.desc: %s\n" % (base64.b64decode(options.exp_desc) if options.exp_desc is not None else ""))
 	Util.RunSubp("7z a -mx %s.7z %s" % (fn, fn))
 
 
