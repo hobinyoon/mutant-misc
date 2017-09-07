@@ -117,7 +117,7 @@ if (1) {
 
   t_l(x) = TARGET_LATENCY
   #set yrange[0:TARGET_LATENCY * 2]
-  set yrange[0:60]
+  #set yrange[0:60]
 
   set label sprintf("target latency: %.1f\nPID constants: %s", TARGET_LATENCY, PID_PARAMS) at graph 0.03, graph 0.9
 
