@@ -87,6 +87,8 @@ void Init() {
   //   calc "1365709.587 / 24 / 3600" = 15.8 days.
   options.mutant_options.simulated_time_dur_sec  = 1365709.587;
 
+  options.mutant_options.sla_admin = Conf::Get("sla_admin").as<bool>();
+
   // Open DB
   Status s = DB::Open(options, db_path, &_db);
   if (! s.ok())

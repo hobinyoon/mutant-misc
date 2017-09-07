@@ -67,6 +67,7 @@ namespace Conf {
 			("record_size", po::value<int>()->default_value(Get("record_size").as<int>()))
 			("121x_speed_replay", po::value<bool>()->default_value(Get("121x_speed_replay").as<bool>()))
 			("pid_params", po::value<string>()->default_value(Get("pid_params").as<string>()))
+			("sla_admin", po::value<bool>()->default_value(Get("sla_admin").as<bool>()))
 			;
 
 		po::variables_map vm;
@@ -95,6 +96,7 @@ namespace Conf {
 		__EditYaml<int>("record_size", vm);
 		__EditYaml<bool>("121x_speed_replay", vm);
 		__EditYaml<string>("pid_params", vm);
+		__EditYaml<bool>("sla_admin", vm);
 	}
 
 	void Init(int argc, char* argv[]) {

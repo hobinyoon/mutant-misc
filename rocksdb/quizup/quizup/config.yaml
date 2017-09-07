@@ -117,3 +117,5 @@ pid_params: 23,0.1,0,0
 
 # This decides the SlaAdmin adjustment interval too.
 report_interval_in_ms: 1000
+
+sla_admin: false

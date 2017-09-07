@@ -59,6 +59,8 @@ def main():
 
 	parser.add_option("--record_size", help="Record size")
 
+	parser.add_option("--sla_admin", help="Run SLA Admin")
+
 	(options, args) = parser.parse_args()
 	if len(args) != 0:
 		parser.error("wrong number of arguments")
@@ -147,6 +149,7 @@ def main():
 			, "121x_speed_replay" \
 			, "pid_params" \
 			, "record_size" \
+			, "sla_admin" \
 			]:
 		if (hasattr(options, k)) and (getattr(options, k) is not None):
 			args0.append("--%s=%s" % (k, getattr(options, k)))
