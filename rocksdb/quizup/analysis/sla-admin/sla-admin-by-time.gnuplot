@@ -3,17 +3,30 @@
 IN_FN_QZ = system("echo $IN_FN_QZ")
 IN_FN_SLA_ADMIN = system("echo $IN_FN_SLA_ADMIN")
 TARGET_LATENCY = system("echo $TARGET_LATENCY") + 0.0
+QUIZUP_OPTIONS = system("echo $QUIZUP_OPTIONS")
 PID_PARAMS = system("echo $PID_PARAMS")
 IN_FN_DS = system("echo $IN_FN_DS")
 OUT_FN = system("echo $OUT_FN")
 
 set print "-"
-#print sprintf("OUT_FN=%s", OUT_FN)
+#print sprintf("QUIZUP_OPTIONS=%s", QUIZUP_OPTIONS)
 
 set terminal pdfcairo enhanced size 6in, (2.3*0.85)in
 set output OUT_FN
 
 # TODO: legend
+
+# Quizup options
+if (1) {
+  reset
+  set noxtics
+  set noytics
+  set noborder
+  f(x) = x
+  set label 1 at screen 0.025, screen 0.90 QUIZUP_OPTIONS font "courier,9" left front
+  plot f(x) lc rgb "#F0F0F0" not
+}
+
 
 # Number of reads and writes
 if (1) {
@@ -72,9 +85,9 @@ if (1) {
 
   set xdata time
   set timefmt "%H:%M:%S"
-  set format x "%M"
+  set format x "%H:%M"
 
-  set xlabel "Time (minute)"
+  set xlabel "Time (HH:MM)"
   set ylabel "EBS Mag IOPS"
 
   set key left
@@ -186,8 +199,8 @@ if (1) {
   }
 
   plot \
-  IN_FN_SLA_ADMIN u 1:4 w lp pt 7 ps 0.1 lc rgb "red" not, \
-  IN_FN_SLA_ADMIN u 1:4 w l smooth bezier lc rgb "red" not
+  IN_FN_SLA_ADMIN u 1:4 w lp pt 7 ps 0.1 lc rgb "red" not
+  #IN_FN_SLA_ADMIN u 1:4 w l smooth bezier lc rgb "red" not
 }
 
 # Number of SSTables what are/should be in the fast/slow devices

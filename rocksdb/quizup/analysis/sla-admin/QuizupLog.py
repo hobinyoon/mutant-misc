@@ -1,3 +1,4 @@
+import ast
 import os
 import pprint
 import re
@@ -21,6 +22,7 @@ class QuizupLog:
       raise RuntimeError("Unexpected")
 
     self.fn = fn
+    #Cons.P(fn)
 
     with open(fn) as fo:
       #where = "before_body"
@@ -65,6 +67,17 @@ class QuizupLog:
         #elif where == "after_body":
         #  # You can parse Quizup run script options. Let's see if needed
         #  pass
+
+        # # Quizup run script options: <Values at 0x7f62c64b7f38: {'slow_dev2_path': None, 'fast_dev_pat
+        # ... }># Quizup run script options.desc:
+        if line.startswith("# Quizup run script options:"):
+          mo = re.match(r"# Quizup run script options: <Values at 0x(\w|\d)+: +(?P<v>{.+})>($|# Quizup run script options.desc:.+)", line)
+          if mo is None:
+            raise RuntimeError("Unexpected: %s" % line)
+          self.quizup_options = ast.literal_eval(mo.group("v"))
+          #Cons.P(pprint.pformat(self.quizup_options))
+          continue
+
 
   def SimTime(self, type):
     return self.simtime[type]

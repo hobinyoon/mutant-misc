@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import math
 import os
+import pprint
 import sys
 
 sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~"))
@@ -156,8 +158,20 @@ def main(argv):
   #exp_dt = "170906-050652.415"
   #job_id = "170906-010535"
   #exp_dt = "170906-050710.117"
-  job_id = "170906-010535"
-  exp_dt = "170906-050724.385"
+  #job_id = "170906-010535"
+  #exp_dt = "170906-050724.385"
+
+  # Explore the load
+  #job_id = "170906-161010"
+  #exp_dt = "170906-205618.503"
+  job_id = "170906-161039"
+  exp_dt = "170906-205659.087"
+  #job_id = "170906-161127"
+  #exp_dt = "170906-205421.292"
+  #job_id = "170906-161155"
+  #exp_dt = "170906-205555.173"
+  #job_id = "170906-161220"
+  #exp_dt = "170906-205627.194"
 
   dn_log_job = "%s/work/mutant/log/quizup/sla-admin/%s" % (os.path.expanduser("~"), job_id)
 
@@ -168,6 +182,20 @@ def main(argv):
   log_q = QuizupLog(fn_log_quizup)
   SimTime.Init(log_q.SimTime("simulated_time_0"), log_q.SimTime("simulated_time_4")
       , log_q.SimTime("simulation_time_0"), log_q.SimTime("simulation_time_4"))
+
+  # quizup_options. List them in 2 columns, column first.
+  strs = []
+  for k, v in sorted(log_q.quizup_options.iteritems()):
+    strs.append("%-60s" % ("%s: %s" % (k, v)))
+  #Cons.P("\n".join(strs))
+  num_rows = int(math.ceil(len(strs) / 2.0))
+  for i in range(num_rows):
+    if i + num_rows <= len(strs):
+      strs[i] += strs[i + num_rows]
+  strs = strs[:num_rows]
+  #Cons.P("\n".join(strs))
+  quizup_options = "\\n".join(strs).replace("_", "\\\\_").replace(" ", "\\ ")
+  #Cons.P(quizup_options)
 
   (fn_rocksdb_sla_admin_log, pid_params) = RocksdbLog.GetSlaAdminLog(fn_log_rocksdb, exp_dt)
 
@@ -180,6 +208,7 @@ def main(argv):
     env["IN_FN_QZ"] = fn_log_quizup
     env["IN_FN_SLA_ADMIN"] = fn_rocksdb_sla_admin_log
     env["TARGET_LATENCY"] = str(pid_params["target_value"])
+    env["QUIZUP_OPTIONS"] = quizup_options
     env["PID_PARAMS"] = "%s %s %s" % (pid_params["p"], pid_params["i"], pid_params["d"])
     env["IN_FN_DS"] = fn_dstat
     env["OUT_FN"] = fn_out
