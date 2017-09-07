@@ -3,6 +3,7 @@
 import math
 import os
 import pprint
+import re
 import sys
 
 sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~"))
@@ -164,8 +165,8 @@ def main(argv):
   # Explore the load
   #job_id = "170906-161010"
   #exp_dt = "170906-205618.503"
-  job_id = "170906-161039"
-  exp_dt = "170906-205659.087"
+  #job_id = "170906-161039"
+  #exp_dt = "170906-205659.087"
   #job_id = "170906-161127"
   #exp_dt = "170906-205421.292"
   #job_id = "170906-161155"
@@ -173,6 +174,30 @@ def main(argv):
   #job_id = "170906-161220"
   #exp_dt = "170906-205627.194"
 
+  # See if you can observe the diurnal latency fluctuations without sla admin
+  exps= """170907-012643/quizup/170907-060525.197
+    170907-012707/quizup/170907-060630.476
+    170907-012728/quizup/170907-060921.104
+    170907-012751/quizup/170907-060456.600
+    170907-012812/quizup/170907-060408.490
+    170907-012834/quizup/170907-060408.086
+    170907-012852/quizup/170907-060457.537
+    170907-012915/quizup/170907-061430.304
+    170907-012937/quizup/170907-060558.257
+    170907-012956/quizup/170907-060554.099
+    170907-013019/quizup/170907-061145.045
+    170907-013041/quizup/170907-060432.527"""
+
+  for line in re.split(r"\s+", exps):
+    t = line.split("/quizup/")
+    if len(t) != 2:
+      raise RuntimeError("Unexpected")
+    job_id = t[0]
+    exp_dt = t[1]
+    Plot(job_id, exp_dt)
+
+
+def Plot(job_id, exp_dt):
   dn_log_job = "%s/work/mutant/log/quizup/sla-admin/%s" % (os.path.expanduser("~"), job_id)
 
   fn_log_quizup  = "%s/quizup/%s" % (dn_log_job, exp_dt)
