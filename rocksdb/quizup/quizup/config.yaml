@@ -119,3 +119,9 @@ pid_params: 23,0.1,0,0
 report_interval_in_ms: 1000
 
 sla_admin: false
+
+# To generate more IOs
+extra_reads: true
+xr_queue_size: 500
+# Make 1 extra read for every 100 reads from the workload trace
+xr_rate: 100

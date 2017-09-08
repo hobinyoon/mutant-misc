@@ -61,6 +61,10 @@ def main():
 
 	parser.add_option("--sla_admin", help="Run SLA Admin")
 
+	parser.add_option("--extra_reads", help="Req extra reads")
+	parser.add_option("--xr_queue_size", help="XR queue size")
+	parser.add_option("--xr_rate", help="XR rate")
+
 	(options, args) = parser.parse_args()
 	if len(args) != 0:
 		parser.error("wrong number of arguments")
@@ -150,6 +154,9 @@ def main():
 			, "pid_params" \
 			, "record_size" \
 			, "sla_admin" \
+			, "extra_reads" \
+			, "xr_queue_size" \
+			, "xr_rate" \
 			]:
 		if (hasattr(options, k)) and (getattr(options, k) is not None):
 			args0.append("--%s=%s" % (k, getattr(options, k)))

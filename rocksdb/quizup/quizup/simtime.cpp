@@ -129,7 +129,10 @@ void Init2() {
     {
       // In mins
       double exp_dur = Conf::Get("simulation_time_dur_in_sec").as<double>() / 60;
-      double load_dur = 17.0;
+
+      double load_dur = (17 + 13.24224072759128587798);
+      double run_dur = (343 - 13.24224072759128587798);
+
       double a = load_dur/exp_dur;  // fast loading
       double b = a + (exp_dur-load_dur)/exp_dur *  10 / 1000;  // give some time for the latency to stabilize
       double c = b + (exp_dur-load_dur)/exp_dur * 495 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
@@ -141,13 +144,29 @@ void Init2() {
       //_simulation_time_4 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * 1.0);
     }
     {
-      double a = 60.0/100;
-      double b = a + 40.0/100 *  10 / 1000;  // give some time for the latency to stabilize
-      double c = b + 40.0/100 * 495 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
-      double d = c + 40.0/100 * 495 / 1000;  // keep going.
+      double load_dur = 40 + 31.15821347668540190509;
+      double run_dur = 60 - 31.15821347668540190509;
+
+      double a = load_dur;
+      double b = a + run_dur *  10 / 1000;  // give some time for the latency to stabilize
+      double c = b + run_dur * 495 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
+      double d = c + run_dur * 495 / 1000;  // keep going.
       _simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a/d));
       _simulated_time_2 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (b/d));
       _simulated_time_3 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (c/d));
+
+      // (40 + x) / (17 + y) = 2.35294117647059
+      // (60 - x) / (343 - y) = 0.087463557
+      //
+      // (40 + x) = 2.35294117647059 * (17 + y)
+      // x = 40 + 2.35294117647059 * y - 40 = 2.35294117647059 * y
+      //
+      // 60 - x = 30 - 0.087463557 * y
+      // x = 0.087463557 * y + 30
+      //
+      // 2.35294117647059 * y = 0.087463557 * y + 30
+      // y = 30 / (2.35294117647059 - 0.087463557) = 13.24224072759128587798
+      // x = 0.087463557 * 13.24224072759128587798 + 30 = 31.15821347668540190509
     }
   }
 
