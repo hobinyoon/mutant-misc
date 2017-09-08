@@ -127,10 +127,10 @@ void Init2() {
     // Starting from the beginning
     // When new SSTables are created
     {
-      double a = 20.0/60;  // fast loading
-      double b = a + 40.0/60 * 10 / 100;  // give some time for the latency to stabilize
-      double c = b + 40.0/60 * 45 / 100;  // begin the SlaAdmin with a target latency of 19 ms
-      double d = c + 40.0/60 * 45 / 100;  // keep going.
+      double a = 17.0/60;  // fast loading
+      double b = a + 43.0/60 * 10 / 100;  // give some time for the latency to stabilize
+      double c = b + 43.0/60 * 45 / 100;  // begin the SlaAdmin with a target latency of 19 ms
+      double d = c + 43.0/60 * 45 / 100;  // keep going.
 
       _simulation_time_1 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (a/d));
       _simulation_time_2 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (b/d));
