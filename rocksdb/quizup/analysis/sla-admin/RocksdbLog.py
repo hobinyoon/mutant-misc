@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import pprint
 import re
 import sys
 
@@ -22,11 +23,24 @@ def GetSlaAdminLog(fn, exp_dt):
 
   fn_out = "%s/rocksdb-sla-admin-%s" % (Conf.GetDir("output_dir"), exp_dt)
   pid_params = None
+  num_sla_adj = 0
 
   with open(fn) as fo, open(fn_out, "w") as fo_out:
-    fmt = "%12s %7.2f %8.2f %10.6f %3d %3d %3d %3d"
-    header = Util.BuildHeader(fmt, "ts cur_latency adj new_sst_ott" \
-        " num_ssts_in_fast_dev num_ssts_in_slow_dev num_ssts_should_be_in_fast_dev num_ssts_should_be_in_slow_dev")
+    # Different versions have different format
+    if exp_dt < "170908-035329.045":
+      fmt = "%12s %7.2f %8.2f %10.6f %3d %3d %3d %3d"
+      header = Util.BuildHeader(fmt, "ts cur_latency adj new_sst_ott" \
+          " num_ssts_in_fast_dev num_ssts_in_slow_dev num_ssts_should_be_in_fast_dev num_ssts_should_be_in_slow_dev")
+      format_version = 1
+    else:
+      # {u'num_ssts_should_be_in_slow_dev': 0, u'sst_ott': 0.005, u'num_ssts_in_slow_dev': 0, u'num_ssts_in_fast_dev': 0,
+      # u'num_ssts_should_be_in_fast_dev': 0, u'cur_lat': 5.8963, u'adj_type': u'no_sstable', u'sst_status': u''}
+      fmt = "%12s %7.2f %28s %8.2f" \
+          " %3d %3d %3d %3d"
+      header = Util.BuildHeader(fmt, "ts cur_latency adj_type new_sst_ott" \
+          " num_ssts_in_fast_dev num_ssts_in_slow_dev num_ssts_should_be_in_fast_dev num_ssts_should_be_in_slow_dev")
+      format_version = 2
+
     i = 0
     for line in fo:
       line = line.strip()
@@ -60,6 +74,8 @@ def GetSlaAdminLog(fn, exp_dt):
           Cons.P("  Ignoring ...")
           continue
 
+        num_sla_adj += 1
+
         # time_micros is in local time. ts seems to be in UTC. Quizup ts is in UTC.
         #ts = datetime.datetime.fromtimestamp(int(j["time_micros"]) / 1000000.0)
         ts = datetime.datetime.strptime(mo.group("ts"), "%Y/%m/%d-%H:%M:%S.%f")
@@ -67,21 +83,31 @@ def GetSlaAdminLog(fn, exp_dt):
 
         j1 = j["mutant_sla_admin_adjust"]
 
-        #dt = float(j1["dt"])
-        # Only the first one is 0. Taken care of by the PID controller.
-
         if i % 40 == 0:
           fo_out.write(header + "\n")
-        fo_out.write((fmt + "\n") % (
-          str(ts_rel)[:11]
-          , j1["cur_lat"]
-          , j1["adj"]
-          , j1["sst_ott"]
-          , j1["num_ssts_in_fast_dev"]
-          , j1["num_ssts_in_slow_dev"]
-          , j1["num_ssts_should_be_in_fast_dev"]
-          , j1["num_ssts_should_be_in_slow_dev"]
-          ))
+        if exp_dt < "170908-035329.045":
+          fo_out.write((fmt + "\n") % (
+            str(ts_rel)[:11]
+            , j1["cur_lat"]
+            , j1["adj"]
+            , j1["sst_ott"]
+            , j1["num_ssts_in_fast_dev"]
+            , j1["num_ssts_in_slow_dev"]
+            , j1["num_ssts_should_be_in_fast_dev"]
+            , j1["num_ssts_should_be_in_slow_dev"]
+            ))
+        else:
+          fo_out.write((fmt + "\n") % (
+            str(ts_rel)[:11]
+            , j1["cur_lat"]
+            , j1["adj_type"]
+            , j1["sst_ott"]
+            , j1["num_ssts_in_fast_dev"]
+            , j1["num_ssts_in_slow_dev"]
+            , j1["num_ssts_should_be_in_fast_dev"]
+            , j1["num_ssts_should_be_in_slow_dev"]
+            ))
         i += 1
+
   Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-  return (fn_out, pid_params)
+  return (fn_out, pid_params, num_sla_adj, format_version)

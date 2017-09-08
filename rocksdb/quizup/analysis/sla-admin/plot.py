@@ -203,6 +203,27 @@ def main(argv):
 
   exps = """170907-123114/quizup/170907-170943.678"""
 
+  exps = """170907-164049/quizup/170907-212518.984
+    170907-164110/quizup/170907-211905.715
+    170907-164130/quizup/170907-211822.147
+    170907-164153/quizup/170907-211909.870
+    170907-164222/quizup/170907-213001.374
+    170907-164246/quizup/170907-213336.369
+    170907-164304/quizup/170907-212518.303
+    170907-164326/quizup/170907-220020.817
+    170907-164348/quizup/170907-212049.945
+    170907-164410/quizup/170907-212045.491
+    170907-164429/quizup/170907-212755.838
+    170907-164452/quizup/170907-213236.709
+    170907-164514/quizup/170907-212552.729
+    170907-164536/quizup/170907-213455.280
+    170907-164557/quizup/170907-213013.051
+    170907-164619/quizup/170907-212735.136
+    170907-165226/quizup/170907-212208.496
+    170907-235300/quizup/170908-035329.045"""
+
+  exps = """170907-235300/quizup/170908-035329.045"""
+
   for line in re.split(r"\s+", exps):
     t = line.split("/quizup/")
     if len(t) != 2:
@@ -230,14 +251,14 @@ def Plot(job_id, exp_dt):
   #Cons.P("\n".join(strs))
   num_rows = int(math.ceil(len(strs) / 2.0))
   for i in range(num_rows):
-    if i + num_rows <= len(strs):
+    if i + num_rows < len(strs):
       strs[i] += strs[i + num_rows]
   strs = strs[:num_rows]
   #Cons.P("\n".join(strs))
   quizup_options = "\\n".join(strs).replace("_", "\\\\_").replace(" ", "\\ ")
   #Cons.P(quizup_options)
 
-  (fn_rocksdb_sla_admin_log, pid_params) = RocksdbLog.GetSlaAdminLog(fn_log_rocksdb, exp_dt)
+  (fn_rocksdb_sla_admin_log, pid_params, num_sla_adj, format_version) = RocksdbLog.GetSlaAdminLog(fn_log_rocksdb, exp_dt)
 
   fn_dstat = DstatLog.GenDataFileForGnuplot(fn_log_dstat, exp_dt)
 
@@ -246,7 +267,8 @@ def Plot(job_id, exp_dt):
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
     env["IN_FN_QZ"] = fn_log_quizup
-    env["IN_FN_SLA_ADMIN"] = fn_rocksdb_sla_admin_log
+    env["IN_FN_SLA_ADMIN"] = "" if num_sla_adj == 0 else fn_rocksdb_sla_admin_log
+    env["IN_FN_SLA_ADMIN_FORMAT"] = str(format_version)
     env["TARGET_LATENCY"] = str(pid_params["target_value"])
     env["QUIZUP_OPTIONS"] = quizup_options
     env["PID_PARAMS"] = "%s %s %s" % (pid_params["p"], pid_params["i"], pid_params["d"])

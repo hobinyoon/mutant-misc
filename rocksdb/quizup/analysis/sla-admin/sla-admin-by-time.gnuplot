@@ -2,6 +2,7 @@
 
 IN_FN_QZ = system("echo $IN_FN_QZ")
 IN_FN_SLA_ADMIN = system("echo $IN_FN_SLA_ADMIN")
+IN_FN_SLA_ADMIN_FORMAT = system("echo $IN_FN_SLA_ADMIN_FORMAT") + 0
 TARGET_LATENCY = system("echo $TARGET_LATENCY") + 0.0
 QUIZUP_OPTIONS = system("echo $QUIZUP_OPTIONS")
 PID_PARAMS = system("echo $PID_PARAMS")
@@ -130,31 +131,38 @@ if (1) {
 
 # sst_ott adjustment
 if (1) {
-  reset
-  set border front lc rgb "#808080" back
-  set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
-  set border front lc rgb "#808080" back
+  if (IN_FN_SLA_ADMIN ne "") {
+    reset
+    set border front lc rgb "#808080" back
+    set xtics nomirror tc rgb "black"
+    set ytics nomirror tc rgb "black"
+    set grid xtics ytics back lc rgb "#808080"
+    set border front lc rgb "#808080" back
 
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%M"
+    set xdata time
+    set timefmt "%H:%M:%S"
+    set format x "%M"
 
-  set xlabel "Time (minute)"
-  set ylabel "sst\\_ott adjustment"
+    set xlabel "Time (minute)"
+    set ylabel "sst\\_ott adjustment"
 
-  set xrange ["00:00:00.000":]
-  #set yrange [:50]
+    set xrange ["00:00:00.000":]
+    #set yrange [:50]
 
-  f(x) = 0
+    f(x) = 0
 
-  plot \
-  IN_FN_SLA_ADMIN u 1:3 w filledcurves y1=0 lc rgb "#FFA0A0" not, \
-  f(x) w l lc rgb "black" not
-
-  #IN_FN_SLA_ADMIN u 1:3 w lp pt 7 ps 0.1 lc rgb "red" not, \
-
+    if (IN_FN_SLA_ADMIN_FORMAT == 1) {
+      plot \
+      IN_FN_SLA_ADMIN u 1:3 w filledcurves y1=0 lc rgb "#FFA0A0" not, \
+      f(x) w l lc rgb "black" not
+    } else {
+      adj_str_to_value(x) = (x eq "move_sst_to_slow" ? -1 : \
+        (x eq "move_sst_to_fast" ? 1 : 0) )
+      plot \
+      IN_FN_SLA_ADMIN u 1:(adj_str_to_value(strcol(3))) w filledcurves y1=0 lc rgb "#FFA0A0" not, \
+      f(x) w l lc rgb "black" not
+    }
+  }
 }
 
 # sst_ott
