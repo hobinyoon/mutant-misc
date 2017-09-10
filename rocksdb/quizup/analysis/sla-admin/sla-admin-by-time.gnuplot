@@ -15,6 +15,8 @@ set print "-"
 set terminal pdfcairo enhanced size 6in, (2.3*0.85)in
 set output OUT_FN
 
+LMARGIN = 10
+
 # TODO: legend
 
 # Quizup options
@@ -24,7 +26,9 @@ if (1) {
   set noytics
   set noborder
   f(x) = x
-  set label 1 at screen 0.025, screen 0.90 QUIZUP_OPTIONS font "courier,9" left front
+  #set label 1 at screen 0.025, screen 0.90 QUIZUP_OPTIONS font "courier,10" left front
+  # Looks better. Feels narrower.
+  set label 1 at screen 0.025, screen 0.90 QUIZUP_OPTIONS font "DejaVu Sans Mono,10" left front
   plot f(x) lc rgb "#F0F0F0" not
 }
 
@@ -53,6 +57,9 @@ if (1) {
   }
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
 
   if (logscale_y == 1) {
     set logscale y
@@ -95,12 +102,15 @@ if (1) {
 
   set logscale y
 
+  set lmargin LMARGIN
+
   plot \
   IN_FN_DS u 25:15 w p pt 7 ps 0.2 lc rgb "blue" t "read", \
   IN_FN_DS u 25:16 w p pt 7 ps 0.2 lc rgb "red" t "write"
 }
 
-# Read latency
+# Read latency: Both Quizup and RocksDB SLA Admin logs have read latencies.
+# Go with RocksDB SLA Admin log. It has when the latency is counted in our not.
 if (1) {
   reset
   set xdata time
@@ -122,10 +132,22 @@ if (1) {
 
   set label sprintf("target latency: %.1f\nPID constants: %s", TARGET_LATENCY, PID_PARAMS) at graph 0.03, graph 0.9
 
-  plot \
-  IN_FN_QZ u 1:($30/1000) w p pt 7 ps 0.2 lc rgb "#FFB0B0" not, \
-  IN_FN_QZ u 1:($30/1000) w l smooth bezier lw 6 lc rgb "red" not, \
-  t_l(x) w l lt 1 lc rgb "blue" not
+  set lmargin LMARGIN
+
+  use_locksdb_sla_admin_log = 1
+  if (use_locksdb_sla_admin_log == 1) {
+    plot \
+    IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w p pt 7 ps 0.2 lc rgb "#FFB0B0" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 1 ? $2 : 1/0) w p pt 7 ps 0.2 lc rgb "#B0B0FF" not, \
+    t_l(x) w l lt 1 lc rgb "black" not
+    #IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w l smooth bezier lw 6 lc rgb "red" not, \
+    #IN_FN_SLA_ADMIN u 1:($3 == 1 ? $2 : 1/0) w l smooth bezier lw 6 lc rgb "blue" not
+  } else {
+    plot \
+    IN_FN_QZ u 1:($30/1000) w p pt 7 ps 0.2 lc rgb "#FFB0B0" not, \
+    IN_FN_QZ u 1:($30/1000) w l smooth bezier lw 6 lc rgb "red" not, \
+    t_l(x) w l lt 1 lc rgb "blue" not
+  }
 }
 
 
@@ -151,15 +173,18 @@ if (1) {
 
     f(x) = 0
 
+    set lmargin LMARGIN
+
     if (IN_FN_SLA_ADMIN_FORMAT == 1) {
       plot \
       IN_FN_SLA_ADMIN u 1:3 w filledcurves y1=0 lc rgb "#FFA0A0" not, \
       f(x) w l lc rgb "black" not
     } else {
+      set yrange [-1.5:1.5]
       adj_str_to_value(x) = (x eq "move_sst_to_slow" ? -1 : \
         (x eq "move_sst_to_fast" ? 1 : 0) )
       plot \
-      IN_FN_SLA_ADMIN u 1:(adj_str_to_value(strcol(3))) w filledcurves y1=0 lc rgb "#FFA0A0" not, \
+      IN_FN_SLA_ADMIN u 1:(adj_str_to_value(strcol(4))) w p pt 7 ps 0.2 lc rgb "#FFA0A0" not, \
       f(x) w l lc rgb "black" not
     }
   }
@@ -206,9 +231,10 @@ if (1) {
     set logscale y
   }
 
+  set lmargin LMARGIN
+
   plot \
-  IN_FN_SLA_ADMIN u 1:4 w lp pt 7 ps 0.1 lc rgb "red" not
-  #IN_FN_SLA_ADMIN u 1:4 w l smooth bezier lc rgb "red" not
+  IN_FN_SLA_ADMIN u 1:5 w lp pt 7 ps 0.1 lc rgb "red" not
 }
 
 # Number of SSTables what are/should be in the fast/slow devices
@@ -241,9 +267,11 @@ if (1) {
   set xrange ["00:00:00.000":]
   #set yrange [-150:150]
 
+  set lmargin LMARGIN
+
   plot \
-  IN_FN_SLA_ADMIN u 1:5 w filledcurves y1=0 lc rgb "#FFB0B0" t "Current", \
-  IN_FN_SLA_ADMIN u 1:($6*(-1)) w filledcurves y1=0 lc rgb "#B0B0FF" not, \
-  IN_FN_SLA_ADMIN u 1:7 w l lc rgb "red" t "Should be", \
-  IN_FN_SLA_ADMIN u 1:($8*(-1)) w l lc rgb "blue" not
+  IN_FN_SLA_ADMIN u 1:6 w filledcurves y1=0 lc rgb "#FFB0B0" t "Current", \
+  IN_FN_SLA_ADMIN u 1:($7*(-1)) w filledcurves y1=0 lc rgb "#B0B0FF" not, \
+  IN_FN_SLA_ADMIN u 1:8 w l lc rgb "red" t "Should be", \
+  IN_FN_SLA_ADMIN u 1:($9*(-1)) w l lc rgb "blue" not
 }

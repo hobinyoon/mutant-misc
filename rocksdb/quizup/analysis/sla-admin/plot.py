@@ -224,6 +224,12 @@ def main(argv):
 
   exps = """170907-235300/quizup/170908-035329.045"""
 
+  exps = """170908-195136/quizup/170909-003325.826
+    170908-200335/quizup/170909-003326.821
+    170908-200450/quizup/170909-003330.257
+    170908-200648/quizup/170909-003333.434
+    170908-200711/quizup/170909-003334.323"""
+
   for line in re.split(r"\s+", exps):
     t = line.split("/quizup/")
     if len(t) != 2:
@@ -245,11 +251,20 @@ def Plot(job_id, exp_dt):
       , log_q.SimTime("simulation_time_0"), log_q.SimTime("simulation_time_4"))
 
   # quizup_options. List them in 2 columns, column first.
-  strs = []
+  max_width = 0
+  i = 0
+  num_rows = int(math.ceil(len(log_q.quizup_options) / 2.0))
   for k, v in sorted(log_q.quizup_options.iteritems()):
-    strs.append("%-60s" % ("%s: %s" % (k, v)))
+    max_width = max(max_width, len("%s: %s" % (k, v)))
+    i += 1
+    if i == num_rows:
+      break
+
+  strs = []
+  fmt = "%%-%ds" % (max_width + 1)
+  for k, v in sorted(log_q.quizup_options.iteritems()):
+    strs.append(fmt % ("%s: %s" % (k, v)))
   #Cons.P("\n".join(strs))
-  num_rows = int(math.ceil(len(strs) / 2.0))
   for i in range(num_rows):
     if i + num_rows < len(strs):
       strs[i] += strs[i + num_rows]
