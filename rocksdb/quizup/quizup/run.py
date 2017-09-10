@@ -60,6 +60,7 @@ def main():
 	parser.add_option("--record_size", help="Record size")
 
 	parser.add_option("--sla_admin", help="Run SLA Admin")
+	parser.add_option("--lat_hist_q_size", help="Latency history queue size")
 
 	parser.add_option("--extra_reads", help="Req extra reads")
 	parser.add_option("--xr_queue_size", help="XR queue size")
@@ -154,6 +155,7 @@ def main():
 			, "pid_params" \
 			, "record_size" \
 			, "sla_admin" \
+			, "lat_hist_q_size" \
 			, "extra_reads" \
 			, "xr_queue_size" \
 			, "xr_rate" \

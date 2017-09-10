@@ -88,6 +88,7 @@ void Init() {
   options.mutant_options.simulated_time_dur_sec  = 1365709.587;
 
   options.mutant_options.sla_admin = Conf::Get("sla_admin").as<bool>();
+  options.mutant_options.lat_hist_q_size = Conf::Get("lat_hist_q_size").as<int>();
 
   // Open DB
   Status s = DB::Open(options, db_path, &_db);
