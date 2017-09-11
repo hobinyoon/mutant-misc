@@ -1,4 +1,5 @@
 #include <chrono>
+#include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 
 #include "db-client.h"
@@ -89,6 +90,17 @@ void Init() {
 
   options.mutant_options.sla_admin = Conf::Get("sla_admin").as<bool>();
   options.mutant_options.lat_hist_q_size = Conf::Get("lat_hist_q_size").as<int>();
+
+  {
+    static const auto sep = boost::is_any_of(",");
+    string ranges = Conf::GetStr("sst_ott_adj_ranges");
+    vector<string> t;
+    boost::split(t, ranges, sep);
+    if (t.size() != 2)
+      THROW(boost::format("Unexpected sst_ott_adj_ranges [%s]") % ranges);
+    options.mutant_options.sst_ott_adj_ranges[0] = atof(t[0].c_str());
+    options.mutant_options.sst_ott_adj_ranges[1] = atof(t[1].c_str());
+  }
 
   // Open DB
   Status s = DB::Open(options, db_path, &_db);

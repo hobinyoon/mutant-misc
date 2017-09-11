@@ -120,6 +120,7 @@ report_interval_in_ms: 1000
 
 sla_admin: false
 lat_hist_q_size: 30
+sst_ott_adj_ranges: -0.1,-0.025
 
 # To generate more IOs
 extra_reads: true
