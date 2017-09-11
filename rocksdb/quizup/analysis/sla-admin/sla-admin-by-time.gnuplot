@@ -158,6 +158,49 @@ if (1) {
   }
 }
 
+# Number of SSTables that are/should be in the fast/slow devices
+if (1) {
+  reset
+  set border front lc rgb "#808080" back
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black" ( \
+      "200"  200 \
+    , "150"  150 \
+    , "100"  100 \
+    ,  "50"   50 \
+    ,  "0"     0 \
+    ,  "50"  -50 \
+    , "100" -100 \
+    , "150" -150 \
+  )
+  set grid xtics ytics back lc rgb "#808080"
+  set border front lc rgb "#808080" back
+
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "Number of SSTables\nin fast/slow stg device"
+
+  set key left
+
+  set xrange ["00:00:00.000":]
+  #set yrange [-150:150]
+
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":STD_MAX]
+
+  f(x) = 0
+
+  plot \
+  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $9) w l lc rgb "#FFC0C0" t "Should be", \
+  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($10*(-1))) w l lc rgb "#C0C0FF" not, \
+  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $7) w l lc rgb "red" t "Actual", \
+  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($8*(-1))) w l lc rgb "blue" not, \
+  f(x) w l lc rgb "black" not
+}
 
 # sst_ott adjustment
 if (0) {
@@ -247,49 +290,4 @@ if (1) {
 
   plot \
   IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $6) w p pt 7 ps 0.1 lc rgb "red" not
-}
-
-# Number of SSTables that are/should be in the fast/slow devices
-if (1) {
-  reset
-  set border front lc rgb "#808080" back
-  set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black" ( \
-      "200"  200 \
-    , "150"  150 \
-    , "100"  100 \
-    ,  "50"   50 \
-    ,  "0"     0 \
-    ,  "50"  -50 \
-    , "100" -100 \
-    , "150" -150 \
-  )
-  set grid xtics ytics back lc rgb "#808080"
-  set border front lc rgb "#808080" back
-
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%H:%M"
-
-  set xlabel "Time (HH:MM)"
-  set ylabel "Number of SSTables\nin fast/slow stg device"
-
-  set key left
-
-  set xrange ["00:00:00.000":]
-  #set yrange [-150:150]
-
-  set lmargin LMARGIN
-
-  set xrange ["00:00:00":STD_MAX]
-
-  plot \
-  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $9) w l lc rgb "#FFC0C0" t "Should be", \
-  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($10*(-1))) w l lc rgb "#C0C0FF" not, \
-  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $7) w l lc rgb "red" t "Actual", \
-  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($8*(-1))) w l lc rgb "blue" not
-
-  #IN_FN_SLA_ADMIN u 1:7 w filledcurves y1=0 lc rgb "#FFB0B0" t "Current", \
-  #IN_FN_SLA_ADMIN u 1:($8*(-1)) w filledcurves y1=0 lc rgb "#B0B0FF" not, \
-
 }
