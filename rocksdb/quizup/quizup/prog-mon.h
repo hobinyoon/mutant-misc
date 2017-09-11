@@ -44,4 +44,7 @@ void ReporterStop();
 const std::string& FnClientLog();
 
 void StartReportingToSlaAdmin();
+
+void UpdateXrQLen(size_t s);
+
 }

@@ -1,6 +1,8 @@
 #include <condition_variable>
 #include <thread>
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 
 #include "conf.h"
 #include "cons.h"
@@ -65,6 +67,7 @@ void _GetAndReset(
     vector<long>& latency_put,
     vector<long>& latency_get);
 Stat GenStat(vector<long>& v);
+void _ReportXrQLen();
 
 
 void WorkerStat::RunningOnTime() {
@@ -281,6 +284,7 @@ void _ReporterThread() {
 
   for (int i = 0; !_reporter_stop; i ++) {
     if (i % 30 == 0) {
+      _ReportXrQLen();
       ofs << header1 << "\n";
       Cons::P(header2);
     }
@@ -510,6 +514,98 @@ Stat GenStat(vector<long>& v) {
   }
 
   return s;
+}
+
+
+// Thread ID to xr(extra reads) queue length
+mutex _tid_xrqlen_lock;
+map<thread::id, size_t> _tid_xrqlen;
+
+
+void UpdateXrQLen(size_t s) {
+  thread::id tid = this_thread::get_id();
+  {
+    lock_guard<mutex> _(_tid_xrqlen_lock);
+    _tid_xrqlen[tid] = s;
+  }
+}
+
+
+void _ReportXrQLen() {
+  vector<size_t> sizes;
+  {
+    lock_guard<mutex> _(_tid_xrqlen_lock);
+    for (auto i: _tid_xrqlen)
+      sizes.push_back(i.second);
+  }
+  sort(sizes.begin(), sizes.end());
+
+  // 0: list all
+  // 1: duplicate items with x(number)
+  // 2: histogram with bucket size 50
+  int format_type = 2;
+  if (format_type == 0) {
+    Cons::P(boost::format("# xr_q_len: %s") % boost::join(sizes | boost::adaptors::transformed([](size_t s) { return std::to_string(s); }), " "));
+  } else if (format_type == 1) {
+    string out;
+    int cur_s = 0;
+    int cur_s_cnt = 0;
+    for (size_t s: sizes) {
+      if (s == cur_s) {
+        cur_s_cnt ++;
+      } else {
+        if (cur_s_cnt == 0) {
+        } else if (cur_s_cnt == 1) {
+          if (0 < out.size())
+            out += " ";
+          out += str(boost::format("%d") % cur_s);
+        } else {
+          if (0 < out.size())
+            out += " ";
+          out += str(boost::format("%dx%d") % cur_s % cur_s_cnt);
+        }
+
+        cur_s = s;
+        cur_s_cnt = 1;
+      }
+    }
+
+    // Print the last one.
+    if (cur_s_cnt == 0) {
+    } else if (cur_s_cnt == 1) {
+      if (0 < out.size())
+        out += " ";
+      out += str(boost::format("%d") % cur_s);
+    } else {
+      if (0 < out.size())
+        out += " ";
+      out += str(boost::format("%dx%d") % cur_s % cur_s_cnt);
+    }
+
+    Cons::P(boost::format("# xr_q_len: %s") % out);
+  } else if (format_type == 2) {
+    // <Bucket of in the range such as [0, 50), count>
+    map<int, int> histo;
+    const int bucket_size = 50;
+
+    for (size_t s: sizes) {
+      int bucket_id = s / bucket_size;
+      auto it = histo.find(bucket_id);
+      if (it == histo.end()) {
+        histo[bucket_id] = 1;
+      } else {
+        it->second ++;
+      }
+    }
+
+    string out;
+    for (auto i: histo) {
+      if (0 < out.size())
+        out += " ";
+      out += str(boost::format("%d:%d") % (i.first * bucket_size) % i.second);
+    }
+    Cons::P(boost::format("# xr_q_len: %s") % out);
+  }
 }
 
 }

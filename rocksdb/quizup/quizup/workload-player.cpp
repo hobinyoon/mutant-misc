@@ -264,10 +264,10 @@ namespace WorkloadPlayer {
     const bool req_extra_reads = Conf::Get("extra_reads").as<bool>();
     deque<long> latest_keys_q;
     set<long> latest_keys_set;
-    bool queue_size_printed = false;
     bool uniform_key_popularity = true;
     const size_t latest_keys_q_cap = Conf::Get("xr_queue_size").as<int>();
     const int xr_rate = Conf::Get("xr_rate").as<int>();
+    boost::posix_time::ptime prev_ts_queue_size_report;
 
     // Make requests
     while (i < s) {
@@ -319,6 +319,19 @@ namespace WorkloadPlayer {
               latest_keys_q.pop_back();
             }
           }
+
+          // Update the queue length every second
+          {
+            boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+            if (prev_ts_queue_size_report.is_not_a_date_time()) {
+              prev_ts_queue_size_report = now;
+            } else {
+              if (1000 < (now - prev_ts_queue_size_report).total_milliseconds()) {
+                ProgMon::UpdateXrQLen(latest_keys_q.size());
+                prev_ts_queue_size_report = now;
+              }
+            }
+          }
         }
 
         if (phase == 0) {
@@ -335,12 +348,6 @@ namespace WorkloadPlayer {
 
           if (req_extra_reads) {
             size_t s = latest_keys_q.size();
-
-            //if (! queue_size_printed) {
-            //  Cons::P(boost::format("latest_keys_q.size()=%d") % s);
-            //  queue_size_printed = true;
-            //}
-
             if (rand() % xr_rate == 0) {
               long oid = latest_keys_q[rand() % s];
               char k1[20];
