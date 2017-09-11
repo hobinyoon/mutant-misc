@@ -79,18 +79,26 @@ if (1) {
 
   set border front lc rgb "#808080" back
   set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black" ( \
-      "10^{3}"  1000 \
-    , "10^{2}"   100 \
-    , "10^{1}"    10 \
-    , "10^{0}"     1 \
-    , "10^{-1}"    0.1 \
-    , "10^{-2}"    0.01 \
-    , "10^{-3}"    0.001 \
-    , "10^{-4}"    0.0001 \
-    , "10^{-5}"    0.00001 \
-    , "10^{-6}"    0.000001 \
-  )
+
+  logscale_y = 0
+  if (logscale_y == 1) {
+    set ytics nomirror tc rgb "black" ( \
+        "10^{3}"  1000 \
+      , "10^{2}"   100 \
+      , "10^{1}"    10 \
+      , "10^{0}"     1 \
+      , "10^{-1}"    0.1 \
+      , "10^{-2}"    0.01 \
+      , "10^{-3}"    0.001 \
+      , "10^{-4}"    0.0001 \
+      , "10^{-5}"    0.00001 \
+      , "10^{-6}"    0.000001 \
+    )
+    set logscale y
+  } else {
+    set ytics nomirror tc rgb "black"
+  }
+
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
 
@@ -102,8 +110,6 @@ if (1) {
   set ylabel "EBS Mag IOPS"
 
   set key left
-
-  set logscale y
 
   set lmargin LMARGIN
 
@@ -131,9 +137,10 @@ if (1) {
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
 
-  t_l(x) = TARGET_LATENCY
+  f_t(x, a) = TARGET_LATENCY * (1 - a)
+
   #set yrange[0:TARGET_LATENCY * 2]
-  set yrange[0:200]
+  set yrange[0:100]
 
   set label sprintf("target latency: %.1f\nPID constants: %s", TARGET_LATENCY, PID_PARAMS) at graph 0.03, graph 0.9
 
@@ -147,14 +154,18 @@ if (1) {
     IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w p pt 7 ps 0.1 lc rgb "#C0C0C0" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? (TARGET_LATENCY < $2  ? $2 : 1/0) : 1/0) w p pt 7 ps 0.1 lc rgb "#FFC0C0" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($2 <= TARGET_LATENCY ? $2 : 1/0) : 1/0) w p pt 7 ps 0.1 lc rgb "#C0C0FF" not, \
-    t_l(x) w l lt 1 lc rgb "black" not, \
+    f_t(x,  0.10) w l lt 1 lc rgb "black" not, \
+    f_t(x,  0.05) w l lt 1 lc rgb "black" not, \
+    f_t(x, 0) w l lt 1 lc rgb "black" not, \
+    f_t(x, -0.05) w l lt 1 lc rgb "black" not, \
+    f_t(x, -0.10) w l lt 1 lc rgb "black" not, \
     IN_FN_SLA_ADMIN u 1:($4 == -1 ? 1/0 : (TARGET_LATENCY < $4  ? $4 : 1/0)) w p pt 7 ps 0.03 lc rgb "red" not, \
     IN_FN_SLA_ADMIN u 1:($4 == -1 ? 1/0 : ($4 <= TARGET_LATENCY ? $4 : 1/0)) w p pt 7 ps 0.03 lc rgb "blue" not
   } else {
     plot \
     IN_FN_QZ u 1:($30/1000) w p pt 7 ps 0.2 lc rgb "#FFB0B0" not, \
     IN_FN_QZ u 1:($30/1000) w l smooth bezier lw 6 lc rgb "red" not, \
-    t_l(x) w l lt 1 lc rgb "blue" not
+    f_t(x, 0) w l lt 1 lc rgb "blue" not
   }
 }
 
