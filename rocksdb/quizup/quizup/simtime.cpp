@@ -124,14 +124,57 @@ void Init2() {
     //_simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * a);
     //_simulated_time_2 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a + 0.1));
 
+    // (40 + x) / (17 + y) = 2.35294117647059
+    // (60 - x) / (343 - y) = 0.087463557
+    //
+    // (40 + x) = 2.35294117647059 * (17 + y)
+    // x = 40 + 2.35294117647059 * y - 40 = 2.35294117647059 * y
+    //
+    // 60 - x = 30 - 0.087463557 * y
+    // x = 0.087463557 * y + 30
+    //
+    // 2.35294117647059 * y = 0.087463557 * y + 30
+    // y = 30 / (2.35294117647059 - 0.087463557) = 13.24224072759128587798
+    // x = 0.087463557 * 13.24224072759128587798 + 30 = 31.15821347668540190509
+
+    // x = 120 mins. total 2 hours of experiment.
+    //   Simulation time. Load and run phases.
+    //     30 : 330 = 30 : (x - 30)
+    //   Simulated time.
+    //     Before: 0.7116 * 0.3 : 0.2884 * 0.3
+    //     After:
+    //       a * z : b * z
+    //       a + b = 1 -- (a)
+    //       z is the new total simulated time ratio such as 0.25
+    //
+    //   Same load phase rate
+    //     a * z = 0.7116 * 0.3 = 0.21348
+    //     a = 0.21348 / z -- (b)
+    //
+    //   Same run phase rate
+    //     330 : 0.2884 * 0.3 = (x - 30) : b * z
+    //     z = (0.2884 * 0.3) * (x - 30) / 330 / b = 0.00026218181818181818 * (x - 30) / b -- (c)
+    //
+    //   From (a) and (b)
+    //     b = 1 - a = 1 - (0.21348 / z) -- (d)
+    //
+    //   From (c) and (d)
+    //     z = 0.00026218181818181818 * (x - 30) / (1 - (0.21348 / z))
+    //       = 0.00026218181818181818 * (x - 30) / (-0.21348 / z + 1)
+    //     z * (-0.21348 / z + 1) = 0.00026218181818181818 * (x - 30)
+    //     x = z * (-0.21348 / z + 1) / 0.00026218181818181818 + 30 -- (e)
+    //       = (z - 0.21348) / 0.00026218181818181818 + 30
+    //     0.00026218181818181818 * (x - 30) = z - 0.21348
+    //     z = 0.00026218181818181818 * (x - 30) + 0.21348
+    //
     // Starting from the beginning
     // When new SSTables are created
     {
       // In mins
       double exp_dur = Conf::Get("simulation_time_dur_in_sec").as<double>() / 60;
 
-      double load_dur = (17 + 13.24224072759128587798);
-      double run_dur = (343 - 13.24224072759128587798);
+      double load_dur = 30;
+      double run_dur = exp_dur - 30;
 
       double a = load_dur/exp_dur;  // fast loading
       double b = a + (exp_dur-load_dur)/exp_dur *  10 / 1000;  // give some time for the latency to stabilize
@@ -144,8 +187,9 @@ void Init2() {
       //_simulation_time_4 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * 1.0);
     }
     {
-      double load_dur = 40 + 31.15821347668540190509;
-      double run_dur = 60 - 31.15821347668540190509;
+      // From (d)
+      double run_dur = 1.0 - (0.21348 / Conf::Get("workload_stop_at").as<double>());
+      double load_dur = 1.0 - run_dur;
 
       double a = load_dur;
       double b = a + run_dur *  10 / 1000;  // give some time for the latency to stabilize
@@ -154,19 +198,6 @@ void Init2() {
       _simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a/d));
       _simulated_time_2 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (b/d));
       _simulated_time_3 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (c/d));
-
-      // (40 + x) / (17 + y) = 2.35294117647059
-      // (60 - x) / (343 - y) = 0.087463557
-      //
-      // (40 + x) = 2.35294117647059 * (17 + y)
-      // x = 40 + 2.35294117647059 * y - 40 = 2.35294117647059 * y
-      //
-      // 60 - x = 30 - 0.087463557 * y
-      // x = 0.087463557 * y + 30
-      //
-      // 2.35294117647059 * y = 0.087463557 * y + 30
-      // y = 30 / (2.35294117647059 - 0.087463557) = 13.24224072759128587798
-      // x = 0.087463557 * 13.24224072759128587798 + 30 = 31.15821347668540190509
     }
   }
 
