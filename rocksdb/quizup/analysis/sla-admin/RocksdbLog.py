@@ -35,9 +35,11 @@ def GetSlaAdminLog(fn, exp_dt):
     else:
       # {u'num_ssts_should_be_in_slow_dev': 0, u'sst_ott': 0.005, u'num_ssts_in_slow_dev': 0, u'num_ssts_in_fast_dev': 0,
       # u'num_ssts_should_be_in_fast_dev': 0, u'cur_lat': 5.8963, u'adj_type': u'no_sstable', u'sst_status': u''}
-      fmt = "%12s %7.2f %1d %28s %8.2f" \
+      fmt = "%12s %7.2f %1d" \
+          " %6.2f %28s %8.2f" \
           " %3d %3d %3d %3d"
-      header = Util.BuildHeader(fmt, "ts cur_latency make_adjustment adj_type new_sst_ott" \
+      header = Util.BuildHeader(fmt, "ts cur_latency make_adjustment" \
+          " lat_running_avg adj_type new_sst_ott" \
           " num_ssts_in_fast_dev num_ssts_in_slow_dev num_ssts_should_be_in_fast_dev num_ssts_should_be_in_slow_dev")
       format_version = 2
 
@@ -86,6 +88,8 @@ def GetSlaAdminLog(fn, exp_dt):
 
           if i % 40 == 0:
             fo_out.write(header + "\n")
+          i += 1
+
           if exp_dt < "170908-035329.045":
             fo_out.write((fmt + "\n") % (
               str(ts_rel)[:11]
@@ -98,8 +102,7 @@ def GetSlaAdminLog(fn, exp_dt):
               , j1["num_ssts_should_be_in_slow_dev"]
               ))
           else:
-            # TODO: ignore these when make_adjustment is 0
-            # TODO: plot with different colors: ignored and counted-in latencies
+            lat_running_avg                = -1
             adj_type                       = "-"
             sst_ott                        = 0.0
             num_ssts_in_fast_dev           = -1
@@ -111,6 +114,7 @@ def GetSlaAdminLog(fn, exp_dt):
             if j1["make_adjustment"] == 0:
               pass
             else:
+              lat_running_avg                = j1["lat_running_avg"]
               adj_type                       = j1["adj_type"]
               sst_ott                        = j1["sst_ott"]
               num_ssts_in_fast_dev           = j1["num_ssts_in_fast_dev"]
@@ -122,6 +126,7 @@ def GetSlaAdminLog(fn, exp_dt):
               str(ts_rel)[:11]
               , j1["cur_lat"]
               , j1["make_adjustment"]
+              , lat_running_avg
               , adj_type
               , sst_ott
               , num_ssts_in_fast_dev
@@ -129,7 +134,6 @@ def GetSlaAdminLog(fn, exp_dt):
               , num_ssts_should_be_in_fast_dev
               , num_ssts_should_be_in_slow_dev
               ))
-        i += 1
       except KeyError as e:
         Cons.P("KeyError: %s fn=%s line=%s" % (e, fn, line))
         sys.exit(1)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import datetime
 import math
 import os
 import pprint
@@ -230,6 +231,15 @@ def main(argv):
     170908-200648/quizup/170909-003333.434
     170908-200711/quizup/170909-003334.323"""
 
+  # Made a mistake. Oh man.
+  #exps = """170909-133452/quizup/170909-181406.862
+  #  170909-234250/quizup/170910-034328.419
+  #  170909-234319/quizup/170910-034334.963
+  #  170909-234341/quizup/170910-034405.061
+  #  170909-234355/quizup/170910-034420.568"""
+
+  exps = """170910-125635/quizup/170910-165648.445"""
+
   for line in re.split(r"\s+", exps):
     t = line.split("/quizup/")
     if len(t) != 2:
@@ -249,6 +259,12 @@ def Plot(job_id, exp_dt):
   log_q = QuizupLog(fn_log_quizup)
   SimTime.Init(log_q.SimTime("simulated_time_0"), log_q.SimTime("simulated_time_4")
       , log_q.SimTime("simulation_time_0"), log_q.SimTime("simulation_time_4"))
+  # Simulation time duration
+  s = int(log_q.quizup_options["simulation_time_dur_in_sec"])
+  std_s = s % 60
+  std_m = int(s / 60) % 60
+  std_h = int(s / 3600)
+  std_max = "%02d:%02d:%02d" % (std_h, std_m, std_s)
 
   # quizup_options. List them in 2 columns, column first.
   max_width = 0
@@ -281,6 +297,7 @@ def Plot(job_id, exp_dt):
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
+    env["STD_MAX"] = std_max
     env["IN_FN_QZ"] = fn_log_quizup
     env["IN_FN_SLA_ADMIN"] = "" if num_sla_adj == 0 else fn_rocksdb_sla_admin_log
     env["IN_FN_SLA_ADMIN_FORMAT"] = str(format_version)

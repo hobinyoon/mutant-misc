@@ -1,5 +1,6 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
+STD_MAX = system("echo $STD_MAX")
 IN_FN_QZ = system("echo $IN_FN_QZ")
 IN_FN_SLA_ADMIN = system("echo $IN_FN_SLA_ADMIN")
 IN_FN_SLA_ADMIN_FORMAT = system("echo $IN_FN_SLA_ADMIN_FORMAT") + 0
@@ -17,8 +18,6 @@ set output OUT_FN
 
 LMARGIN = 10
 
-# TODO: legend
-
 # Quizup options
 if (1) {
   reset
@@ -33,17 +32,18 @@ if (1) {
 }
 
 
-# Number of reads and writes
+# Number of DB reads and writes
 if (1) {
   reset
   set xdata time
   set timefmt "%H:%M:%S"
-  set format x "%M"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "DB IO/sec" tc rgb "black"
+  set xtics nomirror tc rgb "black"
 
   logscale_y = 0
-
-  set ylabel "Reads/sec" tc rgb "black"
-  set xtics nomirror tc rgb "black"
 
   if (logscale_y == 1) {
     set ytics nomirror tc rgb "black" ( \
@@ -65,9 +65,12 @@ if (1) {
     set logscale y
   }
 
+  set xrange ["00:00:00":STD_MAX]
+  set yrange [:10000]
+
   plot \
-  IN_FN_QZ u 1:29 w p pt 7 ps 0.2 lc rgb "blue" t "read", \
-  IN_FN_QZ u 1:8  w p pt 7 ps 0.2 lc rgb "red" t "write"
+  IN_FN_QZ u 1:29 w p pt 7 ps 0.05 lc rgb "blue" t "read", \
+  IN_FN_QZ u 1:8  w p pt 7 ps 0.05 lc rgb "red" t "write"
 }
 
 # EBS st1 disk IOs
@@ -104,9 +107,11 @@ if (1) {
 
   set lmargin LMARGIN
 
+  set xrange ["00:00:00":STD_MAX]
+
   plot \
-  IN_FN_DS u 25:15 w p pt 7 ps 0.2 lc rgb "blue" t "read", \
-  IN_FN_DS u 25:16 w p pt 7 ps 0.2 lc rgb "red" t "write"
+  IN_FN_DS u 25:15 w p pt 7 ps 0.1 lc rgb "blue" t "read", \
+  IN_FN_DS u 25:16 w p pt 7 ps 0.1 lc rgb "red" t "write"
 }
 
 # Read latency: Both Quizup and RocksDB SLA Admin logs have read latencies.
@@ -116,9 +121,9 @@ if (1) {
   set xdata time
   # 00:00:00.491
   set timefmt "%H:%M:%S"
-  set format x "%M"
+  set format x "%H:%M"
 
-  set xlabel "Time (minute)"
+  set xlabel "Time (HH:MM)"
   set ylabel "Read latency (ms)" tc rgb "black"
 
   set xtics nomirror tc rgb "black"
@@ -128,20 +133,23 @@ if (1) {
 
   t_l(x) = TARGET_LATENCY
   #set yrange[0:TARGET_LATENCY * 2]
-  #set yrange[0:60]
+  set yrange[0:200]
 
   set label sprintf("target latency: %.1f\nPID constants: %s", TARGET_LATENCY, PID_PARAMS) at graph 0.03, graph 0.9
 
   set lmargin LMARGIN
 
+  set xrange ["00:00:00":STD_MAX]
+
   use_locksdb_sla_admin_log = 1
   if (use_locksdb_sla_admin_log == 1) {
     plot \
-    IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w p pt 7 ps 0.2 lc rgb "#FFB0B0" not, \
-    IN_FN_SLA_ADMIN u 1:($3 == 1 ? $2 : 1/0) w p pt 7 ps 0.2 lc rgb "#B0B0FF" not, \
-    t_l(x) w l lt 1 lc rgb "black" not
-    #IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w l smooth bezier lw 6 lc rgb "red" not, \
-    #IN_FN_SLA_ADMIN u 1:($3 == 1 ? $2 : 1/0) w l smooth bezier lw 6 lc rgb "blue" not
+    IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w p pt 7 ps 0.1 lc rgb "#C0C0C0" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 1 ? (TARGET_LATENCY < $2  ? $2 : 1/0) : 1/0) w p pt 7 ps 0.1 lc rgb "#FFC0C0" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($2 <= TARGET_LATENCY ? $2 : 1/0) : 1/0) w p pt 7 ps 0.1 lc rgb "#C0C0FF" not, \
+    t_l(x) w l lt 1 lc rgb "black" not, \
+    IN_FN_SLA_ADMIN u 1:($4 == -1 ? 1/0 : (TARGET_LATENCY < $4  ? $4 : 1/0)) w p pt 7 ps 0.03 lc rgb "red" not, \
+    IN_FN_SLA_ADMIN u 1:($4 == -1 ? 1/0 : ($4 <= TARGET_LATENCY ? $4 : 1/0)) w p pt 7 ps 0.03 lc rgb "blue" not
   } else {
     plot \
     IN_FN_QZ u 1:($30/1000) w p pt 7 ps 0.2 lc rgb "#FFB0B0" not, \
@@ -152,7 +160,7 @@ if (1) {
 
 
 # sst_ott adjustment
-if (1) {
+if (0) {
   if (IN_FN_SLA_ADMIN ne "") {
     reset
     set border front lc rgb "#808080" back
@@ -163,9 +171,9 @@ if (1) {
 
     set xdata time
     set timefmt "%H:%M:%S"
-    set format x "%M"
+    set format x "%H:%M"
 
-    set xlabel "Time (minute)"
+    set xlabel "Time (HH:MM)"
     set ylabel "sst\\_ott adjustment"
 
     set xrange ["00:00:00.000":]
@@ -174,6 +182,8 @@ if (1) {
     f(x) = 0
 
     set lmargin LMARGIN
+
+    set xrange ["00:00:00":STD_MAX]
 
     if (IN_FN_SLA_ADMIN_FORMAT == 1) {
       plot \
@@ -184,7 +194,7 @@ if (1) {
       adj_str_to_value(x) = (x eq "move_sst_to_slow" ? -1 : \
         (x eq "move_sst_to_fast" ? 1 : 0) )
       plot \
-      IN_FN_SLA_ADMIN u 1:(adj_str_to_value(strcol(4))) w p pt 7 ps 0.2 lc rgb "#FFA0A0" not, \
+      IN_FN_SLA_ADMIN u 1:(adj_str_to_value(strcol(5))) w p pt 7 ps 0.2 lc rgb "#FFA0A0" not, \
       f(x) w l lc rgb "black" not
     }
   }
@@ -219,9 +229,9 @@ if (1) {
 
   set xdata time
   set timefmt "%H:%M:%S"
-  set format x "%M"
+  set format x "%H:%M"
 
-  set xlabel "Time (minute)"
+  set xlabel "Time (HH:MM)"
   set ylabel "sst\\_ott"
 
   set xrange ["00:00:00.000":]
@@ -233,11 +243,13 @@ if (1) {
 
   set lmargin LMARGIN
 
+  set xrange ["00:00:00":STD_MAX]
+
   plot \
-  IN_FN_SLA_ADMIN u 1:5 w lp pt 7 ps 0.1 lc rgb "red" not
+  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $6) w p pt 7 ps 0.1 lc rgb "red" not
 }
 
-# Number of SSTables what are/should be in the fast/slow devices
+# Number of SSTables that are/should be in the fast/slow devices
 if (1) {
   reset
   set border front lc rgb "#808080" back
@@ -257,9 +269,9 @@ if (1) {
 
   set xdata time
   set timefmt "%H:%M:%S"
-  set format x "%M"
+  set format x "%H:%M"
 
-  set xlabel "Time (minute)"
+  set xlabel "Time (HH:MM)"
   set ylabel "Number of SSTables\nin fast/slow stg device"
 
   set key left
@@ -269,9 +281,15 @@ if (1) {
 
   set lmargin LMARGIN
 
+  set xrange ["00:00:00":STD_MAX]
+
   plot \
-  IN_FN_SLA_ADMIN u 1:6 w filledcurves y1=0 lc rgb "#FFB0B0" t "Current", \
-  IN_FN_SLA_ADMIN u 1:($7*(-1)) w filledcurves y1=0 lc rgb "#B0B0FF" not, \
-  IN_FN_SLA_ADMIN u 1:8 w l lc rgb "red" t "Should be", \
-  IN_FN_SLA_ADMIN u 1:($9*(-1)) w l lc rgb "blue" not
+  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $9) w l lc rgb "#FFC0C0" t "Should be", \
+  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($10*(-1))) w l lc rgb "#C0C0FF" not, \
+  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $7) w l lc rgb "red" t "Actual", \
+  IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($8*(-1))) w l lc rgb "blue" not
+
+  #IN_FN_SLA_ADMIN u 1:7 w filledcurves y1=0 lc rgb "#FFB0B0" t "Current", \
+  #IN_FN_SLA_ADMIN u 1:($8*(-1)) w filledcurves y1=0 lc rgb "#B0B0FF" not, \
+
 }
