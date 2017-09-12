@@ -80,7 +80,7 @@ if (1) {
   set border front lc rgb "#808080" back
   set xtics nomirror tc rgb "black"
 
-  logscale_y = 0
+  logscale_y = 1
   if (logscale_y == 1) {
     set ytics nomirror tc rgb "black" ( \
         "10^{3}"  1000 \
@@ -114,6 +114,12 @@ if (1) {
   set lmargin LMARGIN
 
   set xrange ["00:00:00":STD_MAX]
+
+  # A gray background box indicating disk reads from DB records reads, not from the SSTable movements.
+  y0 = 25
+  y1 = 55
+  set object rect from "00:00:00",y0 to STD_MAX,y1 fs solid 0.1 noborder fc rgb "black" behind
+  set label "Expected disk reads IOPS range\nfrom DB reads" at "00:02:00",((y0 + y1)/2.0) font ",9"
 
   plot \
   IN_FN_DS u 25:($16 == 0 ? 1/0 : $16) w p pt 7 ps 0.1 lc rgb "red" t "write", \
