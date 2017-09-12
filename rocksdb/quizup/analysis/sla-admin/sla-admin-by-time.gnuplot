@@ -69,8 +69,8 @@ if (1) {
   set yrange [:10000]
 
   plot \
-  IN_FN_QZ u 1:29 w p pt 7 ps 0.05 lc rgb "blue" t "read", \
-  IN_FN_QZ u 1:8  w p pt 7 ps 0.05 lc rgb "red" t "write"
+  IN_FN_QZ u 1:($29 == 0 ? 1/0 : $29) w p pt 7 ps 0.05 lc rgb "blue" t "read", \
+  IN_FN_QZ u 1:($8  == 0 ? 1/0 : $8 ) w p pt 7 ps 0.05 lc rgb "red" t "write"
 }
 
 # EBS st1 disk IOs
@@ -116,8 +116,8 @@ if (1) {
   set xrange ["00:00:00":STD_MAX]
 
   plot \
-  IN_FN_DS u 25:15 w p pt 7 ps 0.1 lc rgb "blue" t "read", \
-  IN_FN_DS u 25:16 w p pt 7 ps 0.1 lc rgb "red" t "write"
+  IN_FN_DS u 25:($16 == 0 ? 1/0 : $16) w p pt 7 ps 0.1 lc rgb "red" t "write", \
+  IN_FN_DS u 25:($15 == 0 ? 1/0 : $15) w p pt 7 ps 0.1 lc rgb "blue" t "read"
 }
 
 # Read latency: Both Quizup and RocksDB SLA Admin logs have read latencies.
