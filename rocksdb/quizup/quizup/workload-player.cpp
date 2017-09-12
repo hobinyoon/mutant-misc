@@ -354,7 +354,6 @@ namespace WorkloadPlayer {
       }
     }
 
-    // TODO: monitor what the SSTable temperatures and read counts are like. Do histograms.
     if (phase2_started && req_extra_reads) {
       const int xr_thread_sleep_ms = int(Conf::Get("xr_thread_sleep_ms").as<double>());
       size_t s = latest_keys_q.size();
