@@ -102,6 +102,8 @@ void Init() {
     options.mutant_options.sst_ott_adj_ranges[1] = atof(t[1].c_str());
   }
 
+  //options.mutant_options.temp_decay_factor = 0.9999;
+
   // Open DB
   Status s = DB::Open(options, db_path, &_db);
   if (! s.ok())

@@ -339,7 +339,6 @@ namespace WorkloadPlayer {
           // No reads during the load phase
         } else if (phase >= 1) {
           string v;
-          // This is needed to keep the average latency low
           DbClient::Get(k, v, ws);
 
           if (phase == 1) {
@@ -359,17 +358,21 @@ namespace WorkloadPlayer {
       size_t s = latest_keys_q.size();
       while (! _stop_requested) {
         boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-        int sleep_ms = rand() / xr_thread_sleep_ms;
+        int sleep_ms = rand() % xr_thread_sleep_ms;
         if (SimTime::SimulationTime4() <= now + boost::posix_time::milliseconds(sleep_ms))
           break;
         SimTime::SleepFor(sleep_ms);
         if (_stop_requested)
           break;
-        long oid = latest_keys_q[rand() % s];
-        char k1[20];
-        sprintf(k1, "%ld", oid);
-        string v;
-        DbClient::Get(k1, v, ws);
+
+        if (0 <= s) {
+          long oid = latest_keys_q[rand() % s];
+          char k1[20];
+          sprintf(k1, "%ld", oid);
+          string v;
+          DbClient::Get(k1, v, ws);
+        }
+        // TODO: if you want to keep the average latency low, repeat the same request like 10 times
       }
     }
   }

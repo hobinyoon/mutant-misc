@@ -174,7 +174,7 @@ void Init2() {
       double exp_dur = Conf::Get("simulation_time_dur_in_sec").as<double>() / 60;
 
       double load_dur = 30;
-      double run_dur = exp_dur - 30;
+      double run_dur = exp_dur - load_dur;
 
       double a = load_dur/exp_dur;  // fast loading
       double b = a + (exp_dur-load_dur)/exp_dur *  10 / 1000;  // give some time for the latency to stabilize
