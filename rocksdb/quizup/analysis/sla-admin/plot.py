@@ -248,6 +248,11 @@ def main(argv):
     170910-215342/quizup/170911-024322.130
     170910-215403/quizup/170911-024013.697"""
 
+  exps = """170911-180901/quizup/170911-225243.953
+    170911-191601/quizup/170912-000330.251
+    170911-191706/quizup/170912-000344.161
+    170911-191727/quizup/170912-001211.393"""
+
   for line in re.split(r"\s+", exps):
     t = line.split("/quizup/")
     if len(t) != 2:
@@ -267,35 +272,10 @@ def Plot(job_id, exp_dt):
   log_q = QuizupLog(fn_log_quizup)
   SimTime.Init(log_q.SimTime("simulated_time_0"), log_q.SimTime("simulated_time_4")
       , log_q.SimTime("simulation_time_0"), log_q.SimTime("simulation_time_4"))
-  # Simulation time duration
-  s = int(log_q.quizup_options["simulation_time_dur_in_sec"])
-  std_s = s % 60
-  std_m = int(s / 60) % 60
-  std_h = int(s / 3600)
-  std_max = "%02d:%02d:%02d" % (std_h, std_m, std_s)
 
-  # quizup_options. List them in 2 columns, column first.
-  max_width = 0
-  i = 0
-  num_rows = int(math.ceil(len(log_q.quizup_options) / 2.0))
-  for k, v in sorted(log_q.quizup_options.iteritems()):
-    max_width = max(max_width, len("%s: %s" % (k, v)))
-    i += 1
-    if i == num_rows:
-      break
-
-  strs = []
-  fmt = "%%-%ds" % (max_width + 1)
-  for k, v in sorted(log_q.quizup_options.iteritems()):
-    strs.append(fmt % ("%s: %s" % (k, v)))
-  #Cons.P("\n".join(strs))
-  for i in range(num_rows):
-    if i + num_rows < len(strs):
-      strs[i] += strs[i + num_rows]
-  strs = strs[:num_rows]
-  #Cons.P("\n".join(strs))
-  quizup_options = "\\n".join(strs).replace("_", "\\\\_").replace(" ", "\\ ")
-  #Cons.P(quizup_options)
+  qz_std_max = _QzSimTimeDur(log_q.quizup_options["simulation_time_dur_in_sec"])
+  qz_opt_str = _QuizupOptionsFormattedStr(log_q.quizup_options)
+  qz_sst_ott_adj_ranges = log_q.quizup_options["sst_ott_adj_ranges"].replace(",", " ")
 
   (fn_rocksdb_sla_admin_log, pid_params, num_sla_adj, format_version) = RocksdbLog.GetSlaAdminLog(fn_log_rocksdb, exp_dt)
 
@@ -305,17 +285,53 @@ def Plot(job_id, exp_dt):
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
-    env["STD_MAX"] = std_max
+    env["STD_MAX"] = qz_std_max
+    env["QZ_SST_OTT_ADJ_RANGES"] = qz_sst_ott_adj_ranges
     env["IN_FN_QZ"] = fn_log_quizup
     env["IN_FN_SLA_ADMIN"] = "" if num_sla_adj == 0 else fn_rocksdb_sla_admin_log
     env["IN_FN_SLA_ADMIN_FORMAT"] = str(format_version)
     env["TARGET_LATENCY"] = str(pid_params["target_value"])
-    env["QUIZUP_OPTIONS"] = quizup_options
+    env["QUIZUP_OPTIONS"] = qz_opt_str
     env["PID_PARAMS"] = "%s %s %s" % (pid_params["p"], pid_params["i"], pid_params["d"])
     env["IN_FN_DS"] = fn_dstat
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/sla-admin-by-time.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+
+
+# List the options in 2 columns, column first.
+def _QuizupOptionsFormattedStr(quizup_options):
+  max_width = 0
+  i = 0
+  num_rows = int(math.ceil(len(quizup_options) / 2.0))
+  for k, v in sorted(quizup_options.iteritems()):
+    max_width = max(max_width, len("%s: %s" % (k, v)))
+    i += 1
+    if i == num_rows:
+      break
+
+  strs = []
+  fmt = "%%-%ds" % (max_width + 1)
+  for k, v in sorted(quizup_options.iteritems()):
+    strs.append(fmt % ("%s: %s" % (k, v)))
+  #Cons.P("\n".join(strs))
+  for i in range(num_rows):
+    if i + num_rows < len(strs):
+      strs[i] += strs[i + num_rows]
+  strs = strs[:num_rows]
+  #Cons.P("\n".join(strs))
+  qz_opt_str = "\\n".join(strs).replace("_", "\\\\_").replace(" ", "\\ ")
+  #Cons.P(qz_opt_str)
+  return qz_opt_str
+
+
+# Simulation time duration
+def _QzSimTimeDur(std):
+  s = int(std)
+  std_s = s % 60
+  std_m = int(s / 60) % 60
+  std_h = int(s / 3600)
+  return "%02d:%02d:%02d" % (std_h, std_m, std_s)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
 STD_MAX = system("echo $STD_MAX")
+QZ_SST_OTT_ADJ_RANGES = system("echo $QZ_SST_OTT_ADJ_RANGES")
 IN_FN_QZ = system("echo $IN_FN_QZ")
 IN_FN_SLA_ADMIN = system("echo $IN_FN_SLA_ADMIN")
 IN_FN_SLA_ADMIN_FORMAT = system("echo $IN_FN_SLA_ADMIN_FORMAT") + 0
@@ -12,6 +13,7 @@ OUT_FN = system("echo $OUT_FN")
 
 set print "-"
 #print sprintf("QUIZUP_OPTIONS=%s", QUIZUP_OPTIONS)
+print sprintf("QZ_SST_OTT_ADJ_RANGES=%s", QZ_SST_OTT_ADJ_RANGES)
 
 set terminal pdfcairo enhanced size 6in, (2.3*0.85)in
 set output OUT_FN
@@ -31,8 +33,7 @@ if (1) {
   plot f(x) lc rgb "#F0F0F0" not
 }
 
-
-# Number of DB reads and writes
+# Memory:cache usage
 if (1) {
   reset
   set xdata time
@@ -40,37 +41,19 @@ if (1) {
   set format x "%H:%M"
 
   set xlabel "Time (HH:MM)"
-  set ylabel "DB IO/sec" tc rgb "black"
+  set ylabel "Mem:cache (GB)"
   set xtics nomirror tc rgb "black"
-
-  logscale_y = 0
-
-  if (logscale_y == 1) {
-    set ytics nomirror tc rgb "black" ( \
-        "10^{3}"  1000 \
-      , "10^{2}"   100 \
-      , "10^{1}"    10 \
-      , "10^{0}"     1 \
-    )
-  } else {
-    set ytics nomirror tc rgb "black"
-  }
+  set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
 
   # Align the stacked plots
   set lmargin LMARGIN
 
-  if (logscale_y == 1) {
-    set logscale y
-  }
-
   set xrange ["00:00:00":STD_MAX]
-  set yrange [:10000]
 
   plot \
-  IN_FN_QZ u 1:($29 == 0 ? 1/0 : $29) w p pt 7 ps 0.05 lc rgb "blue" t "read", \
-  IN_FN_QZ u 1:($8  == 0 ? 1/0 : $8 ) w p pt 7 ps 0.05 lc rgb "red" t "write"
+  IN_FN_DS u 25:($18/1048576) w lp pt 7 ps 0.05 lc rgb "red" not
 }
 
 # EBS st1 disk IOs
@@ -143,12 +126,10 @@ if (1) {
   set grid xtics ytics back lc rgb "#808080"
   set border front lc rgb "#808080" back
 
-  f_t(x, a) = TARGET_LATENCY * (1 - a)
+  f_t(x, a) = TARGET_LATENCY * (1 + a)
 
   #set yrange[0:TARGET_LATENCY * 2]
   set yrange[0:100]
-
-  set label sprintf("target latency: %.1f\nPID constants: %s", TARGET_LATENCY, PID_PARAMS) at graph 0.03, graph 0.9
 
   set lmargin LMARGIN
 
@@ -156,17 +137,30 @@ if (1) {
 
   use_locksdb_sla_admin_log = 1
   if (use_locksdb_sla_admin_log == 1) {
+    # sst_ott adj ranges
+    ar0 = word(QZ_SST_OTT_ADJ_RANGES, 1) + 0.0
+    ar1 = word(QZ_SST_OTT_ADJ_RANGES, 2) + 0.0
+    lat_0 = TARGET_LATENCY * (1 + ar0)
+    lat_1 = TARGET_LATENCY * (1 + ar1)
+
+    # Point size for latency and runnig average latency
+    PS_LAT = 0.04
+    PS_LAT_RA = 0.04
+
+    set label sprintf("target latency: %.1f\nsst\\_ott adj ranges: %.1f %.1f (%s)", \
+      TARGET_LATENCY, lat_0, lat_1, QZ_SST_OTT_ADJ_RANGES) at graph 0.03, graph 0.9
+
     plot \
-    IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w p pt 7 ps 0.1 lc rgb "#C0C0C0" not, \
-    IN_FN_SLA_ADMIN u 1:($3 == 1 ? (TARGET_LATENCY < $2  ? $2 : 1/0) : 1/0) w p pt 7 ps 0.1 lc rgb "#FFC0C0" not, \
-    IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($2 <= TARGET_LATENCY ? $2 : 1/0) : 1/0) w p pt 7 ps 0.1 lc rgb "#C0C0FF" not, \
-    f_t(x,  0.10) w l lt 1 lc rgb "black" not, \
-    f_t(x,  0.05) w l lt 1 lc rgb "black" not, \
-    f_t(x, 0) w l lt 1 lc rgb "black" not, \
-    f_t(x, -0.05) w l lt 1 lc rgb "black" not, \
-    f_t(x, -0.10) w l lt 1 lc rgb "black" not, \
-    IN_FN_SLA_ADMIN u 1:($4 == -1 ? 1/0 : (TARGET_LATENCY < $4  ? $4 : 1/0)) w p pt 7 ps 0.03 lc rgb "red" not, \
-    IN_FN_SLA_ADMIN u 1:($4 == -1 ? 1/0 : ($4 <= TARGET_LATENCY ? $4 : 1/0)) w p pt 7 ps 0.03 lc rgb "blue" not
+    IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0D0D0" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($2 < lat_0 ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0D0FF" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 1 ? (((lat_0 <= $2) && ($2 < lat_1)) ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0FFD0" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 1 ? (lat_1 <= $2 ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#FFD0D0" not, \
+    f_t(x, 0) w l lt 1 lc rgb "#B0B0B0" not, \
+    f_t(x, ar1) w l lt 1 lc rgb "#B0B0B0" not, \
+    f_t(x, ar0) w l lt 1 lc rgb "#B0B0B0" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($4 < lat_0 ? $4 : 1/0) : 1/0) w p pt 7 ps PS_LAT_RA lc rgb "#0000FF" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 1 ? (((lat_0 <= $4) && ($4 < lat_1)) ? $4 : 1/0) : 1/0) w p pt 7 ps PS_LAT_RA lc rgb "#00FF00" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 1 ? (lat_1 <= $4 ? $4 : 1/0) : 1/0) w p pt 7 ps PS_LAT_RA lc rgb "#FF0000" not
   } else {
     plot \
     IN_FN_QZ u 1:($30/1000) w p pt 7 ps 0.2 lc rgb "#FFB0B0" not, \
@@ -219,47 +213,6 @@ if (1) {
   f(x) w l lc rgb "black" not
 }
 
-# sst_ott adjustment
-if (0) {
-  if (IN_FN_SLA_ADMIN ne "") {
-    reset
-    set border front lc rgb "#808080" back
-    set xtics nomirror tc rgb "black"
-    set ytics nomirror tc rgb "black"
-    set grid xtics ytics back lc rgb "#808080"
-    set border front lc rgb "#808080" back
-
-    set xdata time
-    set timefmt "%H:%M:%S"
-    set format x "%H:%M"
-
-    set xlabel "Time (HH:MM)"
-    set ylabel "sst\\_ott adjustment"
-
-    set xrange ["00:00:00.000":]
-    #set yrange [:50]
-
-    f(x) = 0
-
-    set lmargin LMARGIN
-
-    set xrange ["00:00:00":STD_MAX]
-
-    if (IN_FN_SLA_ADMIN_FORMAT == 1) {
-      plot \
-      IN_FN_SLA_ADMIN u 1:3 w filledcurves y1=0 lc rgb "#FFA0A0" not, \
-      f(x) w l lc rgb "black" not
-    } else {
-      set yrange [-1.5:1.5]
-      adj_str_to_value(x) = (x eq "move_sst_to_slow" ? -1 : \
-        (x eq "move_sst_to_fast" ? 1 : 0) )
-      plot \
-      IN_FN_SLA_ADMIN u 1:(adj_str_to_value(strcol(5))) w p pt 7 ps 0.2 lc rgb "#FFA0A0" not, \
-      f(x) w l lc rgb "black" not
-    }
-  }
-}
-
 # sst_ott
 if (1) {
   reset
@@ -307,4 +260,86 @@ if (1) {
 
   plot \
   IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $6) w p pt 7 ps 0.1 lc rgb "red" not
+}
+
+# Number of DB reads and writes
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "DB IO/sec" tc rgb "black"
+  set xtics nomirror tc rgb "black"
+
+  logscale_y = 0
+
+  if (logscale_y == 1) {
+    set ytics nomirror tc rgb "black" ( \
+        "10^{3}"  1000 \
+      , "10^{2}"   100 \
+      , "10^{1}"    10 \
+      , "10^{0}"     1 \
+    )
+  } else {
+    set ytics nomirror tc rgb "black"
+  }
+  set grid xtics ytics back lc rgb "#808080"
+  set border front lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  if (logscale_y == 1) {
+    set logscale y
+  }
+
+  set xrange ["00:00:00":STD_MAX]
+  set yrange [:10000]
+
+  plot \
+  IN_FN_QZ u 1:($29 == 0 ? 1/0 : $29) w p pt 7 ps 0.05 lc rgb "blue" t "read", \
+  IN_FN_QZ u 1:($8  == 0 ? 1/0 : $8 ) w p pt 7 ps 0.05 lc rgb "red" t "write"
+}
+
+# sst_ott adjustment
+if (0) {
+  if (IN_FN_SLA_ADMIN ne "") {
+    reset
+    set border front lc rgb "#808080" back
+    set xtics nomirror tc rgb "black"
+    set ytics nomirror tc rgb "black"
+    set grid xtics ytics back lc rgb "#808080"
+    set border front lc rgb "#808080" back
+
+    set xdata time
+    set timefmt "%H:%M:%S"
+    set format x "%H:%M"
+
+    set xlabel "Time (HH:MM)"
+    set ylabel "sst\\_ott adjustment"
+
+    set xrange ["00:00:00.000":]
+    #set yrange [:50]
+
+    f(x) = 0
+
+    set lmargin LMARGIN
+
+    set xrange ["00:00:00":STD_MAX]
+
+    if (IN_FN_SLA_ADMIN_FORMAT == 1) {
+      plot \
+      IN_FN_SLA_ADMIN u 1:3 w filledcurves y1=0 lc rgb "#FFA0A0" not, \
+      f(x) w l lc rgb "black" not
+    } else {
+      set yrange [-1.5:1.5]
+      adj_str_to_value(x) = (x eq "move_sst_to_slow" ? -1 : \
+        (x eq "move_sst_to_fast" ? 1 : 0) )
+      plot \
+      IN_FN_SLA_ADMIN u 1:(adj_str_to_value(strcol(5))) w p pt 7 ps 0.2 lc rgb "#FFA0A0" not, \
+      f(x) w l lc rgb "black" not
+    }
+  }
 }
