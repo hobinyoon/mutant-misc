@@ -253,6 +253,11 @@ def main(argv):
     170911-191706/quizup/170912-000344.161
     170911-191727/quizup/170912-001211.393"""
 
+  exps = """170912-090146/quizup/170912-134543.058
+    170912-094042/quizup/170912-142410.344"""
+
+  exps = """170912-121125/quizup/170912-165921.714"""
+
   for line in re.split(r"\s+", exps):
     t = line.split("/quizup/")
     if len(t) != 2:
@@ -277,7 +282,7 @@ def Plot(job_id, exp_dt):
   qz_opt_str = _QuizupOptionsFormattedStr(log_q.quizup_options)
   qz_sst_ott_adj_ranges = log_q.quizup_options["sst_ott_adj_ranges"].replace(",", " ")
 
-  (fn_rocksdb_sla_admin_log, pid_params, num_sla_adj, format_version) = RocksdbLog.GetSlaAdminLog(fn_log_rocksdb, exp_dt)
+  (fn_rocksdb_sla_admin_log, pid_params, num_sla_adj, format_version) = RocksdbLog.ParseLog(fn_log_rocksdb, exp_dt)
 
   fn_dstat = DstatLog.GenDataFileForGnuplot(fn_log_dstat, exp_dt)
 

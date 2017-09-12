@@ -5,6 +5,8 @@ import pprint
 import re
 import sys
 
+import Queue
+
 sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~"))
 import Cons
 import Util
@@ -12,7 +14,12 @@ import Util
 import Conf
 import SimTime
 
-def GetSlaAdminLog(fn, exp_dt):
+def ParseLog(fn, exp_dt):
+  with Cons.MT("Parsing RocksDB log %s ..." % fn):
+    return _ParseLog(fn, exp_dt)
+
+
+def _ParseLog(fn, exp_dt):
   if not os.path.exists(fn):
     fn_zipped = "%s.7z" % fn
     if not os.path.exists(fn_zipped):
@@ -24,6 +31,7 @@ def GetSlaAdminLog(fn, exp_dt):
   fn_out = "%s/rocksdb-sla-admin-%s" % (Conf.GetDir("output_dir"), exp_dt)
   pid_params = None
   num_sla_adj = 0
+  last_lines_mutant_table_acc_cnt = Queue.Queue()
 
   with open(fn) as fo, open(fn_out, "w") as fo_out:
     # Different versions have different format
@@ -134,9 +142,54 @@ def GetSlaAdminLog(fn, exp_dt):
               , num_ssts_should_be_in_fast_dev
               , num_ssts_should_be_in_slow_dev
               ))
+        elif "mutant_table_acc_cnt" in line:
+          if 500 <= last_lines_mutant_table_acc_cnt.qsize():
+            last_lines_mutant_table_acc_cnt.get()
+          last_lines_mutant_table_acc_cnt.put(line)
+
       except KeyError as e:
         Cons.P("KeyError: %s fn=%s line=%s" % (e, fn, line))
         sys.exit(1)
 
+  # Checked to see what their access count distribution is like
+  #_ParseSstAccCnt(last_lines_mutant_table_acc_cnt.get())
+
   Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
   return (fn_out, pid_params, num_sla_adj, format_version)
+
+
+def _ParseSstAccCnt(line):
+  if line is None:
+    raise RuntimeError("Unexpected")
+  mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .+EVENT_LOG_v1 (?P<json>.+)", line)
+
+  ts = datetime.datetime.strptime(mo.group("ts"), "%Y/%m/%d-%H:%M:%S.%f")
+  ts_rel = ts - SimTime.SimulationTimeBegin()
+  Cons.P("line ts: %s" % str(ts_rel)[:11])
+
+  j = json.loads(mo.group("json"))
+  #Cons.P(j["mutant_table_acc_cnt"]["sst"])
+  # 2816:2:1:1.046:0.199 2869:2:1:1.046:0.264 2903:3:2:3.705:0.174 3385:3:2:2.092:1.087 3389:3:3:3.138:1.646 ...
+  tokens = j["mutant_table_acc_cnt"]["sst"].split(" ")
+  sst_acc_infos = []
+  for t in tokens:
+    sst_acc_infos.append(SstAccInfo(t))
+
+  sst_acc_infos.sort(key=lambda x: x.temp)
+
+  for ai in sst_acc_infos:
+    Cons.P(ai)
+
+
+class SstAccInfo:
+  def __init__(self, t):
+    t1 = t.split(":")
+    if len(t1) != 5:
+      raise RuntimeError("Unexpected: [%s]" % t)
+    self.sst_id = int(t1[0])
+    self.level = int(t1[1])
+    self.acc_cnt = int(t1[2])
+    self.temp = float(t1[4])
+
+  def __repr__(self):
+    return pprint.pformat(vars(self))

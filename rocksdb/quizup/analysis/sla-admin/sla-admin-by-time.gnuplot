@@ -13,7 +13,7 @@ OUT_FN = system("echo $OUT_FN")
 
 set print "-"
 #print sprintf("QUIZUP_OPTIONS=%s", QUIZUP_OPTIONS)
-print sprintf("QZ_SST_OTT_ADJ_RANGES=%s", QZ_SST_OTT_ADJ_RANGES)
+#print sprintf("QZ_SST_OTT_ADJ_RANGES=%s", QZ_SST_OTT_ADJ_RANGES)
 
 set terminal pdfcairo enhanced size 6in, (2.3*0.85)in
 set output OUT_FN
@@ -102,7 +102,7 @@ if (1) {
   y0 = 25
   y1 = 55
   set object rect from "00:00:00",y0 to STD_MAX,y1 fs solid 0.1 noborder fc rgb "black" behind
-  set label "Expected disk reads IOPS range\nfrom DB reads" at "00:02:00",((y0 + y1)/2.0) font ",9"
+  set label "Expected total (fast+slow) disk reads\nIOPS range from DB reads" at "00:02:00",((y0 + y1)/2.0) font ",9"
 
   plot \
   IN_FN_DS u 25:($16 == 0 ? 1/0 : $16) w p pt 7 ps 0.1 lc rgb "red" t "write", \
@@ -155,9 +155,9 @@ if (1) {
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($2 < lat_0 ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0D0FF" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? (((lat_0 <= $2) && ($2 < lat_1)) ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0FFD0" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? (lat_1 <= $2 ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#FFD0D0" not, \
-    f_t(x, 0) w l lt 1 lc rgb "#B0B0B0" not, \
-    f_t(x, ar1) w l lt 1 lc rgb "#B0B0B0" not, \
-    f_t(x, ar0) w l lt 1 lc rgb "#B0B0B0" not, \
+    f_t(x, 0)   w l lt 1 lc rgb "#B0B0B0" not, \
+    f_t(x, ar1) w l lt 1 lc rgb "#D0D0D0" not, \
+    f_t(x, ar0) w l lt 1 lc rgb "#D0D0D0" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($4 < lat_0 ? $4 : 1/0) : 1/0) w p pt 7 ps PS_LAT_RA lc rgb "#0000FF" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? (((lat_0 <= $4) && ($4 < lat_1)) ? $4 : 1/0) : 1/0) w p pt 7 ps PS_LAT_RA lc rgb "#00FF00" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? (lat_1 <= $4 ? $4 : 1/0) : 1/0) w p pt 7 ps PS_LAT_RA lc rgb "#FF0000" not
