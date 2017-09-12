@@ -67,7 +67,7 @@ void _GetAndReset(
     vector<long>& latency_put,
     vector<long>& latency_get);
 Stat GenStat(vector<long>& v);
-void _ReportXrQLen();
+string _GetXrQLenStat();
 
 
 void WorkerStat::RunningOnTime() {
@@ -284,8 +284,13 @@ void _ReporterThread() {
 
   for (int i = 0; !_reporter_stop; i ++) {
     if (i % 30 == 0) {
-      _ReportXrQLen();
+      string xr_q_len_stat = str(boost::format("# xr_q_len_stat: %s") % _GetXrQLenStat());
+
+      ofs << xr_q_len_stat << "\n";
+      ofs << "\n";
       ofs << header1 << "\n";
+
+      Cons::P(xr_q_len_stat);
       Cons::P(header2);
     }
 
@@ -444,19 +449,19 @@ void StartReportingToSlaAdmin() {
   if (! _start_sla_admin_report_latency) {
     lock_guard<mutex> _(m);
     if (! _start_sla_admin_report_latency) {
-			string pid_params = Conf::GetStr("pid_params");
-			vector<string> t;
-			static const auto sep = boost::is_any_of(",");
-			boost::split(t, pid_params, sep);
-			if (t.size() != 4)
-				THROW(boost::format("Unexpected: [%s]") % pid_params);
+      string pid_params = Conf::GetStr("pid_params");
+      vector<string> t;
+      static const auto sep = boost::is_any_of(",");
+      boost::split(t, pid_params, sep);
+      if (t.size() != 4)
+        THROW(boost::format("Unexpected: [%s]") % pid_params);
 
       rocksdb::Mutant::SlaAdminInit(
-				atof(t[0].c_str()) // target latency in ms
-				, atof(t[1].c_str()) // P
-				, atof(t[2].c_str()) // I
-				, atof(t[3].c_str()) // D
-				);
+        atof(t[0].c_str()) // target latency in ms
+        , atof(t[1].c_str()) // P
+        , atof(t[2].c_str()) // I
+        , atof(t[3].c_str()) // D
+        );
       _start_sla_admin_report_latency = true;
     }
   }
@@ -531,7 +536,7 @@ void UpdateXrQLen(size_t s) {
 }
 
 
-void _ReportXrQLen() {
+string _GetXrQLenStat() {
   vector<size_t> sizes;
   {
     lock_guard<mutex> _(_tid_xrqlen_lock);
@@ -545,7 +550,7 @@ void _ReportXrQLen() {
   // 2: histogram with bucket size 50
   int format_type = 2;
   if (format_type == 0) {
-    Cons::P(boost::format("# xr_q_len: %s") % boost::join(sizes | boost::adaptors::transformed([](size_t s) { return std::to_string(s); }), " "));
+    return boost::join(sizes | boost::adaptors::transformed([](size_t s) { return std::to_string(s); }), " ");
   } else if (format_type == 1) {
     string out;
     int cur_s = 0;
@@ -582,7 +587,7 @@ void _ReportXrQLen() {
       out += str(boost::format("%dx%d") % cur_s % cur_s_cnt);
     }
 
-    Cons::P(boost::format("# xr_q_len: %s") % out);
+    return out;
   } else if (format_type == 2) {
     // <Bucket of in the range such as [0, 50), count>
     map<int, int> histo;
@@ -604,7 +609,7 @@ void _ReportXrQLen() {
         out += " ";
       out += str(boost::format("%d:%d") % (i.first * bucket_size) % i.second);
     }
-    Cons::P(boost::format("# xr_q_len: %s") % out);
+    return out;
   }
 }
 
