@@ -399,6 +399,16 @@ int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, Pro
 }
 
 
+void SleepFor(const long ms) {
+  auto sleep_dur = ms * 1000000;
+  {
+    // I'm hoping this is reentrant by multiple worker threads. Looks like, because wait_for() unlocks the mutex.
+    unique_lock<mutex> lk(_stop_requested_mutex);
+    _stop_requested_cv.wait_for(lk, chrono::nanoseconds(sleep_dur), [](){return _stop_requested;});
+  }
+}
+
+
 void WakeupSleepingThreads() {
   {
     lock_guard<mutex> lk(_stop_requested_mutex);

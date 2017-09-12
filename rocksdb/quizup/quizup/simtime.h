@@ -11,6 +11,7 @@ namespace SimTime {
 
 	int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated
 			, ProgMon::WorkerStat* ws);
+	void SleepFor(const long ms);
 	void WakeupSleepingThreads();
 
 	boost::posix_time::ptime SimulationTime0();

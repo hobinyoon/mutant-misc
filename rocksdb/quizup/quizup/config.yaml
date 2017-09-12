@@ -125,5 +125,5 @@ sst_ott_adj_ranges: -0.1,-0.025
 # To generate more IOs
 extra_reads: true
 xr_queue_size: 500
-# Make 1 extra read for every 100 reads from the workload trace
-xr_rate: 100
+# Each thread sleeps for a random time in [0, xr_thread_sleep_ms - 1] ms.
+xr_thread_sleep_ms: 300.0

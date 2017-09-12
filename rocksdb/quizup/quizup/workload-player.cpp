@@ -266,8 +266,9 @@ namespace WorkloadPlayer {
     set<long> latest_keys_set;
     bool uniform_key_popularity = true;
     const size_t latest_keys_q_cap = Conf::Get("xr_queue_size").as<int>();
-    const int xr_rate = Conf::Get("xr_rate").as<int>();
     boost::posix_time::ptime prev_ts_queue_size_report;
+    // From phase2, make uniform random, uniformly placed requests until the end of the simulation time.
+    bool phase2_started = false;
 
     // Make requests
     while (i < s) {
@@ -344,20 +345,32 @@ namespace WorkloadPlayer {
           if (phase == 1) {
           } else if (phase == 2) {
             ProgMon::StartReportingToSlaAdmin();
-          }
-
-          if (req_extra_reads) {
-            size_t s = latest_keys_q.size();
-            if (rand() % xr_rate == 0) {
-              long oid = latest_keys_q[rand() % s];
-              char k1[20];
-              sprintf(k1, "%ld", oid);
-              DbClient::Get(k1, v, ws);
-            }
+            phase2_started = true;
+            break;
           }
         }
       } else {
         THROW(boost::format("Unexpected op %c") % too.op);
+      }
+    }
+
+    // TODO: monitor what the SSTable temperatures and read counts are like. Do histograms.
+    if (phase2_started && req_extra_reads) {
+      const int xr_thread_sleep_ms = int(Conf::Get("xr_thread_sleep_ms").as<double>());
+      size_t s = latest_keys_q.size();
+      while (! _stop_requested) {
+        boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+        int sleep_ms = rand() / xr_thread_sleep_ms;
+        if (SimTime::SimulationTime4() <= now + boost::posix_time::milliseconds(sleep_ms))
+          break;
+        SimTime::SleepFor(sleep_ms);
+        if (_stop_requested)
+          break;
+        long oid = latest_keys_q[rand() % s];
+        char k1[20];
+        sprintf(k1, "%ld", oid);
+        string v;
+        DbClient::Get(k1, v, ws);
       }
     }
   }
