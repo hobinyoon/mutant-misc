@@ -373,7 +373,7 @@ namespace WorkloadPlayer {
           char k1[20];
           sprintf(k1, "%ld", oid);
           string v;
-          if (int i = 0; i < xr_gets_per_key; i ++)
+          for (int i = 0; i < xr_gets_per_key; i ++)
             DbClient::Get(k1, v, ws);
         }
       }
