@@ -354,25 +354,28 @@ namespace WorkloadPlayer {
     }
 
     if (phase2_started && req_extra_reads) {
-      const int xr_thread_sleep_ms = int(Conf::Get("xr_thread_sleep_ms").as<double>());
-      size_t s = latest_keys_q.size();
-      while (! _stop_requested) {
-        boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-        int sleep_ms = rand() % xr_thread_sleep_ms;
-        if (SimTime::SimulationTime4() <= now + boost::posix_time::milliseconds(sleep_ms))
-          break;
-        SimTime::SleepFor(sleep_ms);
-        if (_stop_requested)
-          break;
+      size_t q_size = latest_keys_q.size();
+      if (q_size == 0) {
+        // Nothing to do
+      } else {
+        const int xr_thread_sleep_ms = int(Conf::Get("xr_thread_sleep_ms").as<double>());
+        const int xr_gets_per_key = Conf::Get("xr_gets_per_key").as<int>();
+        while (! _stop_requested) {
+          boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+          int sleep_ms = rand() % xr_thread_sleep_ms;
+          if (SimTime::SimulationTime4() <= now + boost::posix_time::milliseconds(sleep_ms))
+            break;
+          SimTime::SleepFor(sleep_ms);
+          if (_stop_requested)
+            break;
 
-        if (0 <= s) {
-          long oid = latest_keys_q[rand() % s];
+          long oid = latest_keys_q[rand() % q_size];
           char k1[20];
           sprintf(k1, "%ld", oid);
           string v;
-          DbClient::Get(k1, v, ws);
+          if (int i = 0; i < xr_gets_per_key; i ++)
+            DbClient::Get(k1, v, ws);
         }
-        // TODO: if you want to keep the average latency low, repeat the same request like 10 times
       }
     }
   }

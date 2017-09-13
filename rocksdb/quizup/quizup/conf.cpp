@@ -73,6 +73,7 @@ namespace Conf {
       ("extra_reads", po::value<bool>()->default_value(Get("extra_reads").as<bool>()))
       ("xr_queue_size", po::value<int>()->default_value(Get("xr_queue_size").as<int>()))
       ("xr_thread_sleep_ms", po::value<double>()->default_value(Get("xr_thread_sleep_ms").as<double>()))
+      ("xr_gets_per_key", po::value<int>()->default_value(Get("xr_gets_per_key").as<int>()))
       ;
 
     po::variables_map vm;
@@ -107,6 +108,7 @@ namespace Conf {
     __EditYaml<bool>("extra_reads", vm);
     __EditYaml<int>("xr_queue_size", vm);
     __EditYaml<double>("xr_thread_sleep_ms", vm);
+    __EditYaml<int>("xr_gets_per_key", vm);
   }
 
   void Init(int argc, char* argv[]) {

@@ -66,6 +66,7 @@ def main():
   parser.add_option("--extra_reads", help="Req extra reads")
   parser.add_option("--xr_queue_size", help="XR queue size")
   parser.add_option("--xr_thread_sleep_ms", help="XR thread random sleep time parameter in ms")
+  parser.add_option("--xr_gets_per_key", help="XR gets per key")
 
   (options, args) = parser.parse_args()
   if len(args) != 0:
@@ -161,6 +162,7 @@ def main():
       , "extra_reads" \
       , "xr_queue_size" \
       , "xr_thread_sleep_ms" \
+      , "xr_gets_per_key" \
       ]:
     if (hasattr(options, k)) and (getattr(options, k) is not None):
       args0.append("--%s=%s" % (k, getattr(options, k)))

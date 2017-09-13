@@ -127,3 +127,4 @@ extra_reads: true
 xr_queue_size: 500
 # Each thread sleeps for a random time in [0, xr_thread_sleep_ms - 1] ms.
 xr_thread_sleep_ms: 300.0
+xr_gets_per_key: 10
