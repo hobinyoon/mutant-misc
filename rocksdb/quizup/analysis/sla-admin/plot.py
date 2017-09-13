@@ -258,6 +258,11 @@ def main(argv):
 
   exps = """170912-121125/quizup/170912-165921.714"""
 
+  exps = """170912-090146/quizup/170912-134543.058"""
+
+  exps = """170912-200314/quizup/170913-000846.906
+    170912-200725/quizup/170913-000923.763"""
+
   for line in re.split(r"\s+", exps):
     t = line.split("/quizup/")
     if len(t) != 2:

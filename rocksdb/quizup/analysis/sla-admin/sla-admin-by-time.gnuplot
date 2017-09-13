@@ -63,7 +63,7 @@ if (1) {
   set border front lc rgb "#808080" back
   set xtics nomirror tc rgb "black"
 
-  logscale_y = 1
+  logscale_y = 0
   if (logscale_y == 1) {
     set ytics nomirror tc rgb "black" ( \
         "10^{3}"  1000 \
@@ -80,6 +80,7 @@ if (1) {
     set logscale y
   } else {
     set ytics nomirror tc rgb "black"
+    set yrange [:100]
   }
 
   set grid xtics ytics back lc rgb "#808080"
@@ -99,14 +100,23 @@ if (1) {
   set xrange ["00:00:00":STD_MAX]
 
   # A gray background box indicating disk reads from DB records reads, not from the SSTable movements.
-  y0 = 25
-  y1 = 55
-  set object rect from "00:00:00",y0 to STD_MAX,y1 fs solid 0.1 noborder fc rgb "black" behind
-  set label "Expected total (fast+slow) disk reads\nIOPS range from DB reads" at "00:02:00",((y0 + y1)/2.0) font ",9"
+  if (0) {
+    y0 = 25
+    y1 = 55
+    set object rect from "00:00:00",y0 to STD_MAX,y1 fs solid 0.1 noborder fc rgb "black" behind
+    set label "Expected total (fast+slow) disk reads\nIOPS range from DB reads" at "00:02:00",((y0 + y1)/2.0) font ",9"
+  }
+
+  PS=0.05
 
   plot \
-  IN_FN_DS u 25:($16 == 0 ? 1/0 : $16) w p pt 7 ps 0.1 lc rgb "red" t "write", \
-  IN_FN_DS u 25:($15 == 0 ? 1/0 : $15) w p pt 7 ps 0.1 lc rgb "blue" t "read"
+  IN_FN_DS u 25:($16 == 0 ? 1/0 : $16) w p pt 7 ps PS lc rgb "red" t "write (red)", \
+  IN_FN_DS u 25:($15 == 0 ? 1/0 : $15) w p pt 7 ps PS lc rgb "blue" t "read (blue)"
+
+  set ylabel "Local SSD IOPS"
+  plot \
+  IN_FN_DS u 25:($14 == 0 ? 1/0 : $14) w p pt 7 ps PS lc rgb "red" t "write (red)", \
+  IN_FN_DS u 25:($13 == 0 ? 1/0 : $13) w p pt 7 ps PS lc rgb "blue" t "read (blue)"
 }
 
 # Read latency: Both Quizup and RocksDB SLA Admin logs have read latencies.
@@ -128,12 +138,16 @@ if (1) {
 
   f_t(x, a) = TARGET_LATENCY * (1 + a)
 
-  #set yrange[0:TARGET_LATENCY * 2]
-  set yrange[0:100]
-
   set lmargin LMARGIN
 
   set xrange ["00:00:00":STD_MAX]
+
+  logscale_y = 0
+  if (logscale_y == 1) {
+    set logscale y
+  } else {
+    set yrange[:100]
+  }
 
   use_locksdb_sla_admin_log = 1
   if (use_locksdb_sla_admin_log == 1) {
@@ -151,7 +165,7 @@ if (1) {
       TARGET_LATENCY, lat_0, lat_1, QZ_SST_OTT_ADJ_RANGES) at graph 0.03, graph 0.9
 
     plot \
-    IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0D0D0" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w p pt 7 ps PS_LAT lc rgb "#B0B0B0" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($2 < lat_0 ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0D0FF" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? (((lat_0 <= $2) && ($2 < lat_1)) ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0FFD0" not, \
     IN_FN_SLA_ADMIN u 1:($3 == 1 ? (lat_1 <= $2 ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#FFD0D0" not, \
