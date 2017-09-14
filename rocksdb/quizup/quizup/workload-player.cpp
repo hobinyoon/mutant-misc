@@ -64,6 +64,8 @@ void RandomAsciiString(const int len, string& v) {
 
 
 namespace WorkloadPlayer {
+  int _xr_gets_per_key = 0;
+  int _xr_sleep_upper_bound_ms = 0;
 
   struct TsOpOid {
     long ts;
@@ -163,6 +165,15 @@ namespace WorkloadPlayer {
       THROW("Unexpected");
 
     //Conf.Get("workload_stop_at").as<double>
+
+    // Pre-calculate additional parameters
+    const double xr_iops = Conf::Get("xr_iops").as<double>();
+    _xr_gets_per_key = Conf::Get("xr_gets_per_key").as<int>();
+    // 1000.0: ms
+    // * 2: upper bound
+    // * 1000: 1000 threads
+    _xr_sleep_upper_bound_ms = int((1000.0 / (xr_iops / _xr_gets_per_key)) * 2 * 1000);
+    Cons::P(boost::format("# _xr_sleep_upper_bound_ms=%d") % _xr_sleep_upper_bound_ms);
 
     SimTime::Init1();
 
@@ -358,11 +369,9 @@ namespace WorkloadPlayer {
       if (q_size == 0) {
         // Nothing to do
       } else {
-        const int xr_thread_sleep_ms = int(Conf::Get("xr_thread_sleep_ms").as<double>());
-        const int xr_gets_per_key = Conf::Get("xr_gets_per_key").as<int>();
         while (! _stop_requested) {
           boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-          int sleep_ms = rand() % xr_thread_sleep_ms;
+          int sleep_ms = rand() % _xr_sleep_upper_bound_ms;
           if (SimTime::SimulationTime4() <= now + boost::posix_time::milliseconds(sleep_ms))
             break;
           SimTime::SleepFor(sleep_ms);
@@ -373,7 +382,7 @@ namespace WorkloadPlayer {
           char k1[20];
           sprintf(k1, "%ld", oid);
           string v;
-          for (int i = 0; i < xr_gets_per_key; i ++)
+          for (int i = 0; i < _xr_gets_per_key; i ++)
             DbClient::Get(k1, v, ws);
         }
       }

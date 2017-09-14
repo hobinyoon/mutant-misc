@@ -65,7 +65,7 @@ def main():
 
   parser.add_option("--extra_reads", help="Req extra reads")
   parser.add_option("--xr_queue_size", help="XR queue size")
-  parser.add_option("--xr_thread_sleep_ms", help="XR thread random sleep time parameter in ms")
+  parser.add_option("--xr_iops", help="XR IOPS")
   parser.add_option("--xr_gets_per_key", help="XR gets per key")
 
   (options, args) = parser.parse_args()
@@ -161,7 +161,7 @@ def main():
       , "sst_ott_adj_ranges" \
       , "extra_reads" \
       , "xr_queue_size" \
-      , "xr_thread_sleep_ms" \
+      , "xr_iops" \
       , "xr_gets_per_key" \
       ]:
     if (hasattr(options, k)) and (getattr(options, k) is not None):
