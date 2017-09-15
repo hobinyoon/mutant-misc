@@ -88,8 +88,8 @@ void Init() {
   //   calc "1365709.587 / 24 / 3600" = 15.8 days.
   options.mutant_options.simulated_time_dur_sec  = 1365709.587;
 
-  options.mutant_options.sla_admin = Conf::Get("sla_admin").as<bool>();
-  options.mutant_options.lat_hist_q_size = Conf::Get("lat_hist_q_size").as<int>();
+  options.mutant_options.sla_admin_type = Conf::GetStr("sla_admin_type");
+  options.mutant_options.sla_observed_value_hist_q_size = Conf::Get("sla_observed_value_hist_q_size").as<int>();
 
   {
     static const auto sep = boost::is_any_of(",");
@@ -102,7 +102,8 @@ void Init() {
     options.mutant_options.sst_ott_adj_ranges[1] = atof(t[1].c_str());
   }
 
-  //options.mutant_options.temp_decay_factor = 0.9999;
+  options.mutant_options.slow_dev = Conf::GetStr("slow_dev");
+  options.mutant_options.slow_dev_target_r_iops = Conf::Get("slow_dev_target_r_iops").as<double>();
 
   // Open DB
   Status s = DB::Open(options, db_path, &_db);

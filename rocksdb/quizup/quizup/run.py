@@ -59,9 +59,11 @@ def main():
 
   parser.add_option("--record_size", help="Record size")
 
-  parser.add_option("--sla_admin", help="Run SLA Admin")
-  parser.add_option("--lat_hist_q_size", help="Latency history queue size")
+  parser.add_option("--sla_admin_type", help="SLA admin type")
+  parser.add_option("--sla_observed_value_hist_q_size", help="SLA observed value queue size")
   parser.add_option("--sst_ott_adj_ranges", help="sst_ott adjustment ranges")
+  parser.add_option("--slow_dev", help="slow storage device name such as xvde")
+  parser.add_option("--slow_dev_target_r_iops", help="slow storage device target read IOPS")
 
   parser.add_option("--extra_reads", help="Req extra reads")
   parser.add_option("--xr_queue_size", help="XR queue size")
@@ -156,8 +158,8 @@ def main():
       , "121x_speed_replay" \
       , "pid_params" \
       , "record_size" \
-      , "sla_admin" \
-      , "lat_hist_q_size" \
+      , "sla_admin_type" \
+      , "sla_observed_value_hist_q_size" \
       , "sst_ott_adj_ranges" \
       , "extra_reads" \
       , "xr_queue_size" \

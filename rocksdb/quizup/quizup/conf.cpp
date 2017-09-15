@@ -67,9 +67,13 @@ namespace Conf {
       ("record_size", po::value<int>()->default_value(Get("record_size").as<int>()))
       ("121x_speed_replay", po::value<bool>()->default_value(Get("121x_speed_replay").as<bool>()))
       ("pid_params", po::value<string>()->default_value(Get("pid_params").as<string>()))
-      ("sla_admin", po::value<bool>()->default_value(Get("sla_admin").as<bool>()))
-      ("lat_hist_q_size", po::value<int>()->default_value(Get("lat_hist_q_size").as<int>()))
+
+      ("sla_admin_type", po::value<string>()->default_value(Get("sla_admin_type").as<string>()))
+      ("sla_observed_value_hist_q_size", po::value<int>()->default_value(Get("sla_observed_value_hist_q_size").as<int>()))
       ("sst_ott_adj_ranges", po::value<string>()->default_value(GetStr("sst_ott_adj_ranges")))
+      ("slow_dev", po::value<string>()->default_value(GetStr("slow_dev")))
+      ("slow_dev_target_r_iops", po::value<double>()->default_value(Get("slow_dev_target_r_iops").as<double>()))
+
       ("extra_reads", po::value<bool>()->default_value(Get("extra_reads").as<bool>()))
       ("xr_queue_size", po::value<int>()->default_value(Get("xr_queue_size").as<int>()))
       ("xr_iops", po::value<double>()->default_value(Get("xr_iops").as<double>()))
@@ -102,9 +106,13 @@ namespace Conf {
     __EditYaml<int>("record_size", vm);
     __EditYaml<bool>("121x_speed_replay", vm);
     __EditYaml<string>("pid_params", vm);
-    __EditYaml<bool>("sla_admin", vm);
-    __EditYaml<int>("lat_hist_q_size", vm);
+
+    __EditYaml<string>("sla_admin_type", vm);
+    __EditYaml<int>("sla_observed_value_hist_q_size", vm);
     __EditYaml<string>("sst_ott_adj_ranges", vm);
+    __EditYaml<string>("slow_dev", vm);
+    __EditYaml<double>("slow_dev_target_r_iops", vm);
+
     __EditYaml<bool>("extra_reads", vm);
     __EditYaml<int>("xr_queue_size", vm);
     __EditYaml<double>("xr_iops", vm);
