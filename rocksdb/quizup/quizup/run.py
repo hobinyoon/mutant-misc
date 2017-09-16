@@ -161,6 +161,8 @@ def main():
       , "sla_admin_type" \
       , "sla_observed_value_hist_q_size" \
       , "sst_ott_adj_ranges" \
+      , "slow_dev" \
+      , "slow_dev_target_r_iops" \
       , "extra_reads" \
       , "xr_queue_size" \
       , "xr_iops" \
