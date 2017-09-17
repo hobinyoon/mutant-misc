@@ -64,6 +64,7 @@ def main():
   parser.add_option("--sst_ott_adj_ranges", help="sst_ott adjustment ranges")
   parser.add_option("--slow_dev", help="slow storage device name such as xvde")
   parser.add_option("--slow_dev_target_r_iops", help="slow storage device target read IOPS")
+  parser.add_option("--sst_ott_adj_cooldown_ms", help="sst_ott adjustment cooldown time")
 
   parser.add_option("--extra_reads", help="Req extra reads")
   parser.add_option("--xr_queue_size", help="XR queue size")
@@ -163,6 +164,7 @@ def main():
       , "sst_ott_adj_ranges" \
       , "slow_dev" \
       , "slow_dev_target_r_iops" \
+      , "sst_ott_adj_cooldown_ms" \
       , "extra_reads" \
       , "xr_queue_size" \
       , "xr_iops" \
