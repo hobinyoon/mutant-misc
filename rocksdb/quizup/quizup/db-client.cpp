@@ -103,7 +103,6 @@ void Init() {
   }
 
   options.mutant_options.slow_dev = Conf::GetStr("slow_dev");
-  options.mutant_options.slow_dev_target_r_iops = Conf::Get("slow_dev_target_r_iops").as<double>();
   options.mutant_options.sst_ott_adj_cooldown_ms = Conf::Get("sst_ott_adj_cooldown_ms").as<int>();
 
   // Open DB

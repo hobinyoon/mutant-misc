@@ -451,7 +451,7 @@ void StartReportingToSlaAdmin() {
     if (! _start_sla_admin_report_latency) {
       string pid_params = Conf::GetStr("pid_params");
       vector<string> t;
-      static const auto sep = boost::is_any_of(",");
+      static const auto sep = boost::is_any_of(":");
       boost::split(t, pid_params, sep);
       if (t.size() != 4)
         THROW(boost::format("Unexpected: [%s]") % pid_params);

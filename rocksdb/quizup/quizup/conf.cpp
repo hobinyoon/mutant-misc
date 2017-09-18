@@ -72,7 +72,6 @@ namespace Conf {
       ("sla_observed_value_hist_q_size", po::value<int>()->default_value(Get("sla_observed_value_hist_q_size").as<int>()))
       ("error_adj_ranges", po::value<string>()->default_value(GetStr("error_adj_ranges")))
       ("slow_dev", po::value<string>()->default_value(GetStr("slow_dev")))
-      ("slow_dev_target_r_iops", po::value<double>()->default_value(Get("slow_dev_target_r_iops").as<double>()))
       ("sst_ott_adj_cooldown_ms", po::value<int>()->default_value(Get("sst_ott_adj_cooldown_ms").as<int>()))
 
       ("extra_reads", po::value<bool>()->default_value(Get("extra_reads").as<bool>()))
@@ -112,7 +111,6 @@ namespace Conf {
     __EditYaml<int>("sla_observed_value_hist_q_size", vm);
     __EditYaml<string>("error_adj_ranges", vm);
     __EditYaml<string>("slow_dev", vm);
-    __EditYaml<double>("slow_dev_target_r_iops", vm);
     __EditYaml<int>("sst_ott_adj_cooldown_ms", vm);
 
     __EditYaml<bool>("extra_reads", vm);
