@@ -93,13 +93,13 @@ void Init() {
 
   {
     static const auto sep = boost::is_any_of(",");
-    string ranges = Conf::GetStr("sst_ott_adj_ranges");
+    string ranges = Conf::GetStr("error_adj_ranges");
     vector<string> t;
     boost::split(t, ranges, sep);
     if (t.size() != 2)
-      THROW(boost::format("Unexpected sst_ott_adj_ranges [%s]") % ranges);
-    options.mutant_options.sst_ott_adj_ranges[0] = atof(t[0].c_str());
-    options.mutant_options.sst_ott_adj_ranges[1] = atof(t[1].c_str());
+      THROW(boost::format("Unexpected error_adj_ranges [%s]") % ranges);
+    options.mutant_options.error_adj_ranges[0] = atof(t[0].c_str());
+    options.mutant_options.error_adj_ranges[1] = atof(t[1].c_str());
   }
 
   options.mutant_options.slow_dev = Conf::GetStr("slow_dev");

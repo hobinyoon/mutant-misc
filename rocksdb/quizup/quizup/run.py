@@ -61,7 +61,7 @@ def main():
 
   parser.add_option("--sla_admin_type", help="SLA admin type")
   parser.add_option("--sla_observed_value_hist_q_size", help="SLA observed value queue size")
-  parser.add_option("--sst_ott_adj_ranges", help="sst_ott adjustment ranges")
+  parser.add_option("--error_adj_ranges", help="SLA admin error adjustment ranges")
   parser.add_option("--slow_dev", help="slow storage device name such as xvde")
   parser.add_option("--slow_dev_target_r_iops", help="slow storage device target read IOPS")
   parser.add_option("--sst_ott_adj_cooldown_ms", help="sst_ott adjustment cooldown time")
@@ -161,7 +161,7 @@ def main():
       , "record_size" \
       , "sla_admin_type" \
       , "sla_observed_value_hist_q_size" \
-      , "sst_ott_adj_ranges" \
+      , "error_adj_ranges" \
       , "slow_dev" \
       , "slow_dev_target_r_iops" \
       , "sst_ott_adj_cooldown_ms" \
