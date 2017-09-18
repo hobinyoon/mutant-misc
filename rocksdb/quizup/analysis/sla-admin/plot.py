@@ -263,6 +263,89 @@ def main(argv):
   exps = """170912-200314/quizup/170913-000846.906
     170912-200725/quizup/170913-000923.763"""
 
+  exps = """170912-235306/quizup/170913-035333.657
+    170912-235306/quizup/170913-055415.634
+    170912-235306/quizup/170913-075445.589
+    170912-235306/quizup/170913-095515.845
+    170912-235806/quizup/170913-035835.113
+    170912-235806/quizup/170913-055909.611
+    170912-235806/quizup/170913-075944.519
+    170912-235806/quizup/170913-100015.814
+    170912-235306/quizup/170913-115546.705
+    170912-235806/quizup/170913-120051.923"""
+
+  # Figuring out st1 read IO range that has a good impact to latency.
+  exps = """170914-000708/quizup/170914-040724.461
+    170914-000708/quizup/170914-040728.503
+    170914-000708/quizup/170914-060743.656
+    170914-000708/quizup/170914-060747.543
+    170914-000708/quizup/170914-080805.656
+    170914-000708/quizup/170914-080806.895
+    170914-000708/quizup/170914-100826.473
+    170914-000708/quizup/170914-100828.200
+    170914-000708/quizup/170914-120845.944
+    170914-000708/quizup/170914-120850.303"""
+  #exps = """170914-000708/quizup/170914-080806.895"""
+
+  exps = """170914-150736/quizup/170914-190749.869
+    170914-151351/quizup/170914-191411.718
+    170914-153055/quizup/170914-201130.757
+    170914-153118/quizup/170914-201130.361
+    170914-153137/quizup/170914-201250.023
+    170914-153158/quizup/170914-201306.037
+    170914-153221/quizup/170914-201648.453
+    170914-153245/quizup/170914-201252.468 170914-153305/quizup/170914-201050.453"""
+
+  exps = """170914-231951/quizup/170915-032025.411
+    170914-232159/quizup/170915-032225.825
+    170914-232330/quizup/170915-040616.383
+    170914-232350/quizup/170915-040809.867
+    170914-232414/quizup/170915-040314.460
+    170914-232438/quizup/170915-035913.893
+    170914-232501/quizup/170915-040730.774
+    170914-232523/quizup/170915-040311.639
+    170914-232543/quizup/170915-035747.727"""
+  exps = """170915-082816/quizup/170915-131440.110
+    170915-082837/quizup/170915-130901.347
+    170915-082858/quizup/170915-130841.880
+    170915-082920/quizup/170915-130954.426
+    170915-082943/quizup/170915-131048.454"""
+
+  # RocksDB log was only for like 10 mins. No sla_admin there.
+  exps = """170916-075803/quizup/170916-130854.144"""
+
+  exps = """170916-092153/quizup/170916-132205.868
+    170916-092325/quizup/170916-132335.799
+    170916-092740/quizup/170916-140616.320
+    170916-092804/quizup/170916-141328.769
+    170916-092825/quizup/170916-140920.145
+    170916-092852/quizup/170916-141053.787
+    170916-092915/quizup/170916-141348.288
+    170916-092938/quizup/170916-140728.381"""
+  exps = """170916-092153/quizup/170916-132205.868"""
+
+  exps = """170916-220723/quizup/170917-020739.228
+    170916-220748/quizup/170917-020806.055
+    170916-220846/quizup/170917-025257.235
+    170916-220910/quizup/170917-025604.621
+    170916-220934/quizup/170917-025027.329
+    170916-220953/quizup/170917-025025.737
+    170916-221014/quizup/170917-025820.759
+    170916-221037/quizup/170917-024758.760
+    170917-084245/quizup/170917-132036.875
+    170917-084309/quizup/170917-132822.408"""
+  exps = """170916-220723/quizup/170917-020739.228"""
+
+  exps = """170917-130929/quizup/170917-174607.417
+    170917-122717/quizup/170917-162741.599
+    170917-123033/quizup/170917-163053.328
+    170917-130954/quizup/170917-174637.952
+    170917-131020/quizup/170917-174725.221
+    170917-131041/quizup/170917-174936.296
+    170917-131101/quizup/170917-175045.541
+    170917-131124/quizup/170917-175419.171
+    170917-131148/quizup/170917-175136.884"""
+
   for line in re.split(r"\s+", exps):
     t = line.split("/quizup/")
     if len(t) != 2:
@@ -285,9 +368,11 @@ def Plot(job_id, exp_dt):
 
   qz_std_max = _QzSimTimeDur(log_q.quizup_options["simulation_time_dur_in_sec"])
   qz_opt_str = _QuizupOptionsFormattedStr(log_q.quizup_options)
-  qz_sst_ott_adj_ranges = log_q.quizup_options["sst_ott_adj_ranges"].replace(",", " ")
+  # TODO
+  #error_adj_ranges = log_q.quizup_options["error_adj_ranges"].replace(",", " ")
+  error_adj_ranges = log_q.quizup_options["sst_ott_adj_ranges"].replace(",", " ")
 
-  (fn_rocksdb_sla_admin_log, pid_params, num_sla_adj, format_version) = RocksdbLog.ParseLog(fn_log_rocksdb, exp_dt)
+  (fn_rocksdb_sla_admin_log, pid_params, num_sla_adj) = RocksdbLog.ParseLog(fn_log_rocksdb, exp_dt)
 
   fn_dstat = DstatLog.GenDataFileForGnuplot(fn_log_dstat, exp_dt)
 
@@ -296,13 +381,12 @@ def Plot(job_id, exp_dt):
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
     env["STD_MAX"] = qz_std_max
-    env["QZ_SST_OTT_ADJ_RANGES"] = qz_sst_ott_adj_ranges
+    env["ERROR_ADJ_RANGES"] = error_adj_ranges
     env["IN_FN_QZ"] = fn_log_quizup
     env["IN_FN_SLA_ADMIN"] = "" if num_sla_adj == 0 else fn_rocksdb_sla_admin_log
-    env["IN_FN_SLA_ADMIN_FORMAT"] = str(format_version)
-    env["TARGET_LATENCY"] = str(pid_params["target_value"])
+    env["TARGET_VALUE"] = str(log_q.quizup_options["slow_dev_target_r_iops"])
     env["QUIZUP_OPTIONS"] = qz_opt_str
-    env["PID_PARAMS"] = "%s %s %s" % (pid_params["p"], pid_params["i"], pid_params["d"])
+    #env["PID_PARAMS"] = "%s %s %s" % (pid_params["p"], pid_params["i"], pid_params["d"])
     env["IN_FN_DS"] = fn_dstat
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/sla-admin-by-time.gnuplot" % os.path.dirname(__file__), env=env)

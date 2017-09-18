@@ -1,3 +1,4 @@
+import collections
 import datetime
 import json
 import os
@@ -34,22 +35,25 @@ def _ParseLog(fn, exp_dt):
   last_lines_mutant_table_acc_cnt = Queue.Queue()
 
   with open(fn) as fo, open(fn_out, "w") as fo_out:
-    # Different versions have different format
-    if exp_dt < "170908-035329.045":
-      fmt = "%12s %7.2f %8.2f %10.6f %3d %3d %3d %3d"
-      header = Util.BuildHeader(fmt, "ts cur_latency adj new_sst_ott" \
-          " num_ssts_in_fast_dev num_ssts_in_slow_dev num_ssts_should_be_in_fast_dev num_ssts_should_be_in_slow_dev")
-      format_version = 1
-    else:
-      # {u'num_ssts_should_be_in_slow_dev': 0, u'sst_ott': 0.005, u'num_ssts_in_slow_dev': 0, u'num_ssts_in_fast_dev': 0,
-      # u'num_ssts_should_be_in_fast_dev': 0, u'cur_lat': 5.8963, u'adj_type': u'no_sstable', u'sst_status': u''}
-      fmt = "%12s %7.2f %1d" \
-          " %6.2f %28s %8.2f" \
-          " %3d %3d %3d %3d"
-      header = Util.BuildHeader(fmt, "ts cur_latency make_adjustment" \
-          " lat_running_avg adj_type new_sst_ott" \
-          " num_ssts_in_fast_dev num_ssts_in_slow_dev num_ssts_should_be_in_fast_dev num_ssts_should_be_in_slow_dev")
-      format_version = 2
+    # {u'num_ssts_should_be_in_slow_dev': 0, u'sst_ott': 0.005, u'num_ssts_in_slow_dev': 0, u'num_ssts_in_fast_dev': 0,
+    # u'num_ssts_should_be_in_fast_dev': 0, u'cur_lat': 5.8963, u'adj_type': u'no_sstable', u'sst_status': u''}
+    fmt = "%12s %7.2f %7.2f %7.2f %7.2f %1d" \
+        " %6.1f %6.1f %6.1f" \
+        " %8.2f" \
+        " %3d %3d %3d %3d" \
+        " %6.2f %28s"
+    header = Util.BuildHeader(fmt, "ts cur_latency lat_ra_all_0 lat_ra_all_1 lat_ra_filtered make_adjustment" \
+        " slow_dev_r_iops running_avg slow_dev_w_iops" \
+        " new_sst_ott" \
+        " num_ssts_in_fast_dev num_ssts_in_slow_dev num_ssts_should_be_in_fast_dev num_ssts_should_be_in_slow_dev" \
+        " running_avg adj_type" \
+        )
+
+    # Running average including all
+    # Running average excluding background SSTable compactions and migrations
+    lat_q_all_0 = collections.deque()
+    lat_q_all_1 = collections.deque()
+    lat_q_filtered = collections.deque()
 
     i = 0
     for line in fo:
@@ -98,53 +102,58 @@ def _ParseLog(fn, exp_dt):
             fo_out.write(header + "\n")
           i += 1
 
-          if exp_dt < "170908-035329.045":
-            fo_out.write((fmt + "\n") % (
-              str(ts_rel)[:11]
-              , j1["cur_lat"]
-              , j1["adj"]
-              , j1["sst_ott"]
-              , j1["num_ssts_in_fast_dev"]
-              , j1["num_ssts_in_slow_dev"]
-              , j1["num_ssts_should_be_in_fast_dev"]
-              , j1["num_ssts_should_be_in_slow_dev"]
-              ))
-          else:
-            lat_running_avg                = -1
-            adj_type                       = "-"
-            sst_ott                        = 0.0
-            num_ssts_in_fast_dev           = -1
-            num_ssts_in_slow_dev           = -1
-            num_ssts_should_be_in_fast_dev = -1
-            num_ssts_should_be_in_slow_dev = -1
+          make_adjustment = j1["make_adjustment"]
+          cur_lat = float(j1["cur_lat"])
+          # append() appends to the right. coupled with popleft(), it implements a queue.
+          lat_q_all_0.append(cur_lat)
+          lat_q_all_1.append(cur_lat)
+          if make_adjustment == 1:
+            lat_q_filtered.append(cur_lat)
 
-            # 2017/09/09-01:06:58.728061 7f9c5bc4f700 EVENT_LOG_v1 {"time_micros": 1504919218728050, "mutant_sla_admin_adjust": {"cur_lat": 32.8987, "make_adjustment": 0}}
-            if j1["make_adjustment"] == 0:
-              pass
-            else:
-              lat_running_avg                = j1["lat_running_avg"]
-              adj_type                       = j1["adj_type"]
-              sst_ott                        = j1["sst_ott"]
-              num_ssts_in_fast_dev           = j1["num_ssts_in_fast_dev"]
-              num_ssts_in_slow_dev           = j1["num_ssts_in_slow_dev"]
-              num_ssts_should_be_in_fast_dev = j1["num_ssts_should_be_in_fast_dev"]
-              num_ssts_should_be_in_slow_dev = j1["num_ssts_should_be_in_slow_dev"]
+          # Calc the averages of the last n observations
+          while 10 < len(lat_q_all_0):
+            lat_q_all_0.popleft()
+          while 400 < len(lat_q_all_1):
+            lat_q_all_1.popleft()
+          while 10 < len(lat_q_filtered):
+            lat_q_filtered.popleft()
+          lat_ra_all_0 = -1
+          lat_ra_all_1 = -1
+          lat_ra_filtered = -1
+          if 0 < len(lat_q_all_0):
+            lat_ra_all_0 = sum(lat_q_all_0) / len(lat_q_all_0)
+          if 0 < len(lat_q_all_1):
+            lat_ra_all_1 = sum(lat_q_all_1) / len(lat_q_all_1)
+          if 0 < len(lat_q_filtered):
+            lat_ra_filtered = sum(lat_q_filtered) / len(lat_q_filtered)
 
-            fo_out.write((fmt + "\n") % (
-              str(ts_rel)[:11]
-              , j1["cur_lat"]
-              , j1["make_adjustment"]
-              , lat_running_avg
-              , adj_type
-              , sst_ott
-              , num_ssts_in_fast_dev
-              , num_ssts_in_slow_dev
-              , num_ssts_should_be_in_fast_dev
-              , num_ssts_should_be_in_slow_dev
-              ))
+          # {u'num_ssts_should_be_in_slow_dev': 12, u'make_adjustment': 0, u'slow_dev_r_iops': -1, u'num_ssts_in_slow_dev': 0,
+          # u'num_ssts_in_fast_dev': 216, u'num_ssts_should_be_in_fast_dev': 204, u'cur_lat': 424.31, u'sst_ott': 0, u'slow_dev_w_iops':
+          # -1, u'sst_status': u'2083:2:1.797:0:0 2257:2:3.057:0:0 2386:3:2.446:0:0 2425:2:2.345:0:0 2455:2:3.060:0:0 2529:2:1.581:0:0
+          # ...
+          # 3843:1:-1.000:0:1'}
+
+          fo_out.write((fmt + "\n") % (
+            str(ts_rel)[:11]
+            , cur_lat
+            , lat_ra_all_0
+            , lat_ra_all_1
+            , lat_ra_filtered
+            , j1["make_adjustment"]
+            , j1["slow_dev_r_iops"]
+            , float(j1["running_avg"]) if "running_avg" in j1 else -1
+            , j1["slow_dev_w_iops"]
+            , j1["sst_ott"]
+            , j1["num_ssts_in_fast_dev"]
+            , j1["num_ssts_in_slow_dev"]
+            , j1["num_ssts_should_be_in_fast_dev"]
+            , j1["num_ssts_should_be_in_slow_dev"]
+            , float(j1["running_avg"]) if "running_avg" in j1 else -1
+            , j1["adj_type"] if "adj_type" in j1 else "-"
+            ))
         elif "mutant_table_acc_cnt" in line:
           if 500 <= last_lines_mutant_table_acc_cnt.qsize():
-            last_lines_mutant_table_acc_cnt.get()
+            last_lines_mutant_table_acc_cnt.get_nowait()
           last_lines_mutant_table_acc_cnt.put(line)
 
       except KeyError as e:
@@ -152,15 +161,24 @@ def _ParseLog(fn, exp_dt):
         sys.exit(1)
 
   # Checked to see what their access count distribution is like
-  #_ParseSstAccCnt(last_lines_mutant_table_acc_cnt.get())
+  if True:
+    line = None
+    try:
+      line = last_lines_mutant_table_acc_cnt.get_nowait()
+    except Queue.Empty as e:
+      # This happens
+      pass
+    if line is not None:
+      _ParseSstAccCnt(line)
 
   Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-  return (fn_out, pid_params, num_sla_adj, format_version)
+  return (fn_out, pid_params, num_sla_adj)
 
 
 def _ParseSstAccCnt(line):
   if line is None:
     raise RuntimeError("Unexpected")
+
   mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .+EVENT_LOG_v1 (?P<json>.+)", line)
 
   ts = datetime.datetime.strptime(mo.group("ts"), "%Y/%m/%d-%H:%M:%S.%f")
