@@ -2,6 +2,7 @@
 
 import datetime
 import math
+import multiprocessing
 import os
 import pprint
 import re
@@ -346,16 +347,45 @@ def main(argv):
     170917-131124/quizup/170917-175419.171
     170917-131148/quizup/170917-175136.884"""
 
-  for line in re.split(r"\s+", exps):
-    t = line.split("/quizup/")
-    if len(t) != 2:
-      raise RuntimeError("Unexpected")
-    job_id = t[0]
-    exp_dt = t[1]
-    Plot(job_id, exp_dt)
+  # slow dev iops-based control. widh P and varying levels of D.
+  exps = """170918-002609/quizup/170918-042726.771
+    170918-002740/quizup/170918-042801.188
+    170918-002849/quizup/170918-050530.376
+    170918-002912/quizup/170918-051309.315
+    170918-002934/quizup/170918-050504.193
+    170918-002956/quizup/170918-050530.365
+    170918-003019/quizup/170918-050834.786
+    170918-003039/quizup/170918-050825.371
+    170918-003101/quizup/170918-050226.142
+    170918-003125/quizup/170918-052241.852
+    170918-094956/quizup/170918-144341.674
+    170918-095022/quizup/170918-144018.607"""
+
+  if True:
+    # Parallel processing
+    params = []
+    for line in re.split(r"\s+", exps):
+      t = line.split("/quizup/")
+      if len(t) != 2:
+        raise RuntimeError("Unexpected")
+      job_id = t[0]
+      exp_dt = t[1]
+      params.append((job_id, exp_dt))
+    p = multiprocessing.Pool(8)
+    p.map(Plot, params)
+  else:
+    for line in re.split(r"\s+", exps):
+      t = line.split("/quizup/")
+      if len(t) != 2:
+        raise RuntimeError("Unexpected")
+      job_id = t[0]
+      exp_dt = t[1]
+      Plot((job_id, exp_dt))
 
 
-def Plot(job_id, exp_dt):
+def Plot(param):
+  job_id = param[0]
+  exp_dt = param[1]
   dn_log_job = "%s/work/mutant/log/quizup/sla-admin/%s" % (os.path.expanduser("~"), job_id)
 
   fn_log_quizup  = "%s/quizup/%s" % (dn_log_job, exp_dt)
@@ -368,9 +398,7 @@ def Plot(job_id, exp_dt):
 
   qz_std_max = _QzSimTimeDur(log_q.quizup_options["simulation_time_dur_in_sec"])
   qz_opt_str = _QuizupOptionsFormattedStr(log_q.quizup_options)
-  # TODO
-  #error_adj_ranges = log_q.quizup_options["error_adj_ranges"].replace(",", " ")
-  error_adj_ranges = log_q.quizup_options["sst_ott_adj_ranges"].replace(",", " ")
+  error_adj_ranges = log_q.quizup_options["error_adj_ranges"].replace(",", " ")
 
   (fn_rocksdb_sla_admin_log, pid_params, num_sla_adj) = RocksdbLog.ParseLog(fn_log_rocksdb, exp_dt)
 
@@ -384,9 +412,8 @@ def Plot(job_id, exp_dt):
     env["ERROR_ADJ_RANGES"] = error_adj_ranges
     env["IN_FN_QZ"] = fn_log_quizup
     env["IN_FN_SLA_ADMIN"] = "" if num_sla_adj == 0 else fn_rocksdb_sla_admin_log
-    env["TARGET_VALUE"] = str(log_q.quizup_options["slow_dev_target_r_iops"])
     env["QUIZUP_OPTIONS"] = qz_opt_str
-    #env["PID_PARAMS"] = "%s %s %s" % (pid_params["p"], pid_params["i"], pid_params["d"])
+    env["PID_PARAMS"] = "%s %s %s %s" % (pid_params["target_value"], pid_params["p"], pid_params["i"], pid_params["d"])
     env["IN_FN_DS"] = fn_dstat
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/sla-admin-by-time.gnuplot" % os.path.dirname(__file__), env=env)

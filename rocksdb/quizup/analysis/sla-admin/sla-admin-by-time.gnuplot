@@ -4,11 +4,12 @@ STD_MAX = system("echo $STD_MAX")
 ERROR_ADJ_RANGES = system("echo $ERROR_ADJ_RANGES")
 IN_FN_QZ = system("echo $IN_FN_QZ")
 IN_FN_SLA_ADMIN = system("echo $IN_FN_SLA_ADMIN")
-TARGET_VALUE = system("echo $TARGET_VALUE") + 0.0
 QUIZUP_OPTIONS = system("echo $QUIZUP_OPTIONS")
 PID_PARAMS = system("echo $PID_PARAMS")
 IN_FN_DS = system("echo $IN_FN_DS")
 OUT_FN = system("echo $OUT_FN")
+
+TARGET_VALUE=word(PID_PARAMS, 1) + 0.0
 
 set print "-"
 print sprintf("IN_FN_SLA_ADMIN=%s", IN_FN_SLA_ADMIN)
@@ -58,57 +59,75 @@ if (1) {
   if (logscale_y == 1) {
     set logscale y
     set mytics 10
-    #set ytics nomirror tc rgb "black" ( \
-    #    "10000" 10000 \
-    #  , "1000"   1000 \
-    #  , "100"     100 \
-    #  , "10"       10 \
-    #  , "1"         1 \
-    #  , "0"         0.2 \
-    #)
+    label0 = sprintf("Target read IOPS: %.1f" \
+      . "\nGray: All IOPS" \
+      . "\nBlue: IOPS w/o bg SST activity" \
+      . "\nIOPS 0 is shown as 0.2 due to the logscale" \
+      , TARGET_VALUE)
   } else {
     set ytics nomirror tc rgb "black"
+    label0 = sprintf("Target read IOPS: %.1f" \
+      . "\nGray: All IOPS" \
+      . "\nBlue: IOPS w/o bg SST activity" \
+      , TARGET_VALUE)
   }
 
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
-  # sst_ott adj ranges
-  ar0 = word(ERROR_ADJ_RANGES, 1) + 0.0
-  ar1 = word(ERROR_ADJ_RANGES, 2) + 0.0
-  tv0 = TARGET_VALUE * (1 + ar0)
-  tv1 = TARGET_VALUE * (1 + ar1)
+  set label label0 at graph 0.03, graph 0.9 font ",9"
 
-  # Point size for latency and runnig average latency
-  PS_LAT = 0.04
-  PS_LAT_RA = 0.04
-
-  set label sprintf("target read IOPS: %.1f\nerror adj ranges: %.1f %.1f (%s)" \
-    . "\ngray: all iops" \
-    . "\nblue: iops w/o bg sst activity" \
-    . "\nred: 10-value running avg of blue" \
-    , \
-    TARGET_VALUE, tv0, tv1, ERROR_ADJ_RANGES) at graph 0.03, graph 0.9
+  PS = 0.04
 
   plot \
-  IN_FN_SLA_ADMIN u 1:($5 == 0 ? $6 : 1/0) w p pt 7 ps PS_LAT lc rgb "#C0C0C0" not, \
-  IN_FN_SLA_ADMIN u 1:($5 == 1 ? ($6 == 0 ? 0.2 : $6) : 1/0) w p pt 7 ps PS_LAT lc rgb "blue" not, \
-  IN_FN_SLA_ADMIN u 1:($7 == -1 ? 1/0 : $7) w p pt 7 ps PS_LAT lc rgb "red" not, \
-  f_t(x, 0)   w l lt 1 lc rgb "#B0B0B0" not, \
-  f_t(x, ar1) w l lt 1 lc rgb "#D0D0D0" not, \
-  f_t(x, ar0) w l lt 1 lc rgb "#D0D0D0" not
+  IN_FN_SLA_ADMIN u 1:($6 == 0 ? $7 : 1/0) w p pt 7 ps PS lc rgb "#C0C0C0" not, \
+  IN_FN_SLA_ADMIN u 1:($6 == 1 ? ($7 == 0 ? 0.2 : $7) : 1/0) w p pt 7 ps PS lc rgb "blue" not, \
+  f_t(x, 0)   w l lt 1 lc rgb "#D0D0D0" not
+}
 
-  #plot \
-  #IN_FN_SLA_ADMIN u 1:($3 == 0 ? $2 : 1/0) w p pt 7 ps PS_LAT lc rgb "#B0B0B0" not, \
-  #IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($2 < tv0 ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0D0FF" not, \
-  #IN_FN_SLA_ADMIN u 1:($3 == 1 ? (((tv0 <= $2) && ($2 < tv1)) ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#D0FFD0" not, \
-  #IN_FN_SLA_ADMIN u 1:($3 == 1 ? (tv1 <= $2 ? $2 : 1/0) : 1/0) w p pt 7 ps PS_LAT lc rgb "#FFD0D0" not, \
-  #f_t(x, 0)   w l lt 1 lc rgb "#B0B0B0" not, \
-  #f_t(x, ar1) w l lt 1 lc rgb "#D0D0D0" not, \
-  #f_t(x, ar0) w l lt 1 lc rgb "#D0D0D0" not, \
-  #IN_FN_SLA_ADMIN u 1:($3 == 1 ? ($4 < tv0 ? $4 : 1/0) : 1/0) w p pt 7 ps PS_LAT_RA lc rgb "#0000FF" not, \
-  #IN_FN_SLA_ADMIN u 1:($3 == 1 ? (((tv0 <= $4) && ($4 < tv1)) ? $4 : 1/0) : 1/0) w p pt 7 ps PS_LAT_RA lc rgb "#00FF00" not, \
-  #IN_FN_SLA_ADMIN u 1:($3 == 1 ? (tv1 <= $4 ? $4 : 1/0) : 1/0) w p pt 7 ps PS_LAT_RA lc rgb "#FF0000" not
+# PID controller adjustment
+if (1) {
+  reset
+  set xdata time
+  # 00:00:00.491
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "PID adjustment (relative)" tc rgb "black"
+
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black" format ("%.1f")
+
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":STD_MAX]
+
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Adjustment bounds
+  ab0 = word(ERROR_ADJ_RANGES, 1) + 0.0
+  ab1 = word(ERROR_ADJ_RANGES, 2) + 0.0
+
+  PS = 0.05
+  PS1 = 0.1
+
+  set label sprintf( \
+    "PID params: %s %s %s" \
+    . "\nAdjustment bounds: %s" \
+    . "\nBlue: Move an SST to slow dev" \
+    . "\nRed: Move an SST to fast dev" \
+    , word(PID_PARAMS, 2) \
+    , word(PID_PARAMS, 3) \
+    , word(PID_PARAMS, 4) \
+    , ERROR_ADJ_RANGES) \
+    at graph 0.03, graph 0.9 font ",9"
+
+  plot \
+  IN_FN_SLA_ADMIN u 1:($6 == 0 ? 1/0 : ($16 < ab0               ? $16 : 1/0)) w p pt 7 ps PS1 lc rgb "red"     not, \
+  IN_FN_SLA_ADMIN u 1:($6 == 0 ? 1/0 : (ab0 <= $16 && $16 < ab1 ? $16 : 1/0)) w p pt 7 ps PS  lc rgb "#C0C0C0" not, \
+  IN_FN_SLA_ADMIN u 1:($6 == 0 ? 1/0 : (ab1 <= $16              ? $16 : 1/0)) w p pt 7 ps PS1 lc rgb "blue"    not
 }
 
 # Number of SSTables that are/should be in the fast/slow devices
@@ -152,10 +171,10 @@ if (1) {
 
     plot \
     f(x) w l lc rgb "black" not, \
-    IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $13) w p pt 7 ps PS lc rgb "#FFC0C0" t "Should be", \
-    IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($14*(-1))) w p pt 7 ps PS lc rgb "#C0C0FF" not, \
-    IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $11) w p pt 7 ps PS lc rgb "red" t "Actual", \
-    IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($12*(-1))) w p pt 7 ps PS lc rgb "blue" not
+    IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $12) w p pt 7 ps PS lc rgb "#FFC0C0" t "Should be", \
+    IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($13*(-1))) w p pt 7 ps PS lc rgb "#C0C0FF" not, \
+    IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : $10) w p pt 7 ps PS lc rgb "red" t "Actual", \
+    IN_FN_SLA_ADMIN u 1:($3 == 0 ? 1/0 : ($11*(-1))) w p pt 7 ps PS lc rgb "blue" not
   }
 }
 
@@ -199,11 +218,11 @@ if (1) {
   tv0 = TARGET_VALUE * (1 + ar0)
   tv1 = TARGET_VALUE * (1 + ar1)
 
-  set label sprintf("gray: all latencies" \
-    . "\ngreen: 10-sec running average of all latencies" \
-    . "\nblue: 400-sec running average of all latencies" \
-    . "\nred: 10-value running avg of latencies w/o bg SST activities" \
-    ) at graph 0.03, graph 0.9
+  set label sprintf("Gray: all latencies" \
+    . "\nGreen: 10-sec running average of all latencies" \
+    . "\nBlue: 400-sec running average of all latencies" \
+    . "\nRed: 10-value running avg of latencies w/o bg SST activities" \
+    ) at graph 0.03, graph 0.9 font ",9"
 
   # Point size for latency and runnig average latency
   PS_LAT = 0.04
@@ -213,7 +232,7 @@ if (1) {
   IN_FN_SLA_ADMIN u 1:2 w p pt 7 ps PS_LAT lc rgb "#C0C0C0" not, \
   IN_FN_SLA_ADMIN u 1:3 w l lc rgb "green" not, \
   IN_FN_SLA_ADMIN u 1:4 w l lc rgb "blue" not, \
-  IN_FN_SLA_ADMIN u 1:5 w p pt 7 ps PS_LAT lc rgb "red" not
+  IN_FN_SLA_ADMIN u 1:($6 == 0 ? 1/0 : $5) w p pt 7 ps PS_LAT lc rgb "red" not
 
   #IN_FN_SLA_ADMIN u 1:3 w lp pt 7 ps PS_LAT lc rgb "blue" not, \
 
@@ -281,7 +300,7 @@ if (1) {
 
     # line plot doesn't work since there are holes
     plot \
-    IN_FN_SLA_ADMIN u 1:($6 == 0 ? 1/0 : $10) w p pt 7 ps 0.1 lc rgb "red" not
+    IN_FN_SLA_ADMIN u 1:($6 == 0 ? 1/0 : $9) w p pt 7 ps 0.1 lc rgb "red" not
   }
 }
 
@@ -450,4 +469,3 @@ if (0) {
   plot \
   IN_FN_DS u 25:($18/1048576) w lp pt 7 ps 0.05 lc rgb "red" not
 }
-

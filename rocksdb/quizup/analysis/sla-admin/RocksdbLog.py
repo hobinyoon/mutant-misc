@@ -38,15 +38,15 @@ def _ParseLog(fn, exp_dt):
     # {u'num_ssts_should_be_in_slow_dev': 0, u'sst_ott': 0.005, u'num_ssts_in_slow_dev': 0, u'num_ssts_in_fast_dev': 0,
     # u'num_ssts_should_be_in_fast_dev': 0, u'cur_lat': 5.8963, u'adj_type': u'no_sstable', u'sst_status': u''}
     fmt = "%12s %7.2f %7.2f %7.2f %7.2f %1d" \
-        " %6.1f %6.1f %6.1f" \
+        " %6.1f %6.1f" \
         " %8.2f" \
         " %3d %3d %3d %3d" \
-        " %6.2f %28s"
+        " %28s %10.7f %10.7f"
     header = Util.BuildHeader(fmt, "ts cur_latency lat_ra_all_0 lat_ra_all_1 lat_ra_filtered make_adjustment" \
-        " slow_dev_r_iops running_avg slow_dev_w_iops" \
+        " slow_dev_r_iops slow_dev_w_iops" \
         " new_sst_ott" \
         " num_ssts_in_fast_dev num_ssts_in_slow_dev num_ssts_should_be_in_fast_dev num_ssts_should_be_in_slow_dev" \
-        " running_avg adj_type" \
+        " adj_type pid_adj pid_adj1" \
         )
 
     # Running average including all
@@ -141,15 +141,15 @@ def _ParseLog(fn, exp_dt):
             , lat_ra_filtered
             , j1["make_adjustment"]
             , j1["slow_dev_r_iops"]
-            , float(j1["running_avg"]) if "running_avg" in j1 else -1
             , j1["slow_dev_w_iops"]
             , j1["sst_ott"]
             , j1["num_ssts_in_fast_dev"]
             , j1["num_ssts_in_slow_dev"]
             , j1["num_ssts_should_be_in_fast_dev"]
             , j1["num_ssts_should_be_in_slow_dev"]
-            , float(j1["running_avg"]) if "running_avg" in j1 else -1
             , j1["adj_type"] if "adj_type" in j1 else "-"
+            , j1["adj"] if "adj" in j1 else 0
+            , j1["adj1"] if "adj1" in j1 else 0
             ))
         elif "mutant_table_acc_cnt" in line:
           if 500 <= last_lines_mutant_table_acc_cnt.qsize():
@@ -161,7 +161,7 @@ def _ParseLog(fn, exp_dt):
         sys.exit(1)
 
   # Checked to see what their access count distribution is like
-  if True:
+  if False:
     line = None
     try:
       line = last_lines_mutant_table_acc_cnt.get_nowait()
