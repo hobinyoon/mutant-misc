@@ -104,6 +104,7 @@ void Init() {
 
   options.mutant_options.slow_dev = Conf::GetStr("slow_dev");
   options.mutant_options.sst_ott_adj_cooldown_ms = Conf::Get("sst_ott_adj_cooldown_ms").as<int>();
+  options.mutant_options.pid_i_exp_decay_factor = Conf::Get("pid_i_exp_decay_factor").as<double>();
 
   // Open DB
   Status s = DB::Open(options, db_path, &_db);

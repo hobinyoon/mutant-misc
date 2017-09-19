@@ -73,6 +73,7 @@ namespace Conf {
       ("error_adj_ranges", po::value<string>()->default_value(GetStr("error_adj_ranges")))
       ("slow_dev", po::value<string>()->default_value(GetStr("slow_dev")))
       ("sst_ott_adj_cooldown_ms", po::value<int>()->default_value(Get("sst_ott_adj_cooldown_ms").as<int>()))
+      ("pid_i_exp_decay_factor", po::value<double>()->default_value(Get("pid_i_exp_decay_factor").as<double>()))
 
       ("extra_reads", po::value<bool>()->default_value(Get("extra_reads").as<bool>()))
       ("xr_queue_size", po::value<int>()->default_value(Get("xr_queue_size").as<int>()))
@@ -112,6 +113,7 @@ namespace Conf {
     __EditYaml<string>("error_adj_ranges", vm);
     __EditYaml<string>("slow_dev", vm);
     __EditYaml<int>("sst_ott_adj_cooldown_ms", vm);
+    __EditYaml<double>("pid_i_exp_decay_factor", vm);
 
     __EditYaml<bool>("extra_reads", vm);
     __EditYaml<int>("xr_queue_size", vm);

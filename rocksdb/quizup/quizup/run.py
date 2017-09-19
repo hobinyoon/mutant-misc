@@ -64,6 +64,7 @@ def main():
   parser.add_option("--error_adj_ranges", help="SLA admin error adjustment ranges")
   parser.add_option("--slow_dev", help="slow storage device name such as xvde")
   parser.add_option("--sst_ott_adj_cooldown_ms", help="sst_ott adjustment cooldown time")
+  parser.add_option("--pid_i_exp_decay_factor", help="Exponential decay factor of I per sec")
 
   parser.add_option("--extra_reads", help="Req extra reads")
   parser.add_option("--xr_queue_size", help="XR queue size")
@@ -163,6 +164,7 @@ def main():
       , "error_adj_ranges" \
       , "slow_dev" \
       , "sst_ott_adj_cooldown_ms" \
+      , "pid_i_exp_decay_factor" \
       , "extra_reads" \
       , "xr_queue_size" \
       , "xr_iops" \
