@@ -263,21 +263,25 @@ void _ReporterThread() {
       % Conf::GetStr("progress_log_dn"));
   boost::filesystem::create_directories(dn);
 
-  _fn_client_log = str(boost::format("%s/quizup-client-log-%s") % dn % Util::ToString(SimTime::SimulationTime0()));
+  _fn_client_log = str(boost::format("%s/quizup-client-log-%s") % dn % Util::ToString(SimTime::SimulationTimeBegin()));
   ofstream ofs(_fn_client_log);
   ofs << Util::Prepend("# ", Conf::Desc());
   ofs << "#\n";
   ofs << boost::format("# hostname: %s\n") % Util::Hostname();
-  ofs << boost::format("# simulation_time_0: %s\n") % Util::ToString(SimTime::SimulationTime0());
-  ofs << boost::format("# simulation_time_1: %s\n") % Util::ToString(SimTime::SimulationTime1());
-  ofs << boost::format("# simulation_time_2: %s\n") % Util::ToString(SimTime::SimulationTime2());
-  ofs << boost::format("# simulation_time_3: %s\n") % Util::ToString(SimTime::SimulationTime3());
-  ofs << boost::format("# simulation_time_4: %s\n") % Util::ToString(SimTime::SimulationTime4());
-  ofs << boost::format("# simulated_time_0:  %s\n") % Util::ToString(SimTime::SimulatedTime0());
-  ofs << boost::format("# simulated_time_1:  %s\n") % Util::ToString(SimTime::SimulatedTime1());
-  ofs << boost::format("# simulated_time_2:  %s\n") % Util::ToString(SimTime::SimulatedTime2());
-  ofs << boost::format("# simulated_time_3:  %s\n") % Util::ToString(SimTime::SimulatedTime3());
-  ofs << boost::format("# simulated_time_4:  %s\n") % Util::ToString(SimTime::SimulatedTime4());
+
+  ofs << boost::format("# simulation_time_begin: %s\n") % Util::ToString(SimTime::SimulationTimeBegin());
+  ofs << boost::format("# simulation_time_1    : %s\n") % Util::ToString(SimTime::SimulationTime1());
+  ofs << boost::format("# simulation_time_2    : %s\n") % Util::ToString(SimTime::SimulationTime2());
+  ofs << boost::format("# simulation_time_3    : %s\n") % Util::ToString(SimTime::SimulationTime3());
+  ofs << boost::format("# simulation_time_4    : %s\n") % Util::ToString(SimTime::SimulationTime4());
+  ofs << boost::format("# simulation_time_end  : %s\n") % Util::ToString(SimTime::SimulationTimeEnd());
+
+  ofs << boost::format("# simulated_time_begin: %s\n") % Util::ToString(SimTime::SimulatedTimeBegin());
+  ofs << boost::format("# simulated_time_1    : %s\n") % Util::ToString(SimTime::SimulatedTime1());
+  ofs << boost::format("# simulated_time_2    : %s\n") % Util::ToString(SimTime::SimulatedTime2());
+  ofs << boost::format("# simulated_time_3    : %s\n") % Util::ToString(SimTime::SimulatedTime3());
+  ofs << boost::format("# simulated_time_4    : %s\n") % Util::ToString(SimTime::SimulatedTime4());
+  ofs << boost::format("# simulated_time_end  : %s\n") % Util::ToString(SimTime::SimulatedTimeEnd());
   ofs << "#\n";
 
   long report_interval_in_ms = Conf::Get("report_interval_in_ms").as<long>();
@@ -325,7 +329,7 @@ void _ReportPerTimeIntervalStat(ofstream& ofs, const string& fmt1, const string&
   boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
   string lap_time;
   {
-    string s = boost::posix_time::to_simple_string(now - SimTime::SimulationTime0());
+    string s = boost::posix_time::to_simple_string(now - SimTime::SimulationTimeBegin());
     vector<string> t;
     static const auto sep = boost::is_any_of(".");
     boost::split(t, s, sep);

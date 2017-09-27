@@ -128,5 +128,5 @@ pid_i_exp_decay_factor: 0.9
 # To generate more IOs
 extra_reads: true
 xr_queue_size: 500
-xr_iops: 1000
+xr_iops: 1000:1500:2000
 xr_gets_per_key: 10

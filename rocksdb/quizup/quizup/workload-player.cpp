@@ -3,7 +3,9 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <vector>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 #include <boost/filesystem.hpp>
 
@@ -65,7 +67,7 @@ void RandomAsciiString(const int len, string& v) {
 
 namespace WorkloadPlayer {
   int _xr_gets_per_key = 0;
-  int _xr_sleep_upper_bound_ms = 0;
+  int _xr_sleep_upper_bound_ms[3];
 
   struct TsOpOid {
     long ts;
@@ -167,13 +169,21 @@ namespace WorkloadPlayer {
     //Conf.Get("workload_stop_at").as<double>
 
     // Pre-calculate additional parameters
-    const double xr_iops = Conf::Get("xr_iops").as<double>();
+    static const auto sep = boost::is_any_of(":");
+    vector<string> xr_iops;
+    boost::split(xr_iops, Conf::GetStr("xr_iops"), sep);
+    if (xr_iops.size() != 3)
+      THROW(boost::format("Unexpected %d") % xr_iops.size());
+
     _xr_gets_per_key = Conf::Get("xr_gets_per_key").as<int>();
     // 1000.0: ms
     // * 2: upper bound
     // * 1000: 1000 threads
-    _xr_sleep_upper_bound_ms = int((1000.0 / (xr_iops / _xr_gets_per_key)) * 2 * 1000);
-    Cons::P(boost::format("# _xr_sleep_upper_bound_ms=%d") % _xr_sleep_upper_bound_ms);
+
+    for (int i = 0; i < 3; i ++) {
+      _xr_sleep_upper_bound_ms[i] = int((1000.0 / (atof(xr_iops[i].c_str()) / _xr_gets_per_key)) * 2 * 1000);
+      Cons::P(boost::format("# _xr_sleep_upper_bound_ms[%d]=%d") % i % _xr_sleep_upper_bound_ms[i]);
+    }
 
     SimTime::Init1();
 
@@ -348,7 +358,7 @@ namespace WorkloadPlayer {
 
         if (phase == 0) {
           // No reads during the load phase
-        } else if (phase >= 1) {
+        } else if (1 <= phase) {
           string v;
           DbClient::Get(k, v, ws);
 
@@ -371,8 +381,17 @@ namespace WorkloadPlayer {
       } else {
         while (! _stop_requested) {
           boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-          int sleep_ms = rand() % _xr_sleep_upper_bound_ms;
-          if (SimTime::SimulationTime4() <= now + boost::posix_time::milliseconds(sleep_ms))
+          int read_121_phase = 0;
+          if (now < SimTime::SimulationTime3()) {
+            read_121_phase = 0;
+          } else if (now < SimTime::SimulationTime4()) {
+            read_121_phase = 1;
+          } else {
+            read_121_phase = 2;
+          }
+          int sleep_ms = rand() % _xr_sleep_upper_bound_ms[read_121_phase];
+
+          if (SimTime::SimulationTimeEnd() <= now + boost::posix_time::milliseconds(sleep_ms))
             break;
           SimTime::SleepFor(sleep_ms);
           if (_stop_requested)

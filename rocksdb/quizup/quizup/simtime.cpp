@@ -12,22 +12,27 @@ using namespace std;
 
 namespace SimTime {
 
-// With the 1-2-1x replay, you need
-//   simulation_time_0: start of the simulation time, i.e., the workload from 0.899% is getting replayed. The replay speed is 1x.
-//   simulation_time_1: start of the 2x replay. for the next 1% of the workload.
-//   simulation_time_2: start of the next 1x replay.
-//   simulation_time_3: end of the simulation time
+// 1-2-1x replay,
+//   simulation_time_begin: load only
+//   simulation_time_1: read only. wait for the stabiliztion. not starting slo-admin yet.
+//   simulation_time_2: 1x speed reads
+//   simulation_time_3: 2x speed reads
+//   simulation_time_4: 1x speed reads
+//   simulation_time_end:
 
-boost::posix_time::ptime _simulation_time_0;
+boost::posix_time::ptime _simulation_time_begin;
 boost::posix_time::ptime _simulation_time_1;
 boost::posix_time::ptime _simulation_time_2;
 boost::posix_time::ptime _simulation_time_3;
 boost::posix_time::ptime _simulation_time_4;
-boost::posix_time::ptime _simulated_time_0;
+boost::posix_time::ptime _simulation_time_end;
+
+boost::posix_time::ptime _simulated_time_begin;
 boost::posix_time::ptime _simulated_time_1;
 boost::posix_time::ptime _simulated_time_2;
 boost::posix_time::ptime _simulated_time_3;
 boost::posix_time::ptime _simulated_time_4;
+boost::posix_time::ptime _simulated_time_end;
 
 long _simulated_time_begin_long;
 
@@ -48,17 +53,17 @@ void Init1() {
   Cons::MT _("Init SimTime 1 ...", false);
 
   _121x_speed_replay = Conf::Get("121x_speed_replay").as<bool>();
-  _simulated_time_0 = Util::ToPtime(Conf::GetStr("simulated_time_begin"));
-  _simulated_time_4 = Util::ToPtime(Conf::GetStr("simulated_time_end"));
+  _simulated_time_begin = Util::ToPtime(Conf::GetStr("simulated_time_begin"));
+  _simulated_time_end = Util::ToPtime(Conf::GetStr("simulated_time_end"));
 
   _start_from_defined = Conf::Get("workload_start_from").IsDefined()
     && (Conf::Get("workload_start_from").as<double>() != -1.0);
   if (_start_from_defined) {
     _start_from = Conf::Get("workload_start_from").as<double>();
-    // Can't assign directly to _simulated_time_0. It complicates the
+    // Can't assign directly to _simulated_time_begin. It complicates the
     // calculation of _simulated_time_stop_at below.
-    boost::posix_time::ptime b = _simulated_time_0
-      + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * _start_from);
+    boost::posix_time::ptime b = _simulated_time_begin
+      + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * _start_from);
 
     string s = Util::ToString(b);
     // 160711-170502.871
@@ -77,7 +82,7 @@ void Init1() {
   }
 }
 
-// Calculate simulation / simulated time.  Set the _simulation_time_0 0.01
+// Calculate simulation / simulated time.  Set the _simulation_time_begin 0.01
 // sec after now.
 //
 // Not sure how to construct a std::chrono::time_point from a string with
@@ -86,29 +91,29 @@ void Init2() {
   Cons::MT _("Init SimTime 2 ...", false);
 
   boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-  _simulation_time_0 = now + boost::posix_time::milliseconds(10);
+  _simulation_time_begin = now + boost::posix_time::milliseconds(10);
 
-  _simulation_time_4 = _simulation_time_0 + boost::posix_time::seconds(Conf::Get("simulation_time_dur_in_sec").as<int>());
+  _simulation_time_end = _simulation_time_begin + boost::posix_time::seconds(Conf::Get("simulation_time_dur_in_sec").as<int>());
 
-  Cons::P(boost::format("simulation_time_0: %s") % Util::ToString(_simulation_time_0));
-  Cons::P(boost::format("simulation_time_4: %s") % Util::ToString(_simulation_time_4));
-  Cons::P(boost::format("simulated_time_0 : %s") % Util::ToString(_simulated_time_0));
-  Cons::P(boost::format("simulated_time_4 : %s") % Util::ToString(_simulated_time_4));
+  Cons::P(boost::format("simulation_time_begin: %s") % Util::ToString(_simulation_time_begin));
+  Cons::P(boost::format("simulation_time_end  : %s") % Util::ToString(_simulation_time_end));
+  Cons::P(boost::format("simulated_time_begin : %s") % Util::ToString(_simulated_time_begin));
+  Cons::P(boost::format("simulated_time_end   : %s") % Util::ToString(_simulated_time_end));
 
   // workload_stop_at needs to be calculated before the simulated time interval is shrunk.
   _stop_at_defined = Conf::Get("workload_stop_at").IsDefined()
     && (Conf::Get("workload_stop_at").as<double>() != -1.0);
   if (_stop_at_defined) {
     _stop_at = Conf::Get("workload_stop_at").as<double>();
-    _simulated_time_stop_at = _simulated_time_0
-      + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * _stop_at);
-    _simulated_time_4 = _simulated_time_stop_at;
+    _simulated_time_stop_at = _simulated_time_begin
+      + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * _stop_at);
+    _simulated_time_end = _simulated_time_stop_at;
   }
 
   if (_start_from_defined) {
-    _simulated_time_0 = _simulated_time_0
-      + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * _start_from);
-    _simulation_time_4 = _simulation_time_0 + boost::posix_time::seconds(double(Conf::Get("simulation_time_dur_in_sec").as<int>()) * (1.0 - _start_from));
+    _simulated_time_begin = _simulated_time_begin
+      + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * _start_from);
+    _simulation_time_end = _simulation_time_begin + boost::posix_time::seconds(double(Conf::Get("simulation_time_dur_in_sec").as<int>()) * (1.0 - _start_from));
   }
 
   if (_121x_speed_replay) {
@@ -117,12 +122,12 @@ void Init2() {
     //// Go 7 times faster
     //double b = a + 0.1 / 4.0;
     //double c = b + 0.8;
-    //_simulation_time_1 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * a);
-    //_simulation_time_2 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * b);
-    //_simulation_time_4 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * c);
+    //_simulation_time_1 = _simulation_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_end - _simulation_time_begin).total_nanoseconds() / 1000.0 * a);
+    //_simulation_time_2 = _simulation_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_end - _simulation_time_begin).total_nanoseconds() / 1000.0 * b);
+    //_simulation_time_end = _simulation_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_end - _simulation_time_begin).total_nanoseconds() / 1000.0 * c);
 
-    //_simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * a);
-    //_simulated_time_2 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a + 0.1));
+    //_simulated_time_1 = _simulated_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * a);
+    //_simulated_time_2 = _simulated_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * (a + 0.1));
 
     // (40 + x) / (17 + y) = 2.35294117647059
     // (60 - x) / (343 - y) = 0.087463557
@@ -177,14 +182,15 @@ void Init2() {
       double run_dur = exp_dur - load_dur;
 
       double a = load_dur/exp_dur;  // fast loading
-      double b = a + (exp_dur-load_dur)/exp_dur *  10 / 1000;  // give some time for the latency to stabilize
-      double c = b + (exp_dur-load_dur)/exp_dur * 495 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
-      double d = c + (exp_dur-load_dur)/exp_dur * 495 / 1000;  // keep going.
+      double b = a + (exp_dur-load_dur)/exp_dur *  10     / 1000;  // give some time for the latency to stabilize
+      double c = b + (exp_dur-load_dur)/exp_dur * 990 / 3 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
+      double d = c + (exp_dur-load_dur)/exp_dur * 990 / 3 / 1000;  // keep going.
+      double e = d + (exp_dur-load_dur)/exp_dur * 990 / 3 / 1000;  // keep going.
 
-      _simulation_time_1 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (a/d));
-      _simulation_time_2 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (b/d));
-      _simulation_time_3 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * (c/d));
-      //_simulation_time_4 = _simulation_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_4 - _simulation_time_0).total_nanoseconds() / 1000.0 * 1.0);
+      _simulation_time_1 = _simulation_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_end - _simulation_time_begin).total_nanoseconds() / 1000.0 * (a/e));
+      _simulation_time_2 = _simulation_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_end - _simulation_time_begin).total_nanoseconds() / 1000.0 * (b/e));
+      _simulation_time_3 = _simulation_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_end - _simulation_time_begin).total_nanoseconds() / 1000.0 * (c/e));
+      _simulation_time_4 = _simulation_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_end - _simulation_time_begin).total_nanoseconds() / 1000.0 * (d/e));
     }
     {
       // From (d)
@@ -192,27 +198,32 @@ void Init2() {
       double load_dur = 1.0 - run_dur;
 
       double a = load_dur;
-      double b = a + run_dur *  10 / 1000;  // give some time for the latency to stabilize
-      double c = b + run_dur * 495 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
-      double d = c + run_dur * 495 / 1000;  // keep going.
-      _simulated_time_1 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (a/d));
-      _simulated_time_2 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (b/d));
-      _simulated_time_3 = _simulated_time_0 + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_4 - _simulated_time_0).total_nanoseconds() / 1000.0 * (c/d));
+      double b = a + run_dur *  10     / 1000;  // give some time for the latency to stabilize
+      double c = b + run_dur * 990 / 3 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
+      double d = c + run_dur * 990 / 3 / 1000;  // keep going.
+      double e = d + run_dur * 990 / 3 / 1000;  // keep going.
+      _simulated_time_1 = _simulated_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * (a/e));
+      _simulated_time_2 = _simulated_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * (b/e));
+      _simulated_time_3 = _simulated_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * (c/e));
+      _simulated_time_4 = _simulated_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * (d/e));
     }
   }
 
   if (_stop_at_defined || _start_from_defined) {
     Cons::P("Adjusted time:");
-    Cons::P(boost::format("simulation_time_0: %s") % Util::ToString(_simulation_time_0));
-    Cons::P(boost::format("simulation_time_1: %s") % Util::ToString(_simulation_time_1));
-    Cons::P(boost::format("simulation_time_2: %s") % Util::ToString(_simulation_time_2));
-    Cons::P(boost::format("simulation_time_3: %s") % Util::ToString(_simulation_time_3));
-    Cons::P(boost::format("simulation_time_4: %s") % Util::ToString(_simulation_time_4));
-    Cons::P(boost::format("simulated_time_0 : %s") % Util::ToString(_simulated_time_0));
-    Cons::P(boost::format("simulated_time_1 : %s") % Util::ToString(_simulated_time_1));
-    Cons::P(boost::format("simulated_time_2 : %s") % Util::ToString(_simulated_time_2));
-    Cons::P(boost::format("simulated_time_3 : %s") % Util::ToString(_simulated_time_3));
-    Cons::P(boost::format("simulated_time_4 : %s") % Util::ToString(_simulated_time_4));
+    Cons::P(boost::format("simulation_time_begin : %s") % Util::ToString(_simulation_time_begin));
+    Cons::P(boost::format("simulation_time_1     : %s") % Util::ToString(_simulation_time_1));
+    Cons::P(boost::format("simulation_time_2     : %s") % Util::ToString(_simulation_time_2));
+    Cons::P(boost::format("simulation_time_3     : %s") % Util::ToString(_simulation_time_3));
+    Cons::P(boost::format("simulation_time_4     : %s") % Util::ToString(_simulation_time_4));
+    Cons::P(boost::format("simulation_time_end   : %s") % Util::ToString(_simulation_time_end));
+
+    Cons::P(boost::format("simulated_time_begin  : %s") % Util::ToString(_simulated_time_begin));
+    Cons::P(boost::format("simulated_time_1      : %s") % Util::ToString(_simulated_time_1));
+    Cons::P(boost::format("simulated_time_2      : %s") % Util::ToString(_simulated_time_2));
+    Cons::P(boost::format("simulated_time_3      : %s") % Util::ToString(_simulated_time_3));
+    Cons::P(boost::format("simulated_time_4      : %s") % Util::ToString(_simulated_time_4));
+    Cons::P(boost::format("simulated_time_end    : %s") % Util::ToString(_simulated_time_end));
     Cons::P(boost::format("simulated_time_stop_at: %s") % Util::ToString(_simulated_time_stop_at));
     Cons::P(boost::format("simulated_time_begin_long: %d") % _simulated_time_begin_long);
   }
@@ -282,35 +293,35 @@ boost::posix_time::ptime _InterpolateSimulatedTime(
 //  int rw_mode = 1 + 2;
 //
 //  if (_121x_speed_replay) {
-//    // _simulation_time_0 : _simulation_time_1 : _simulation_time_2 : _simulation_time_4
-//    //  _simulated_time_0 :  _simulated_time_1 :  _simulated_time_2 :  _simulated_time_4
+//    // _simulation_time_begin : _simulation_time_1 : _simulation_time_2 : _simulation_time_end
+//    //  _simulated_time_begin :  _simulated_time_1 :  _simulated_time_2 :  _simulated_time_end
 //    //
 //    // Figure out a given b
 //    //   b (ts_simulated, input)
 //    //   a (ts_simulation, output)
-//    if (ts_simulated < _simulated_time_0) {
+//    if (ts_simulated < _simulated_time_begin) {
 //      rw_mode = 1;
 //      // This can happen with a small offset. Probably due to the floating point calculation errors.
-//      //THROW(boost::format("Unexpected: simulated=%s simulated_0=%s") % Util::ToString(ts_simulated) % Util::ToString(_simulated_time_0));
+//      //THROW(boost::format("Unexpected: simulated=%s simulated_0=%s") % Util::ToString(ts_simulated) % Util::ToString(_simulated_time_begin));
 //    } else if (ts_simulated < _simulated_time_1) {
 //      rw_mode = 1;
-//      ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_1, ts_simulated, _simulation_time_0, _simulation_time_1);
+//      ts_simulation = _InterpolateSimulationTime(_simulated_time_begin, _simulated_time_1, ts_simulated, _simulation_time_begin, _simulation_time_1);
 //    } else if (ts_simulated < _simulated_time_2) {
 //      rw_mode = 1 + 4;
 //      ts_simulation = _InterpolateSimulationTime(_simulated_time_1, _simulated_time_2, ts_simulated, _simulation_time_1, _simulation_time_2);
 //    } else if (ts_simulated < _simulated_time_3) {
 //      rw_mode = 1 + 4;
 //      ts_simulation = _InterpolateSimulationTime(_simulated_time_2, _simulated_time_3, ts_simulated, _simulation_time_2, _simulation_time_3);
-//    } else if (ts_simulated <= _simulated_time_4) {
+//    } else if (ts_simulated <= _simulated_time_end) {
 //      rw_mode = 1 + 4;
-//      ts_simulation = _InterpolateSimulationTime(_simulated_time_3, _simulated_time_4, ts_simulated, _simulation_time_3, _simulation_time_4);
+//      ts_simulation = _InterpolateSimulationTime(_simulated_time_3, _simulated_time_end, ts_simulated, _simulation_time_3, _simulation_time_end);
 //    } else {
 //      rw_mode = 1 + 4;
 //      // This can happen when the system is saturated
-//      //THROW(boost::format("Unexpected: simulated_3=%s simulated=%s") % Util::ToString(_simulated_time_4) % Util::ToString(ts_simulated));
+//      //THROW(boost::format("Unexpected: simulated_3=%s simulated=%s") % Util::ToString(_simulated_time_end) % Util::ToString(ts_simulated));
 //    }
 //  } else {
-//    ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_4, ts_simulated, _simulation_time_0, _simulation_time_4);
+//    ts_simulation = _InterpolateSimulationTime(_simulated_time_begin, _simulated_time_end, ts_simulated, _simulation_time_begin, _simulation_time_end);
 //  }
 //
 //  boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
@@ -347,35 +358,37 @@ int MaySleepUntilSimulatedTime(const boost::posix_time::ptime& ts_simulated, Pro
   int phase = 0;
 
   if (_121x_speed_replay) {
-    // _simulation_time_0 : _simulation_time_1 : _simulation_time_2 : _simulation_time_4
-    //  _simulated_time_0 :  _simulated_time_1 :  _simulated_time_2 :  _simulated_time_4
+    // _simulation_time_begin : _simulation_time_1 : _simulation_time_2 : _simulation_time_end
+    //  _simulated_time_begin :  _simulated_time_1 :  _simulated_time_2 :  _simulated_time_end
     //
     // Figure out a given b
     //   b (ts_simulated, input)
     //   a (ts_simulation, output)
-    if (ts_simulated < _simulated_time_0) {
+    if (ts_simulated < _simulated_time_begin) {
       phase = 0;
       // This can happen with a small offset. Probably due to the floating point calculation errors.
-      //THROW(boost::format("Unexpected: simulated=%s simulated_0=%s") % Util::ToString(ts_simulated) % Util::ToString(_simulated_time_0));
+      //THROW(boost::format("Unexpected: simulated=%s simulated_0=%s") % Util::ToString(ts_simulated) % Util::ToString(_simulated_time_begin));
     } else if (ts_simulated < _simulated_time_1) {
       phase = 0;
-      ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_1, ts_simulated, _simulation_time_0, _simulation_time_1);
+      ts_simulation = _InterpolateSimulationTime(_simulated_time_begin, _simulated_time_1, ts_simulated, _simulation_time_begin, _simulation_time_1);
     } else if (ts_simulated < _simulated_time_2) {
       phase = 1;
       ts_simulation = _InterpolateSimulationTime(_simulated_time_1, _simulated_time_2, ts_simulated, _simulation_time_1, _simulation_time_2);
     } else if (ts_simulated < _simulated_time_3) {
       phase = 2;
       ts_simulation = _InterpolateSimulationTime(_simulated_time_2, _simulated_time_3, ts_simulated, _simulation_time_2, _simulation_time_3);
-    } else if (ts_simulated <= _simulated_time_4) {
+    } else if (ts_simulated < _simulated_time_4) {
       phase = 3;
       ts_simulation = _InterpolateSimulationTime(_simulated_time_3, _simulated_time_4, ts_simulated, _simulation_time_3, _simulation_time_4);
+    } else if (ts_simulated <= _simulated_time_end) {
+      phase = 4;
+      ts_simulation = _InterpolateSimulationTime(_simulated_time_4, _simulated_time_end, ts_simulated, _simulation_time_4, _simulation_time_end);
     } else {
-      phase = 3;
+      phase = 4;
       // This can happen when the system is saturated
-      //THROW(boost::format("Unexpected: simulated_3=%s simulated=%s") % Util::ToString(_simulated_time_4) % Util::ToString(ts_simulated));
     }
   } else {
-    ts_simulation = _InterpolateSimulationTime(_simulated_time_0, _simulated_time_4, ts_simulated, _simulation_time_0, _simulation_time_4);
+    ts_simulation = _InterpolateSimulationTime(_simulated_time_begin, _simulated_time_end, ts_simulated, _simulation_time_begin, _simulation_time_end);
   }
 
   boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
@@ -422,22 +435,22 @@ boost::posix_time::ptime ToSimulatedTime(const boost::posix_time::ptime& simulat
   boost::posix_time::ptime simulated_time;
 
   if (_121x_speed_replay) {
-    if (simulation_time < _simulation_time_0) {
+    if (simulation_time < _simulation_time_begin) {
       THROW("Unexpected");
     } else if (simulation_time < _simulation_time_1) {
-      simulated_time = _InterpolateSimulatedTime(_simulated_time_0, _simulated_time_1, _simulation_time_0, _simulation_time_1, simulation_time);
+      simulated_time = _InterpolateSimulatedTime(_simulated_time_begin, _simulated_time_1, _simulation_time_begin, _simulation_time_1, simulation_time);
     } else if (simulation_time < _simulation_time_2) {
       simulated_time = _InterpolateSimulatedTime(_simulated_time_1, _simulated_time_2, _simulation_time_1, _simulation_time_2, simulation_time);
     } else if (simulation_time <= _simulation_time_3) {
       simulated_time = _InterpolateSimulatedTime(_simulated_time_2, _simulated_time_3, _simulation_time_2, _simulation_time_3, simulation_time);
-    } else if (simulation_time <= _simulation_time_4) {
-      simulated_time = _InterpolateSimulatedTime(_simulated_time_3, _simulated_time_4, _simulation_time_3, _simulation_time_4, simulation_time);
+    } else if (simulation_time <= _simulation_time_end) {
+      simulated_time = _InterpolateSimulatedTime(_simulated_time_3, _simulated_time_end, _simulation_time_3, _simulation_time_end, simulation_time);
     } else {
       // This can happen
-      //THROW(boost::format("Unexpected: simulation_3=%s simulation=%s") % Util::ToString(_simulation_time_4) % Util::ToString(_simulation_time));
+      //THROW(boost::format("Unexpected: simulation_3=%s simulation=%s") % Util::ToString(_simulation_time_end) % Util::ToString(_simulation_time));
     }
   } else {
-    simulated_time = _InterpolateSimulatedTime(_simulated_time_0, _simulated_time_4, _simulation_time_0, _simulation_time_4, simulation_time);
+    simulated_time = _InterpolateSimulatedTime(_simulated_time_begin, _simulated_time_end, _simulation_time_begin, _simulation_time_end, simulation_time);
   }
 
   return simulated_time;
@@ -465,15 +478,18 @@ const boost::posix_time::ptime& SimulatedTimeStopAt() {
 }
 
 
-boost::posix_time::ptime SimulationTime0() { return _simulation_time_0; }
+boost::posix_time::ptime SimulationTimeBegin() { return _simulation_time_begin; }
 boost::posix_time::ptime SimulationTime1() { return _simulation_time_1; }
 boost::posix_time::ptime SimulationTime2() { return _simulation_time_2; }
 boost::posix_time::ptime SimulationTime3() { return _simulation_time_3; }
 boost::posix_time::ptime SimulationTime4() { return _simulation_time_4; }
-boost::posix_time::ptime SimulatedTime0() { return _simulated_time_0; }
+boost::posix_time::ptime SimulationTimeEnd() { return _simulation_time_end; }
+
+boost::posix_time::ptime SimulatedTimeBegin() { return _simulated_time_begin; }
 boost::posix_time::ptime SimulatedTime1() { return _simulated_time_1; }
 boost::posix_time::ptime SimulatedTime2() { return _simulated_time_2; }
 boost::posix_time::ptime SimulatedTime3() { return _simulated_time_3; }
 boost::posix_time::ptime SimulatedTime4() { return _simulated_time_4; }
+boost::posix_time::ptime SimulatedTimeEnd() { return _simulated_time_end; }
 
 }

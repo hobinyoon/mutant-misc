@@ -31,7 +31,7 @@ void on_signal(int sig) {
 void ArchiveLogs() {
   Cons::MT _("Archiving logs ...");
 
-  string sbt = Util::ToString(SimTime::SimulationTime0());
+  string sbt = Util::ToString(SimTime::SimulationTimeBegin());
 
   // DB LOG
   string fn_db0 = str(boost::format("%s/LOG") % Conf::GetDir("db_path"));

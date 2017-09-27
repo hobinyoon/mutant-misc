@@ -9,6 +9,6 @@ namespace Conf {
 	std::string Desc();
 
 	YAML::Node Get(const std::string& k);
-	std::string GetStr(const std::string& k);
+	const std::string GetStr(const std::string& k);
 	std::string GetDir(const std::string& k);
 };

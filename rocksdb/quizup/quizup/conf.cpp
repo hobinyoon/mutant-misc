@@ -77,7 +77,7 @@ namespace Conf {
 
       ("extra_reads", po::value<bool>()->default_value(Get("extra_reads").as<bool>()))
       ("xr_queue_size", po::value<int>()->default_value(Get("xr_queue_size").as<int>()))
-      ("xr_iops", po::value<double>()->default_value(Get("xr_iops").as<double>()))
+      ("xr_iops", po::value<string>()->default_value(Get("xr_iops").as<string>()))
       ("xr_gets_per_key", po::value<int>()->default_value(Get("xr_gets_per_key").as<int>()))
       ;
 
@@ -117,7 +117,7 @@ namespace Conf {
 
     __EditYaml<bool>("extra_reads", vm);
     __EditYaml<int>("xr_queue_size", vm);
-    __EditYaml<double>("xr_iops", vm);
+    __EditYaml<string>("xr_iops", vm);
     __EditYaml<int>("xr_gets_per_key", vm);
   }
 
@@ -140,7 +140,7 @@ namespace Conf {
     return _yaml_root[k];
   }
 
-  string GetStr(const std::string& k) {
+  const string GetStr(const std::string& k) {
     return _yaml_root[k].as<string>();
   }
 
