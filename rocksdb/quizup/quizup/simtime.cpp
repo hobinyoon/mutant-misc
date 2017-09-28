@@ -182,10 +182,10 @@ void Init2() {
       double run_dur = exp_dur - load_dur;
 
       double a = load_dur/exp_dur;  // fast loading
-      double b = a + (exp_dur-load_dur)/exp_dur *  10     / 1000;  // give some time for the latency to stabilize
-      double c = b + (exp_dur-load_dur)/exp_dur * 990 / 3 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
-      double d = c + (exp_dur-load_dur)/exp_dur * 990 / 3 / 1000;  // keep going.
-      double e = d + (exp_dur-load_dur)/exp_dur * 990 / 3 / 1000;  // keep going.
+      double b = a + (exp_dur-load_dur)/exp_dur *  10       / 1000;  // give some time for the pending SSTable compactions to finish. don't seem to be any actually.
+      double c = b + (exp_dur-load_dur)/exp_dur * 990 * 0.4 / 1000;  // begin the SloEnforcer
+      double d = c + (exp_dur-load_dur)/exp_dur * 990 * 0.3 / 1000;  // with a different load level
+      double e = d + (exp_dur-load_dur)/exp_dur * 990 * 0.3 / 1000;  // with a different load level
 
       _simulation_time_1 = _simulation_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_end - _simulation_time_begin).total_nanoseconds() / 1000.0 * (a/e));
       _simulation_time_2 = _simulation_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulation_time_end - _simulation_time_begin).total_nanoseconds() / 1000.0 * (b/e));
@@ -198,10 +198,10 @@ void Init2() {
       double load_dur = 1.0 - run_dur;
 
       double a = load_dur;
-      double b = a + run_dur *  10     / 1000;  // give some time for the latency to stabilize
-      double c = b + run_dur * 990 / 3 / 1000;  // begin the SlaAdmin with a target latency of 19 ms
-      double d = c + run_dur * 990 / 3 / 1000;  // keep going.
-      double e = d + run_dur * 990 / 3 / 1000;  // keep going.
+      double b = a + run_dur *  10       / 1000;  // give some time for the pending SSTable compactions to finish
+      double c = b + run_dur * 990 * 0.4 / 1000;  // begin the SloEnforcer
+      double d = c + run_dur * 990 * 0.3 / 1000;  // with a different load level
+      double e = d + run_dur * 990 * 0.3 / 1000;  // with a different load level
       _simulated_time_1 = _simulated_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * (a/e));
       _simulated_time_2 = _simulated_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * (b/e));
       _simulated_time_3 = _simulated_time_begin + boost::posix_time::time_duration(0, 0, 0, (_simulated_time_end - _simulated_time_begin).total_nanoseconds() / 1000.0 * (c/e));
