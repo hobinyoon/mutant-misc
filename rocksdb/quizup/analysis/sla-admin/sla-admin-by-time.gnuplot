@@ -6,6 +6,7 @@ IN_FN_QZ = system("echo $IN_FN_QZ")
 IN_FN_SLA_ADMIN = system("echo $IN_FN_SLA_ADMIN")
 QUIZUP_OPTIONS = system("echo $QUIZUP_OPTIONS")
 PID_PARAMS = system("echo $PID_PARAMS")
+WORKLOAD_EVENTS = system("echo $WORKLOAD_EVENTS")
 IN_FN_DS = system("echo $IN_FN_DS")
 OUT_FN = system("echo $OUT_FN")
 
@@ -60,28 +61,36 @@ if (1) {
     set logscale y
     set mytics 10
     label0 = sprintf("Target read IOPS: %.1f" \
-      . "\nGray: All IOPS" \
       . "\nBlue: IOPS w/o bg SST activity" \
+      . "\nRed: IOPS w bg SST activity (including cooldown, no SLA control)" \
       . "\nIOPS 0 is shown as 0.2 due to the logscale" \
       , TARGET_VALUE)
   } else {
     set ytics nomirror tc rgb "black"
     label0 = sprintf("Target read IOPS: %.1f" \
-      . "\nGray: All IOPS" \
       . "\nBlue: IOPS w/o bg SST activity" \
+      . "\nRed: IOPS w bg SST activity (including cooldown, no SLA control)" \
       , TARGET_VALUE)
+  }
+
+  do for [i=1:words(WORKLOAD_EVENTS)] {
+    x1 = word(WORKLOAD_EVENTS, i) + 0.0
+    # Specifying y min and max when you don't know the range. nice.
+    #   https://stackoverflow.com/questions/14946530/loop-structure-inside-gnuplot
+    set arrow from x1,graph(0,0) to x1,graph(1,1) nohead back
   }
 
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
-  set label label0 at graph 0.03, graph 0.9 font ",9"
+  set label label0 at graph 0.02, graph 0.91 font ",9"
 
   PS = 0.04
+  PS1 = 0.08
 
   plot \
-  IN_FN_SLA_ADMIN u 1:($6 == 0 ? $7 : 1/0) w p pt 7 ps PS lc rgb "#C0C0C0" not, \
-  IN_FN_SLA_ADMIN u 1:($6 == 1 ? ($7 == 0 ? 0.2 : $7) : 1/0) w p pt 7 ps PS lc rgb "blue" not, \
+  IN_FN_SLA_ADMIN u 1:($6 == 1 ? ($7 == 0 ? 0.2 : $7) : 1/0) w p pt 7 ps PS  lc rgb "blue" not, \
+  IN_FN_SLA_ADMIN u 1:($6 == 0 ? ($7 == 0 ? 0.2 : $7) : 1/0) w p pt 7 ps PS1 lc rgb "red" not, \
   f_t(x, 0)   w l lt 1 lc rgb "#D0D0D0" not
 }
 
@@ -103,6 +112,11 @@ if (1) {
 
   set xrange ["00:00:00":STD_MAX]
 
+  do for [i=1:words(WORKLOAD_EVENTS)] {
+    x1 = word(WORKLOAD_EVENTS, i) + 0.0
+    set arrow from x1,graph(0,0) to x1,graph(1,1) nohead back
+  }
+
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
@@ -122,7 +136,7 @@ if (1) {
     , word(PID_PARAMS, 3) \
     , word(PID_PARAMS, 4) \
     , ERROR_ADJ_RANGES) \
-    at graph 0.03, graph 0.9 font ",9"
+    at graph 0.02, graph 0.91 font ",9"
 
   plot \
   IN_FN_SLA_ADMIN u 1:($6 == 0 ? 1/0 : ($16 < ab0               ? $16 : 1/0)) w p pt 7 ps PS1 lc rgb "red"     not, \
@@ -156,9 +170,13 @@ if (1) {
     set xlabel "Time (HH:MM)"
     set ylabel "Number of SSTables\nin fast/slow stg device"
 
+    do for [i=1:words(WORKLOAD_EVENTS)] {
+      x1 = word(WORKLOAD_EVENTS, i) + 0.0
+      set arrow from x1,graph(0,0) to x1,graph(1,1) nohead back
+    }
+
     set key left
 
-    set xrange ["00:00:00.000":]
     #set yrange [-150:150]
 
     set lmargin LMARGIN
@@ -222,7 +240,12 @@ if (1) {
     . "\nGreen: 10-sec running average of all latencies" \
     . "\nBlue: 400-sec running average of all latencies" \
     . "\nRed: 10-value running avg of latencies w/o bg SST activities" \
-    ) at graph 0.03, graph 0.9 font ",9"
+    ) at graph 0.02, graph 0.91 font ",9"
+
+  do for [i=1:words(WORKLOAD_EVENTS)] {
+    x1 = word(WORKLOAD_EVENTS, i) + 0.0
+    set arrow from x1,graph(0,0) to x1,graph(1,1) nohead back
+  }
 
   # Point size for latency and runnig average latency
   PS_LAT = 0.04
@@ -294,6 +317,11 @@ if (1) {
       set yrange [0:]
     }
 
+    do for [i=1:words(WORKLOAD_EVENTS)] {
+      x1 = word(WORKLOAD_EVENTS, i) + 0.0
+      set arrow from x1,graph(0,0) to x1,graph(1,1) nohead back
+    }
+
     set lmargin LMARGIN
 
     set xrange ["00:00:00":STD_MAX]
@@ -341,6 +369,11 @@ if (1) {
   set ylabel "EBS Mag IOPS\nfrom dstat"
 
   set key left
+
+  do for [i=1:words(WORKLOAD_EVENTS)] {
+    x1 = word(WORKLOAD_EVENTS, i) + 0.0
+    set arrow from x1,graph(0,0) to x1,graph(1,1) nohead back
+  }
 
   set lmargin LMARGIN
 

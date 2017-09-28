@@ -361,7 +361,49 @@ def main(argv):
     170918-094956/quizup/170918-144341.674
     170918-095022/quizup/170918-144018.607"""
 
-  if True:
+  # Exploring xr_iops to see if we can get different latencies.
+  exps = """170918-180857/quizup/170918-225647.066
+    170918-180920/quizup/170918-225506.963
+    170918-180944/quizup/170918-225646.945
+    170918-181005/quizup/170918-224938.751
+    170918-181026/quizup/170918-224942.079
+    170918-181047/quizup/170918-230536.228
+    170918-181111/quizup/170918-225031.376
+    170918-181138/quizup/170918-225625.807
+    170918-181200/quizup/170918-225711.266"""
+
+  exps = """170918-222135/quizup/170919-025352.507
+    170918-222158/quizup/170919-030120.294
+    170918-222220/quizup/170919-030207.986
+    170918-222242/quizup/170919-030232.318
+    170918-222304/quizup/170919-030717.652
+    170918-222327/quizup/170919-030707.413"""
+
+  exps = """170919-124331/quizup/170919-170007.870
+    170919-131403/quizup/170919-180125.967
+    170919-131424/quizup/170919-180158.349
+    170919-131442/quizup/170919-180139.970
+    170919-131505/quizup/170919-180424.920
+    170919-131524/quizup/170919-180125.980
+    170919-131545/quizup/170919-175120.370
+    170919-131604/quizup/170919-175703.244"""
+
+  exps = """170919-180328/quizup/170919-223524.568
+    170919-180355/quizup/170919-224902.038
+    170919-180420/quizup/170919-224852.550
+    170919-180442/quizup/170919-224011.441
+    170919-180506/quizup/170919-225135.053
+    170919-180528/quizup/170919-225115.304
+    170919-180548/quizup/170919-224900.713
+    170919-180610/quizup/170919-224739.183
+    170919-180634/quizup/170919-225207.149
+    170919-180655/quizup/170919-225134.893
+    170919-180714/quizup/170919-230406.016"""
+
+  # 100K, 150K, 200K. Try lower than 100K
+  exps = """170927-094416/quizup/170927-134712.284"""
+
+  if False:
     # Parallel processing
     params = []
     for line in re.split(r"\s+", exps):
@@ -393,8 +435,8 @@ def Plot(param):
   fn_log_dstat   = "%s/dstat/%s.csv" % (dn_log_job, exp_dt)
 
   log_q = QuizupLog(fn_log_quizup)
-  SimTime.Init(log_q.SimTime("simulated_time_0"), log_q.SimTime("simulated_time_4")
-      , log_q.SimTime("simulation_time_0"), log_q.SimTime("simulation_time_4"))
+  SimTime.Init(log_q.SimTime("simulated_time_begin"), log_q.SimTime("simulated_time_end")
+      , log_q.SimTime("simulation_time_begin"), log_q.SimTime("simulation_time_end"))
 
   qz_std_max = _QzSimTimeDur(log_q.quizup_options["simulation_time_dur_in_sec"])
   qz_opt_str = _QuizupOptionsFormattedStr(log_q.quizup_options)
@@ -414,6 +456,7 @@ def Plot(param):
     env["IN_FN_SLA_ADMIN"] = "" if num_sla_adj == 0 else fn_rocksdb_sla_admin_log
     env["QUIZUP_OPTIONS"] = qz_opt_str
     env["PID_PARAMS"] = "%s %s %s %s" % (pid_params["target_value"], pid_params["p"], pid_params["i"], pid_params["d"])
+    env["WORKLOAD_EVENTS"] = " ".join(str(t) for t in log_q.simulation_time_events)
     env["IN_FN_DS"] = fn_dstat
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/sla-admin-by-time.gnuplot" % os.path.dirname(__file__), env=env)

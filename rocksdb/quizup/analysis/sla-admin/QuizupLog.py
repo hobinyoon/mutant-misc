@@ -1,4 +1,5 @@
 import ast
+import datetime
 import os
 import pprint
 import re
@@ -35,9 +36,9 @@ class QuizupLog:
           self.sst_ott = float(mo.group("v"))
           #Cons.P(self.sst_ott)
           continue
-          # # simulation_time_0: 170828-215755.938
+          # # simulation_time_begin: 170828-215755.938
         if line.startswith("# simulat"):
-          mo = re.match(r"# (?P<k>simulat\w+_time_\d): +(?P<v>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)", line)
+          mo = re.match(r"# (?P<k>simulat\w+_time_(\d|\w)+) *: +(?P<v>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)", line)
           if mo is None:
             continue
           self.simtime[mo.group("k")] = mo.group("v")
@@ -77,6 +78,31 @@ class QuizupLog:
           self.quizup_options = ast.literal_eval(mo.group("v"))
           #Cons.P(pprint.pformat(self.quizup_options))
           continue
+    self._SetSimTimeEvents()
+
+  # Get numbers for plotting vertical lines. Time separators.
+  def _SetSimTimeEvents(self):
+    #Cons.P(self.simtime["simulation_time_begin"])
+    #Cons.P(self.simtime["simulation_time_1"])
+    #Cons.P(self.simtime["simulation_time_2"])
+    #Cons.P(self.simtime["simulation_time_3"])
+    #Cons.P(self.simtime["simulation_time_4"])
+    #Cons.P(self.simtime["simulation_time_end"])
+
+    begin = datetime.datetime.strptime(self.simtime["simulation_time_begin"], "%y%m%d-%H%M%S.%f")
+    #Cons.P(begin)
+    a = (datetime.datetime.strptime(self.simtime["simulation_time_1"], "%y%m%d-%H%M%S.%f") - begin).total_seconds()
+    b = (datetime.datetime.strptime(self.simtime["simulation_time_2"], "%y%m%d-%H%M%S.%f") - begin).total_seconds()
+    c = (datetime.datetime.strptime(self.simtime["simulation_time_3"], "%y%m%d-%H%M%S.%f") - begin).total_seconds()
+    d = (datetime.datetime.strptime(self.simtime["simulation_time_4"], "%y%m%d-%H%M%S.%f") - begin).total_seconds()
+    e = (datetime.datetime.strptime(self.simtime["simulation_time_end"], "%y%m%d-%H%M%S.%f") - begin).total_seconds()
+    #Cons.P(a)
+    #Cons.P(b)
+    #Cons.P(c)
+    #Cons.P(d)
+    #Cons.P(e)
+    self.simulation_time_events = [a, b, c, d, e]
+    #Cons.P(self.simulation_time_events)
 
 
   def SimTime(self, type):
