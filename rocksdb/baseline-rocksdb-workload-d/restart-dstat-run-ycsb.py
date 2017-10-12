@@ -87,52 +87,16 @@ def main(argv):
 
   # Manually making a snapshot of the DB before doing a run phase. Took about 1 min 30 secs.
 
+  # Let's see how long it takes until the file system cache gets full, which is, I think, when the performance is stablized.
+  #   You will probably have to wait for 20 mins until the stabilization.
+  #   Another 10 mins for measuring the performance.
   Dstat.Restart()
-  op_cnt = 100000
+  op_cnt = 100000000
+  r["run"]["memory_limit_in_mb"] = 4.0 * 1024
   r["run"]["ycsb_params"] = " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05" % (op_cnt)
   _EvictCache()
   YcsbRun(params, r)
   Dstat.Stop()
-
-
-#  ycsb_runs = {
-#    "exp_desc": inspect.currentframe().f_code.co_name[4:]
-#    }
-#  
-#  # TODO: I'm concerned about the initial bulk SSTable migration. Or should I?
-#  #   We'll see the result and think about it. We'll have to gather all raw log files.
-#  #   If that's the case, we'll have to exclude the initial warm up period.
-#  for p in conf_ec2.params:
-#    target_iops = p[0]
-#    sst_ott = p[1]
-#    op_cnt = 10000000 / 2
-#    if target_iops < 10000:
-#      op_cnt = op_cnt / 10
-#    ycsb_runs["runs"].append({
-#      "load": {
-#        #"use_preloaded_db": ""
-#        "use_preloaded_db": "ycsb-%s-10M-records-rocksdb" % workload_type
-#        , "ycsb_params": " -p recordcount=10000000 -target 10000"
-#        }
-#      , "run": {
-#        "evict_cached_data": "true"
-#        , "memory_limit_in_mb": 5.0 * 1024
-#        , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
-#        }
-#      # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
-#      , "mutant_options": {
-#        "monitor_temp": "true"
-#        , "migrate_sstables": "true"
-#        , "sst_ott": sst_ott
-#        , "cache_filter_index_at_all_levels": "true"
-#        # Replaying a workload in the past
-#        #, "replaying": {
-#        #  "simulated_time_dur_sec": 1365709.587
-#        #  , "simulation_time_dur_sec": 60000
-#        #  }
-#        , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
-#        }
-#      })
 
 
 def YcsbLoad(params, r):
