@@ -86,17 +86,19 @@ def main(argv):
     YcsbRun(params, r)
 
   # Manually making a snapshot of the DB before doing a run phase. Took about 1 min 30 secs.
+  #   Not sure if this is needed. Thought it might be useful when repeating experiments.
 
-  # Let's see how long it takes until the file system cache gets full, which is, I think, when the performance is stablized.
-  #   You will probably have to wait for 20 mins until the stabilization.
-  #   Another 10 mins for measuring the performance.
-  Dstat.Restart()
-  op_cnt = 100000000
-  r["run"]["memory_limit_in_mb"] = 4.0 * 1024
-  r["run"]["ycsb_params"] = " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05" % (op_cnt)
-  _EvictCache()
-  YcsbRun(params, r)
-  Dstat.Stop()
+  if True:
+    # Let's see how long it takes until the file system cache gets full, which is, I think, when the performance is stablized.
+    #   With sc1, after 1600 secs, cache size stops growing at 3662 MB. Good.
+    #   Wait for another 10 mins for measuring the performance.
+    Dstat.Restart()
+    op_cnt = 100000000
+    r["run"]["memory_limit_in_mb"] = 4.0 * 1024
+    r["run"]["ycsb_params"] = " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05" % (op_cnt)
+    _EvictCache()
+    YcsbRun(params, r)
+    Dstat.Stop()
 
 
 def YcsbLoad(params, r):
