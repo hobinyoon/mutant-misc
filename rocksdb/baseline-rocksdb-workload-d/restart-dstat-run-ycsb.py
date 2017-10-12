@@ -80,7 +80,7 @@ def main(argv):
     YcsbLoad(params, r)
 
     # Let it run for a while, so that the pending compactions can all catch up. The big ones are all gone after 4 mins. Good.
-    op_cnt = 400
+    op_cnt = 40000
     target_iops = 1
     r["run"]["ycsb_params"] = " -p recordcount=10000000 -p operationcount=%d -p readproportion=1.0 -p insertproportion=0.0 -target %d" % (op_cnt, target_iops)
     YcsbRun(params, r)
