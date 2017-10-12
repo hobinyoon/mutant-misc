@@ -10,7 +10,7 @@ class Manifest:
 	def _Init():
 		if Manifest._init:
 			return
-		fn_manifest = "%s/work/mutant/misc/rocksdb/log/manifest.yaml" % os.path.expanduser("~")
+		fn_manifest = "%s/work/mutant/log/quizup/thrp-vs-lat/manifest.yaml" % os.path.expanduser("~")
 		with open(fn_manifest, "r") as f:
 			Manifest._doc = yaml.load(f)
 		Manifest._init = True
