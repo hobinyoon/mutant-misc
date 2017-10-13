@@ -172,12 +172,7 @@ def YcsbRun(params, r):
 
   if ("memory_limit_in_mb" in r["run"]) and (r["run"]["memory_limit_in_mb"] != 0):
     # Just setting memory limit with cgroup seems to be worknig fine. I was wondering if I needed to set the same with JVM.
-    fn_cgconfig = None
-    if socket.gethostname() == "node3":
-      # Different user name on mjolnir
-      fn_cgconfig = "%s/cgconfig-mjolnir.conf" % os.path.dirname(__file__)
-    else:
-      fn_cgconfig = "%s/cgconfig.conf" % os.path.dirname(__file__)
+    fn_cgconfig = "%s/cgconfig.conf" % os.path.dirname(__file__)
     Util.RunSubp("sed -i 's/" \
         "^    memory\.limit_in_bytes = .*" \
         "/    memory\.limit_in_bytes = %d;" \
