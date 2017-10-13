@@ -153,8 +153,6 @@ def YcsbRun(params, r):
       " -s" \
       " -P workloads/workload%s" \
       " -p rocksdb.dir=%s" \
-      " -p measurementtype=raw" \
-      " -p measurement.raw.output_file=/mnt/local-ssd0/ycsb-lat-raw" \
       " -threads 100" \
       " -p status.interval=1" \
       " -p fieldcount=10" \
@@ -165,6 +163,10 @@ def YcsbRun(params, r):
       % (params["workload_type"], params["db_path"], r["run"]["ycsb_params"])
   # YCSB raw output shouldn't go to the root file system, which is heavily rate limited.
   #   -p measurement.raw.output_file=/tmp/ycsb-lat-raw
+  #
+  # Disabled for now. It takes up too much memory. Causing the file system cache size to shrink.
+  #    " -p measurementtype=raw" \
+  #    " -p measurement.raw.output_file=/mnt/local-ssd0/ycsb-lat-raw" \
 
   mutant_options = base64.b64encode(zlib.compress(json.dumps(r["mutant_options"])))
   cmd0 = "cd %s && bin/ycsb run rocksdb %s -m %s > %s 2>&1" % (_dn_ycsb, ycsb_params, mutant_options, fn_ycsb_log)
