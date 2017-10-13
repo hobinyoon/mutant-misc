@@ -223,11 +223,7 @@ class Dstat:
       # Get a list of all block devices
       devs = []
       for f in os.listdir("/dev"):
-        mo = None
-        if socket.gethostname() == "node3":
-          mo = re.match(r"sd\w$", f)
-        else:
-          mo = re.match(r"xvd\w$", f)
+        mo = re.match(r"xvd\w$", f)
         if mo is not None:
           devs.append(f)
 
