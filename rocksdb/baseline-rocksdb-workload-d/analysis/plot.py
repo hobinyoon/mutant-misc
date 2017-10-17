@@ -74,14 +74,17 @@ def Plot(param):
   exp_dt = param[3]
   dn_log_job = "%s/%s" % (dn_log, job_id)
 
-  fn_dstat = DstatLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
-  fn_dstat = YcsbLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
+  (fn_ycsb, time_max) = YcsbLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
+  #Cons.P(time_max)
 
+  fn_dstat = DstatLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
   fn_out = "%s/rocksdb-ycsb_d-%s-by-time-%s.pdf" % (Conf.GetOutDir(), stg_dev, exp_dt)
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
+    env["TIME_MAX"] = str(time_max)
     env["IN_FN_DSTAT"] = fn_dstat
+    env["IN_FN_YCSB"] = fn_ycsb
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/rocksdb-ycsb-by-time.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))

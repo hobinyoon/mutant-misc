@@ -1,19 +1,12 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
+TIME_MAX = system("echo $TIME_MAX")
 IN_FN_DSTAT = system("echo $IN_FN_DSTAT")
+IN_FN_YCSB = system("echo $IN_FN_YCSB")
 OUT_FN = system("echo $OUT_FN")
 
 set print "-"
-#print sprintf("QUIZUP_OPTIONS=%s", QUIZUP_OPTIONS)
-
-# Get X_MAX
-if (1) {
-  set terminal unknown
-  set xdata time
-  set timefmt "%H:%M:%S"
-  plot IN_FN_DSTAT u 25:($18/1048576)
-  X_MAX=GPVAL_DATA_X_MAX
-}
+print sprintf("TIME_MAX=%s", TIME_MAX)
 
 set terminal pdfcairo enhanced size 6in, (2.3*0.85)in
 set output OUT_FN
@@ -36,10 +29,10 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":X_MAX]
+  set xrange ["00:00:00":TIME_MAX]
 
   plot \
-  IN_FN_DSTAT u 25:($18/1048576) w lp pt 7 ps 0.05 lc rgb "red" not
+  IN_FN_DSTAT u 25:($18/1048576) w p pt 7 ps 0.05 lc rgb "red" not
 }
 
 # Disk IOs in MiB
@@ -59,11 +52,13 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":X_MAX]
+  set xrange ["00:00:00":TIME_MAX]
 
   plot \
-  IN_FN_DSTAT u 25:($5/1048576) w lp pt 7 ps 0.05 lc rgb "blue" not, \
-  IN_FN_DSTAT u 25:($6/1048576) w lp pt 7 ps 0.05 lc rgb "red"  not
+  IN_FN_DSTAT u 25:($5/1048576) w p pt 7 ps 0.05 lc rgb "blue" not, \
+  IN_FN_DSTAT u 25:($6/1048576) w p pt 7 ps 0.05 lc rgb "red"  not, \
+  IN_FN_DSTAT u 25:($5/1048576) w l smooth bezier lw 3 lc rgb "blue" not, \
+  IN_FN_DSTAT u 25:($6/1048576) w l smooth bezier lw 3 lc rgb "red"  not
 }
 
 # Disk IOs in IOPS
@@ -83,14 +78,65 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":X_MAX]
+  set xrange ["00:00:00":TIME_MAX]
 
   plot \
-  IN_FN_DSTAT u 25:13 w lp pt 7 ps 0.05 lc rgb "blue" not, \
-  IN_FN_DSTAT u 25:14 w lp pt 7 ps 0.05 lc rgb "red"  not
+  IN_FN_DSTAT u 25:13 w p pt 7 ps 0.05 lc rgb "blue" not, \
+  IN_FN_DSTAT u 25:14 w p pt 7 ps 0.05 lc rgb "red"  not, \
+  IN_FN_DSTAT u 25:13 w l smooth bezier lw 3 lc rgb "blue" not, \
+  IN_FN_DSTAT u 25:14 w l smooth bezier lw 3 lc rgb "red"  not
 }
 
-# TODO: DB Overall IOPS
+# DB IOPS
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "DB IOPS"
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":TIME_MAX]
+
+  plot \
+  IN_FN_YCSB u 1:2 w p pt 7 ps 0.05 lc rgb "blue" not, \
+  IN_FN_YCSB u 1:2 w l smooth bezier lw 3 lc rgb "blue" not
+}
+
+# Read latency
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "Read latency (ms)"
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":TIME_MAX]
+
+  plot \
+  IN_FN_YCSB u 1:($4 /1000.0) w p pt 7 ps 0.05 lc rgb "blue" not, \
+  IN_FN_YCSB u 1:($12/1000.0) w p pt 7 ps 0.05 lc rgb "red"  not, \
+  IN_FN_YCSB u 1:($4 /1000.0) w l smooth bezier lw 3 lc rgb "blue" not, \
+  IN_FN_YCSB u 1:($12/1000.0) w l smooth bezier lw 3 lc rgb "red"  not
+}
+
 # TODO: Read IOPS, latencies.
 # TODO: Write IOPS, latencies.
 # TODO: (Automatically) Figure out the time range to get the IOPS and latencies.
