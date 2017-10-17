@@ -16,7 +16,9 @@ import Conf
 import DstatLog
 from QuizupLog import QuizupLog
 import RocksdbLog
+# TODO
 import SimTime
+import YcsbLog
 
 
 def main(argv):
@@ -72,8 +74,8 @@ def Plot(param):
   exp_dt = param[3]
   dn_log_job = "%s/%s" % (dn_log, job_id)
 
-  fn_log_dstat = "%s/dstat/%s.csv" % (dn_log_job, exp_dt)
-  fn_dstat = DstatLog.GenDataFileForGnuplot(fn_log_dstat, exp_dt)
+  fn_dstat = DstatLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
+  fn_dstat = YcsbLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
 
   fn_out = "%s/rocksdb-ycsb_d-%s-by-time-%s.pdf" % (Conf.GetOutDir(), stg_dev, exp_dt)
 

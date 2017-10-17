@@ -21,7 +21,7 @@ _body_rows = None
 _exp_begin_dt = None
 
 # Generate a formatted output file for gnuplot. The csv file has headers that's not ideal for gnuplot.
-def GenDataFileForGnuplot(fn, exp_dt):
+def GenDataFileForGnuplot(dn_log_job, exp_dt):
   fn_out = "%s/dstat-%s" % (Conf.GetOutDir(), exp_dt)
   if os.path.isfile(fn_out):
     return fn_out
@@ -36,16 +36,17 @@ def GenDataFileForGnuplot(fn, exp_dt):
     _header_idx = None
     _body_rows = None
 
+    fn_log_dstat = "%s/dstat/%s.csv" % (dn_log_job, exp_dt)
     # Unzip when the file is not there
-    if not os.path.exists(fn):
-      fn_zipped = "%s.bz2" % fn
+    if not os.path.exists(fn_log_dstat):
+      fn_zipped = "%s.bz2" % fn_log_dstat
       if not os.path.exists(fn_zipped):
-        raise RuntimeError("Unexpected: %s" % fn)
+        raise RuntimeError("Unexpected: %s" % fn_log_dstat)
       Util.RunSubp("cd %s && bzip2 -dk %s > /dev/null" % (os.path.dirname(fn_zipped), os.path.basename(fn_zipped)))
-    if not os.path.exists(fn):
+    if not os.path.exists(fn_log_dstat):
       raise RuntimeError("Unexpected")
 
-    _Parse(fn)
+    _Parse(fn_log_dstat)
 
     # For read and write
     fmt = " ".join(["%9.0f"] * 2 * _num_stg_devs + ["%6.1f"] * 2 * _num_stg_devs)
