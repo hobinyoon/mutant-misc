@@ -19,7 +19,7 @@ _body_rows = None
 # Generate a formatted output file for gnuplot. The csv file has headers that's not ideal for gnuplot.
 def GenDataFileForGnuplot(dn_log_job, exp_dt):
   lr = YcsbLogReader(dn_log_job, exp_dt)
-  return (lr.FnMetricByTime(), lr.TimeMax())
+  return (lr.FnMetricByTime(), lr.TimeMax(), lr.GetParams())
 
 
 class YcsbLogReader:
@@ -89,14 +89,10 @@ class YcsbLogReader:
 
           if line.startswith("params = {"):
             fo_out.write("# %s" % line)
-            #self.options_params = ast.literal_eval(line[9:])
-            #Cons.P(self.options_params)
             continue
 
           if line.startswith("run = {"):
             fo_out.write("# %s" % line)
-            #self.options_run = ast.literal_eval(line[6:])
-            #Cons.P(self.options_run)
             continue
 
       Cons.P("Created %s %d" % (self.fn_out, os.path.getsize(self.fn_out)))
@@ -117,3 +113,16 @@ class YcsbLogReader:
           raise RuntimeError("Unexpected: %d [%s]" % (len(t), line))
         time = t[0]
     return time
+
+  def GetParams(self):
+    params = None
+    run = None
+    with open(self.fn_out) as fo:
+      for line in fo:
+        if line.startswith("# params = {"):
+          params = ast.literal_eval(line[11:])
+          continue
+        if line.startswith("# run = {"):
+          run = ast.literal_eval(line[8:])
+          continue
+    return (params, run)

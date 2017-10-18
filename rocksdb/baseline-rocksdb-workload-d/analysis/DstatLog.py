@@ -9,8 +9,6 @@ import Cons
 import Util
 
 import Conf
-# TODO: not needed. delete
-#import SimTime
 
 
 # These are not thread-safe. Okay for now.
