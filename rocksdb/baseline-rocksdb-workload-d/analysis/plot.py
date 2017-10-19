@@ -24,24 +24,23 @@ def main(argv):
 
   dn_log = Conf.GetDir("dn")
 
-  stg_dev = "ls"
-  t = Conf.Get(stg_dev).split("/")
-  job_id = t[0]
-  exp_dt = t[1]
-  #Cons.P(job_id)
-  #Cons.P(exp_id)
+  for stg_dev in ["ls", "e-gp2", "e-st1", "e-sc1"]:
+    t = Conf.Get(stg_dev).split("/")
+    job_id = t[0]
+    exp_dt = t[1]
+    #Cons.P(job_id)
+    #Cons.P(exp_id)
 
-  # TODO: Figure out the time interval to get IOPS and read/write latencies.
-  #   Plot time vs cache size and see when the cache saturates. From there you can set the time range to look at.
-  #   The memory usage was increasing. Because YCSB kept the raw data statistics in memory!
+    # TODO: Figure out the time interval to get IOPS and read/write latencies.
+    #   Plot time vs cache size and see when the cache saturates. From there you can set the time range to look at.
+    #   The memory usage was increasing. Because YCSB kept the raw data statistics in memory!
 
-  # TODO: Plot (cost vs latency) by storage devices
-  #
-  # The goal:
-  #   to show there are limited options.
-  #   (or) just show the baseline.
-  Plot((stg_dev, dn_log, job_id, exp_dt))
-  sys.exit(0)
+    # TODO: Plot (cost vs latency) by storage devices
+    #
+    # The goal:
+    #   to show there are limited options.
+    #   (or) just show the baseline.
+    Plot((stg_dev, dn_log, job_id, exp_dt))
 
   #for line in re.split(r"\s+", exps):
   #  t = line.split("/quizup/")
@@ -84,42 +83,41 @@ def Plot(param):
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
     env["PARAMS"] = params_formatted
+    env["STG_DEV"] = stg_dev
     env["TIME_MAX"] = str(time_max)
     env["IN_FN_DSTAT"] = fn_dstat
     env["IN_FN_YCSB"] = fn_ycsb
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/rocksdb-ycsb-by-time.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-  sys.exit(0)
 
-  fn_log_quizup  = "%s/quizup/%s" % (dn_log_job, exp_dt)
-  fn_log_rocksdb = "%s/rocksdb/%s" % (dn_log_job, exp_dt)
+  #fn_log_quizup  = "%s/quizup/%s" % (dn_log_job, exp_dt)
+  #fn_log_rocksdb = "%s/rocksdb/%s" % (dn_log_job, exp_dt)
 
+  #log_q = QuizupLog(fn_log_quizup)
+  #SimTime.Init(log_q.SimTime("simulated_time_begin"), log_q.SimTime("simulated_time_end")
+  #    , log_q.SimTime("simulation_time_begin"), log_q.SimTime("simulation_time_end"))
 
-  log_q = QuizupLog(fn_log_quizup)
-  SimTime.Init(log_q.SimTime("simulated_time_begin"), log_q.SimTime("simulated_time_end")
-      , log_q.SimTime("simulation_time_begin"), log_q.SimTime("simulation_time_end"))
+  #qz_std_max = _QzSimTimeDur(log_q.quizup_options["simulation_time_dur_in_sec"])
+  #qz_opt_str = _QuizupOptionsFormattedStr(log_q.quizup_options)
+  #error_adj_ranges = log_q.quizup_options["error_adj_ranges"].replace(",", " ")
 
-  qz_std_max = _QzSimTimeDur(log_q.quizup_options["simulation_time_dur_in_sec"])
-  qz_opt_str = _QuizupOptionsFormattedStr(log_q.quizup_options)
-  error_adj_ranges = log_q.quizup_options["error_adj_ranges"].replace(",", " ")
-
-  (fn_rocksdb_sla_admin_log, pid_params, num_sla_adj) = RocksdbLog.ParseLog(fn_log_rocksdb, exp_dt)
+  #(fn_rocksdb_sla_admin_log, pid_params, num_sla_adj) = RocksdbLog.ParseLog(fn_log_rocksdb, exp_dt)
 
 
-  with Cons.MT("Plotting ..."):
-    env = os.environ.copy()
-    env["STD_MAX"] = qz_std_max
-    env["ERROR_ADJ_RANGES"] = error_adj_ranges
-    env["IN_FN_QZ"] = fn_log_quizup
-    env["IN_FN_SLA_ADMIN"] = "" if num_sla_adj == 0 else fn_rocksdb_sla_admin_log
-    env["QUIZUP_OPTIONS"] = qz_opt_str
-    env["PID_PARAMS"] = "%s %s %s %s" % (pid_params["target_value"], pid_params["p"], pid_params["i"], pid_params["d"])
-    env["WORKLOAD_EVENTS"] = " ".join(str(t) for t in log_q.simulation_time_events)
-    env["IN_FN_DS"] = fn_dstat
-    env["OUT_FN"] = fn_out
-    Util.RunSubp("gnuplot %s/sla-admin-by-time.gnuplot" % os.path.dirname(__file__), env=env)
-    Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+  #with Cons.MT("Plotting ..."):
+  #  env = os.environ.copy()
+  #  env["STD_MAX"] = qz_std_max
+  #  env["ERROR_ADJ_RANGES"] = error_adj_ranges
+  #  env["IN_FN_QZ"] = fn_log_quizup
+  #  env["IN_FN_SLA_ADMIN"] = "" if num_sla_adj == 0 else fn_rocksdb_sla_admin_log
+  #  env["QUIZUP_OPTIONS"] = qz_opt_str
+  #  env["PID_PARAMS"] = "%s %s %s %s" % (pid_params["target_value"], pid_params["p"], pid_params["i"], pid_params["d"])
+  #  env["WORKLOAD_EVENTS"] = " ".join(str(t) for t in log_q.simulation_time_events)
+  #  env["IN_FN_DS"] = fn_dstat
+  #  env["OUT_FN"] = fn_out
+  #  Util.RunSubp("gnuplot %s/sla-admin-by-time.gnuplot" % os.path.dirname(__file__), env=env)
+  #  Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
 # List the options in 2 columns, column first.

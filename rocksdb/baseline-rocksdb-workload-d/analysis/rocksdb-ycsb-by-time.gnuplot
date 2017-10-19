@@ -1,6 +1,7 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
 PARAMS = system("echo $PARAMS")
+STG_DEV = system("echo $STG_DEV")
 TIME_MAX = system("echo $TIME_MAX")
 IN_FN_DSTAT = system("echo $IN_FN_DSTAT")
 IN_FN_YCSB = system("echo $IN_FN_YCSB")
@@ -26,6 +27,7 @@ if (1) {
 }
 
 LMARGIN = 10
+set sample 1000
 
 # Memory:cache usage
 if (1) {
@@ -69,11 +71,35 @@ if (1) {
 
   set xrange ["00:00:00":TIME_MAX]
 
-  plot \
-  IN_FN_DSTAT u 25:($5/1048576) w p pt 7 ps 0.05 lc rgb "blue" not, \
-  IN_FN_DSTAT u 25:($6/1048576) w p pt 7 ps 0.05 lc rgb "red"  not, \
-  IN_FN_DSTAT u 25:($5/1048576) w l smooth bezier lw 3 lc rgb "blue" not, \
-  IN_FN_DSTAT u 25:($6/1048576) w l smooth bezier lw 3 lc rgb "red"  not
+  # Base index
+  bi = -1
+  if (STG_DEV eq "ls") {
+    bi = 5
+  } else { if (STG_DEV eq "e-gp2") {
+    bi = 7
+  } else { if (STG_DEV eq "e-st1") {
+    bi = 7
+  } else { if (STG_DEV eq "e-sc1") {
+    # xvdf. 7, 8
+    bi = 7
+  } } } }
+
+  logscale_y = 1
+
+  PS = 0.07
+
+  if (logscale_y == 1) {
+    set logscale y
+    plot \
+    IN_FN_DSTAT u 25:(column(bi)   == 0 ? 1/0 : column(bi)  /1048576) w p pt 7 ps PS lc rgb "blue" not, \
+    IN_FN_DSTAT u 25:(column(bi+1) == 0 ? 1/0 : column(bi+1)/1048576) w p pt 7 ps PS lc rgb "red"  not
+  } else {
+    plot \
+    IN_FN_DSTAT u 25:(column(bi)  /1048576) w p pt 7 ps PS lc rgb "blue" not, \
+    IN_FN_DSTAT u 25:(column(bi+1)/1048576) w p pt 7 ps PS lc rgb "red"  not, \
+    IN_FN_DSTAT u 25:(column(bi)  /1048576) w l smooth bezier lw 3 lc rgb "blue" not, \
+    IN_FN_DSTAT u 25:(column(bi+1)/1048576) w l smooth bezier lw 3 lc rgb "red"  not
+  }
 }
 
 # Disk IOs in IOPS
@@ -95,11 +121,32 @@ if (1) {
 
   set xrange ["00:00:00":TIME_MAX]
 
-  plot \
-  IN_FN_DSTAT u 25:13 w p pt 7 ps 0.05 lc rgb "blue" not, \
-  IN_FN_DSTAT u 25:14 w p pt 7 ps 0.05 lc rgb "red"  not, \
-  IN_FN_DSTAT u 25:13 w l smooth bezier lw 3 lc rgb "blue" not, \
-  IN_FN_DSTAT u 25:14 w l smooth bezier lw 3 lc rgb "red"  not
+  bi = -1
+  if (STG_DEV eq "ls") {
+    bi = 13
+  } else { if (STG_DEV eq "e-gp2") {
+    bi = 15
+  } else { if (STG_DEV eq "e-st1") {
+    bi = 15
+  } else { if (STG_DEV eq "e-sc1") {
+    # xvdf. 15, 16
+    bi = 15
+  } } } }
+
+  logscale_y = 1
+
+  if (logscale_y == 1) {
+    set logscale y
+    plot \
+    IN_FN_DSTAT u 25:(column(bi)   == 0 ? 1/0 : column(bi)  ) w p pt 7 ps 0.05 lc rgb "blue" not, \
+    IN_FN_DSTAT u 25:(column(bi+1) == 0 ? 1/0 : column(bi+1)) w p pt 7 ps 0.05 lc rgb "red"  not
+  } else {
+    plot \
+    IN_FN_DSTAT u 25:column(bi)   w p pt 7 ps 0.05 lc rgb "blue" not, \
+    IN_FN_DSTAT u 25:column(bi+1) w p pt 7 ps 0.05 lc rgb "red"  not, \
+    IN_FN_DSTAT u 25:column(bi)   w l smooth bezier lw 3 lc rgb "blue" not, \
+    IN_FN_DSTAT u 25:column(bi+1) w l smooth bezier lw 3 lc rgb "red"  not
+  }
 }
 
 # DB IOPS
@@ -120,6 +167,8 @@ if (1) {
   set lmargin LMARGIN
 
   set xrange ["00:00:00":TIME_MAX]
+
+  set logscale y
 
   plot \
   IN_FN_YCSB u 1:2 w p pt 7 ps 0.05 lc rgb "blue" not, \
@@ -147,7 +196,6 @@ if (1) {
   #set yrange [0:170]
 
   set logscale y
-  set sample 1000
 
   bi=3
   plot \
@@ -182,7 +230,6 @@ if (1) {
   #set yrange [0:170]
 
   set logscale y
-  set sample 1000
 
   bi = 11
   plot \
