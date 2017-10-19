@@ -5,6 +5,7 @@ STG_DEV = system("echo $STG_DEV")
 TIME_MAX = system("echo $TIME_MAX")
 IN_FN_DSTAT = system("echo $IN_FN_DSTAT")
 IN_FN_YCSB = system("echo $IN_FN_YCSB")
+IN_FN_ROCKSDB = system("echo $IN_FN_ROCKSDB")
 OUT_FN = system("echo $OUT_FN")
 
 set print "-"
@@ -193,7 +194,6 @@ if (1) {
   set lmargin LMARGIN
 
   set xrange ["00:00:00":TIME_MAX]
-  #set yrange [0:170]
 
   set logscale y
 
@@ -227,7 +227,6 @@ if (1) {
   set lmargin LMARGIN
 
   set xrange ["00:00:00":TIME_MAX]
-  #set yrange [0:170]
 
   set logscale y
 
@@ -244,6 +243,55 @@ if (1) {
 
 # TODO: (Automatically) Figure out the time range to get the IOPS and latencies.
 
+# Number of SSTables created either from flush or compaction
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "SSTables created"
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":TIME_MAX]
+
+  set boxwidth "00:00:01"
+  plot \
+  IN_FN_ROCKSDB u 1:2 w boxes lc rgb "blue" not
+}
+
+
+# Total sizes of of SSTables created either from flush or compaction
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "SSTables created (MiB)"
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":TIME_MAX]
+
+  set boxwidth "00:00:01"
+  plot \
+  IN_FN_ROCKSDB u 1:($3/1048576) w boxes lc rgb "blue" not
+  #IN_FN_ROCKSDB u 1:($3/1048576) w p pt 7 ps 0.15 lc rgb "blue" not
+}
 
 if (0) {
 
