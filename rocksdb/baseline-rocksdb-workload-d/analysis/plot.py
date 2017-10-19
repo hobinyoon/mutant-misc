@@ -18,47 +18,42 @@ import YcsbLog
 
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
-
   dn_log = Conf.GetDir("dn")
+  stg_devs = ["ls", "e-gp2", "e-st1", "e-sc1"]
 
-  #for stg_dev in ["ls", "e-gp2", "e-st1", "e-sc1"]:
-  for stg_dev in ["ls"]:
-    t = Conf.Get(stg_dev).split("/")
-    job_id = t[0]
-    exp_dt = t[1]
-    #Cons.P(job_id)
-    #Cons.P(exp_id)
+  parallel_processing = True
+  if parallel_processing:
+    params = []
+    for stg_dev in stg_devs:
+      t = Conf.Get(stg_dev).split("/")
+      job_id = t[0]
+      exp_dt = t[1]
+      params.append((stg_dev, dn_log, job_id, exp_dt))
+    p = multiprocessing.Pool()
+    p.map(Plot, params)
+  else:
+    for stg_dev in stg_devs:
+      t = Conf.Get(stg_dev).split("/")
+      job_id = t[0]
+      exp_dt = t[1]
+      Plot((stg_dev, dn_log, job_id, exp_dt))
 
-    # TODO: Figure out the time interval to get IOPS and read/write latencies.
-    #   Plot time vs cache size and see when the cache saturates. From there you can set the time range to look at.
-    #   The memory usage was increasing. Because YCSB kept the raw data statistics in memory!
 
-    # TODO: Plot (cost vs latency) by storage devices
-    #
-    # The goal:
-    #   to show there are limited options.
-    #   (or) just show the baseline.
-    Plot((stg_dev, dn_log, job_id, exp_dt))
+  # Automatically figuring out the time range doesn't seem to be easy. Do manually for now.
+  #
+  # Performance
+  #   Increases during the file system cache warm-up.
+  # The DB IOPS dips (latency valleys) are caused by SSTable flushes and compactions
 
-  #for line in re.split(r"\s+", exps):
-  #  t = line.split("/quizup/")
-  #  if len(t) != 2:
-  #    raise RuntimeError("Unexpected")
-  #  job_id = t[0]
-  #  exp_dt = t[1]
-  #  Plot((job_id, exp_dt))
+  # TODO: Figure out the time interval to get IOPS and read/write latencies.
+  #   Plot time vs cache size and see when the cache saturates. From there you can set the time range to look at.
+  #   The memory usage was increasing. Because YCSB kept the raw data statistics in memory!
 
-  # # Parallel processing
-  # params = []
-  # for line in re.split(r"\s+", exps):
-  #   t = line.split("/quizup/")
-  #   if len(t) != 2:
-  #     raise RuntimeError("Unexpected")
-  #   job_id = t[0]
-  #   exp_dt = t[1]
-  #   params.append((job_id, exp_dt))
-  # p = multiprocessing.Pool(8)
-  # p.map(Plot, params)
+  # TODO: Plot (cost vs latency) by storage devices
+  #
+  # The goal:
+  #   to show there are limited options.
+  #   (or) just show the baseline.
 
 
 def Plot(param):
