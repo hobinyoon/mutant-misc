@@ -31,16 +31,17 @@ def main(argv):
   stg_devs = ["ls", "e-gp2", "e-st1", "e-sc1"]
   #stg_devs = ["ls"]
 
-  parallel_processing = True
-  if parallel_processing:
-    params = []
-    for stg_dev in stg_devs:
-      params.append(stg_dev)
-    p = multiprocessing.Pool()
-    p.map(PlotByTime, params)
-  else:
-    for stg_dev in stg_devs:
-      PlotByTime(stg_dev)
+  if False:
+    parallel_processing = True
+    if parallel_processing:
+      params = []
+      for stg_dev in stg_devs:
+        params.append(stg_dev)
+      p = multiprocessing.Pool()
+      p.map(PlotByTime, params)
+    else:
+      for stg_dev in stg_devs:
+        PlotByTime(stg_dev)
 
   # TODO: Plot (cost vs latency) by storage devices
   #   Latency in avg and tail latencies
@@ -48,29 +49,26 @@ def main(argv):
   # The goal:
   #   to show there are limited options
   #   and show the baseline performances.
+  #
+  # Finish this and show that this was not a fair comparison.
   PlotCostLatency(stg_devs)
 
 
 def PlotByTime(stg_dev):
-  conf_sd = Conf.Get(stg_dev)
-
-  t = conf_sd["jobid_expdt"].split("/")
-  job_id = t[0]
-  exp_dt = t[1]
-
-  t = conf_sd["time_window"].split("-")
-  exp_time_begin = t[0]
-  exp_time_end   = t[1]
-
-  dn_log = Conf.GetDir("dn")
-  dn_log_job = "%s/%s" % (dn_log, job_id)
-
-  (fn_ycsb, time_max, params) = YcsbLog.GenDataFileForGnuplot(dn_log_job, exp_dt, exp_time_begin, exp_time_end)
+  (fn_ycsb, time_max, params) = YcsbLog.GenDataMetricsByTime(stg_dev)
   #Cons.P(time_max)
 
   params_formatted = pprint.pformat(params[0]) + "\n" + pprint.pformat(params[1])
   params_formatted = params_formatted.replace("_", "\\\\_").replace(" ", "\\ ").replace("\n", "\\n").replace("{", "\{").replace("}", "\}")
   #Cons.P(params_formatted)
+
+  conf_sd = Conf.Get(stg_dev)
+  t = conf_sd["jobid_expdt"].split("/")
+  job_id = t[0]
+  exp_dt = t[1]
+
+  dn_log = Conf.GetDir("dn")
+  dn_log_job = "%s/%s" % (dn_log, job_id)
 
   fn_dstat = DstatLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
   fn_rocksdb = RocksdbLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
@@ -91,13 +89,15 @@ def PlotByTime(stg_dev):
 
 
 def PlotCostLatency(stg_devs):
-  # TODO: Parse the comment section of the output files
-  # Reuse this one
-  # (fn_ycsb, time_max, params) = YcsbLog.GenDataFileForGnuplot(dn_log_job, exp_dt, exp_time_begin, exp_time_end)
+  fn_ycsb = YcsbLog.GenDataCostVsMetrics(stg_devs)
+  fn_out = "%s/rocksdb-ycsb-cost-perf.pdf" % Conf.GetOutDir()
 
-
-
-
+  with Cons.MT("Plotting ..."):
+    env = os.environ.copy()
+    env["IN_YCSB"] = fn_ycsb
+    env["OUT_FN"] = fn_out
+    Util.RunSubp("gnuplot %s/rocksdb-ycsb-cost-perf.gnuplot" % os.path.dirname(__file__), env=env)
+    Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
 if __name__ == "__main__":

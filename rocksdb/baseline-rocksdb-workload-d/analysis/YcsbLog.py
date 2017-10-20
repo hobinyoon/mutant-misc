@@ -17,13 +17,61 @@ _num_stg_devs = 0
 _body_rows = None
 
 # Generate a formatted output file for gnuplot. The csv file has headers that's not ideal for gnuplot.
-def GenDataFileForGnuplot(dn_log_job, exp_dt, exp_time_begin, exp_time_end):
-  lr = YcsbLogReader(dn_log_job, exp_dt, exp_time_begin, exp_time_end)
+def GenDataMetricsByTime(stg_dev):
+  lr = YcsbLogReader(stg_dev)
   return (lr.FnMetricByTime(), lr.TimeMax(), lr.GetParams())
 
 
+def GenDataCostVsMetrics(stg_devs):
+  fn_out = "%s/rocksdb-ycsb-cost-vs-perf" % Conf.GetOutDir()
+
+  fmt = "%5s %5.3f" \
+      " %13.6f %10.6f %14.6f %14.6f %14.6f %14.6f %14.6f" \
+      " %13.6f %10.6f %14.6f %14.6f %14.6f %14.6f %14.6f"
+  with open(fn_out, "w") as fo:
+    fo.write(Util.BuildHeader(fmt, "stg_dev cost_dollar_per_gb_per_month" \
+        " r_avg r_min r_max r_90 r_99 r_999 r_9999" \
+        " w_avg w_min w_max w_90 w_99 w_999 w_9999"
+        ) + "\n")
+    for stg_dev in stg_devs:
+      lr = YcsbLogReader(stg_dev)
+      fo.write((fmt + "\n") % (
+        stg_dev
+        , float(Conf.Get("stg_cost")[stg_dev])
+        , lr.GetStat("r_avg")
+        , lr.GetStat("r_min")
+        , lr.GetStat("r_max")
+        , lr.GetStat("r_90")
+        , lr.GetStat("r_99")
+        , lr.GetStat("r_999")
+        , lr.GetStat("r_9999")
+        , lr.GetStat("w_avg")
+        , lr.GetStat("w_min")
+        , lr.GetStat("w_max")
+        , lr.GetStat("w_90")
+        , lr.GetStat("w_99")
+        , lr.GetStat("w_999")
+        , lr.GetStat("w_9999")
+        ))
+  Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+  return fn_out
+
+
 class YcsbLogReader:
-  def __init__(self, dn_log_job, exp_dt, exp_time_begin, exp_time_end):
+  def __init__(self, stg_dev):
+    conf_sd = Conf.Get(stg_dev)
+
+    t = conf_sd["jobid_expdt"].split("/")
+    job_id = t[0]
+    exp_dt = t[1]
+
+    t = conf_sd["time_window"].split("-")
+    exp_time_begin = t[0]
+    exp_time_end   = t[1]
+
+    dn_log = Conf.GetDir("dn")
+    dn_log_job = "%s/%s" % (dn_log, job_id)
+
     self.fn_out = "%s/ycsb-by-time-%s" % (Conf.GetOutDir(), exp_dt)
     if os.path.isfile(self.fn_out):
       return
@@ -201,3 +249,14 @@ class YcsbLogReader:
           run = ast.literal_eval(line[8:])
           continue
     return (params, run)
+
+  def GetStat(self, metric):
+    with open(self.fn_out) as fo:
+      for line in fo:
+        #   r_avg  =   30014.497794
+        if line.startswith("#   %s" % metric):
+          line = line.strip()
+          mo = re.match(r".+= *(?P<v>(\d|\.)+)", line)
+          if mo is None:
+            raise RuntimeError("Unexpected: [%s]" % line)
+          return float(mo.group("v"))

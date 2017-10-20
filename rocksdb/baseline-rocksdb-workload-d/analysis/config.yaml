@@ -1,5 +1,13 @@
 dn: ~/work/mutant/log/ycsb/baseline-rocksdb-by-storages
 
+
+# TODO: Redo the experiment. Will take about 3 hours: an hour to setup, another to run, and another to plot.
+
+
+
+# TODO: make the experiment below a bigger hierarchy
+
+# These were not a fair comparison. Everyone went as fast as they can. To be fair, their target IOPSes should be the same.
 ls:
   jobid_expdt: 171013-134330/171013-204051.385
   time_window: 00:05:00-00:19:00
@@ -12,6 +20,12 @@ e-st1:
 e-sc1:
   jobid_expdt: 171013-150351/171013-211537.893
   time_window: 00:30:00-04:00:00
+
+stg_cost:
+  ls:    0.528
+  e-gp2: 0.100
+  e-st1: 0.045
+  e-sc1: 0.025
 
 # These were with latency stat kept in memory, pressing file system cache 
 #ls: 171012-122913/171012-211308.328
