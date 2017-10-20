@@ -36,8 +36,8 @@ def main(argv):
 
   params = {
       "workload_type": "d"
-      , "db_path": "/mnt/ebs-sc1/rocksdb-data/ycsb"
-      , "db_stg_dev_paths": ["/mnt/ebs-sc1/rocksdb-data/ycsb/t0"]
+      , "db_path": "/mnt/ebs-gp2/rocksdb-data/ycsb"
+      , "db_stg_dev_paths": ["/mnt/ebs-gp2/rocksdb-data/ycsb/t0"]
       }
 
   r = {
@@ -76,7 +76,7 @@ def main(argv):
   _dn_log_rocksdb = "%s/rocksdb" % _dn_log_root
   Util.MkDirs(_dn_log_rocksdb)
 
-  if False:
+  if True:
     YcsbLoad(params, r)
 
     # Let it run for a while, so that the pending compactions can all catch up. The big ones are all gone after 4 mins. Good.
@@ -88,14 +88,16 @@ def main(argv):
   # Manually making a snapshot of the DB before doing a run phase. Took about 1 min 30 secs.
   #   Not sure if this is needed. Thought it might be useful when repeating experiments.
 
-  if True:
+  if False:
     # Let's see how long it takes until the file system cache gets full, which is, I think, when the performance is stablized.
     #   With sc1, after 1600 secs, cache size stops growing at 3662 MB. Good.
     #   Wait for another 10 mins for measuring the performance.
+    #
+    # Redo with target 1500. sc1 has max iops a bit over 1600. Go for a common low number to be fair.
     Dstat.Restart()
     op_cnt = 100000000
     r["run"]["memory_limit_in_mb"] = 4.0 * 1024
-    r["run"]["ycsb_params"] = " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05" % (op_cnt)
+    r["run"]["ycsb_params"] = " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target 1500" % (op_cnt)
     _EvictCache()
     YcsbRun(params, r)
     Dstat.Stop()
