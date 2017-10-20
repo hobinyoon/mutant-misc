@@ -25,19 +25,18 @@ def GenDataMetricsByTime(stg_dev):
 def GenDataCostVsMetrics(stg_devs):
   fn_out = "%s/rocksdb-ycsb-cost-vs-perf" % Conf.GetOutDir()
 
-  fmt = "%5s %5.3f" \
+  fmt = "%5s %5.3f %14.6f" \
       " %13.6f %10.6f %14.6f %14.6f %14.6f %14.6f %14.6f" \
       " %13.6f %10.6f %14.6f %14.6f %14.6f %14.6f %14.6f"
   with open(fn_out, "w") as fo:
-    fo.write(Util.BuildHeader(fmt, "stg_dev cost_dollar_per_gb_per_month" \
+    fo.write(Util.BuildHeader(fmt, "stg_dev cost_dollar_per_gb_per_month db_iops" \
         " r_avg r_min r_max r_90 r_99 r_999 r_9999" \
         " w_avg w_min w_max w_90 w_99 w_999 w_9999"
         ) + "\n")
     for stg_dev in stg_devs:
       lr = YcsbLogReader(stg_dev)
       fo.write((fmt + "\n") % (
-        stg_dev
-        , float(Conf.Get("stg_cost")[stg_dev])
+        stg_dev, float(Conf.Get("stg_cost")[stg_dev]), lr.GetStat("db_iops")
         , lr.GetStat("r_avg")
         , lr.GetStat("r_min")
         , lr.GetStat("r_max")
