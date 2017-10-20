@@ -4,22 +4,20 @@ dn: ~/work/mutant/log/ycsb/baseline-rocksdb-by-storages
 # TODO: Redo the experiment. Will take about 3 hours: an hour to setup, another to run, and another to plot.
 
 
-
-# TODO: make the experiment below a bigger hierarchy
-
 # These were not a fair comparison. Everyone went as fast as they can. To be fair, their target IOPSes should be the same.
-ls:
-  jobid_expdt: 171013-134330/171013-204051.385
-  time_window: 00:05:00-00:19:00
-e-gp2:
-  jobid_expdt: 171013-150426/171013-211753.261
-  time_window: 00:04:00-00:30:00
-e-st1:
-  jobid_expdt: 171013-134330/171013-212649.477
-  time_window: 00:13:00-02:00:00
-e-sc1:
-  jobid_expdt: 171013-150351/171013-211537.893
-  time_window: 00:30:00-04:00:00
+171013-134330:
+  ls:
+    jobid_expdt: 171013-134330/171013-204051.385
+    time_window: 00:05:00-00:19:00
+  e-gp2:
+    jobid_expdt: 171013-150426/171013-211753.261
+    time_window: 00:04:00-00:30:00
+  e-st1:
+    jobid_expdt: 171013-134330/171013-212649.477
+    time_window: 00:13:00-02:00:00
+  e-sc1:
+    jobid_expdt: 171013-150351/171013-211537.893
+    time_window: 00:30:00-04:00:00
 
 stg_cost:
   ls:    0.528

@@ -28,22 +28,23 @@ import YcsbLog
 
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
-  stg_devs = ["ls", "e-gp2", "e-st1", "e-sc1"]
-  #stg_devs = ["ls"]
 
-  if False:
+  exp_set_id = "171013-134330"
+  conf_exp_set = Conf.Get(exp_set_id)
+
+  if True:
     parallel_processing = True
     if parallel_processing:
       params = []
-      for stg_dev in stg_devs:
-        params.append(stg_dev)
+      for stg_dev, v in conf_exp_set.iteritems():
+        params.append((exp_set_id, stg_dev, v))
       p = multiprocessing.Pool()
       p.map(PlotByTime, params)
     else:
-      for stg_dev in stg_devs:
-        PlotByTime(stg_dev)
+      for stg_dev, v in conf_exp_set.iteritems():
+        PlotByTime((exp_set_id, stg_dev, v))
 
-  # TODO: Plot (cost vs latency) by storage devices
+  # Plot (cost vs latency) by storage devices
   #   Latency in avg and tail latencies
   #
   # The goal:
@@ -51,19 +52,25 @@ def main(argv):
   #   and show the baseline performances.
   #
   # Finish this and show that this was not a fair comparison.
-  PlotCostLatency(stg_devs)
+  PlotCostLatency(exp_set_id)
 
 
-def PlotByTime(stg_dev):
-  (fn_ycsb, time_max, params) = YcsbLog.GenDataMetricsByTime(stg_dev)
+def PlotByTime(params):
+  exp_set_id = params[0]
+  stg_dev = params[1]
+  p0 = params[2]
+
+  jobid_expdt = p0["jobid_expdt"]
+  time_window = p0["time_window"]
+
+  (fn_ycsb, time_max, params1) = YcsbLog.GenDataMetricsByTime(exp_set_id, stg_dev)
   #Cons.P(time_max)
 
-  params_formatted = pprint.pformat(params[0]) + "\n" + pprint.pformat(params[1])
+  params_formatted = pprint.pformat(params1[0]) + "\n" + pprint.pformat(params1[1])
   params_formatted = params_formatted.replace("_", "\\\\_").replace(" ", "\\ ").replace("\n", "\\n").replace("{", "\{").replace("}", "\}")
   #Cons.P(params_formatted)
 
-  conf_sd = Conf.Get(stg_dev)
-  t = conf_sd["jobid_expdt"].split("/")
+  t = jobid_expdt.split("/")
   job_id = t[0]
   exp_dt = t[1]
 
@@ -88,9 +95,9 @@ def PlotByTime(stg_dev):
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
-def PlotCostLatency(stg_devs):
-  fn_ycsb = YcsbLog.GenDataCostVsMetrics(stg_devs)
-  fn_out = "%s/rocksdb-ycsb-cost-perf.pdf" % Conf.GetOutDir()
+def PlotCostLatency(exp_set_id):
+  fn_ycsb = YcsbLog.GenDataCostVsMetrics(exp_set_id)
+  fn_out = "%s/rocksdb-ycsb-cost-perf-%s.pdf" % (Conf.GetOutDir(), exp_set_id)
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()

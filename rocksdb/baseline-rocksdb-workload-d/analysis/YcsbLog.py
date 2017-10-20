@@ -17,13 +17,13 @@ _num_stg_devs = 0
 _body_rows = None
 
 # Generate a formatted output file for gnuplot. The csv file has headers that's not ideal for gnuplot.
-def GenDataMetricsByTime(stg_dev):
-  lr = YcsbLogReader(stg_dev)
+def GenDataMetricsByTime(exp_set_id, stg_dev):
+  lr = YcsbLogReader(exp_set_id, stg_dev)
   return (lr.FnMetricByTime(), lr.TimeMax(), lr.GetParams())
 
 
-def GenDataCostVsMetrics(stg_devs):
-  fn_out = "%s/rocksdb-ycsb-cost-vs-perf" % Conf.GetOutDir()
+def GenDataCostVsMetrics(exp_set_id):
+  fn_out = "%s/rocksdb-ycsb-cost-vs-perf-%s" % (Conf.GetOutDir(), exp_set_id)
 
   fmt = "%5s %5.3f %14.6f" \
       " %13.6f %10.6f %14.6f %14.6f %14.6f %14.6f %14.6f" \
@@ -33,8 +33,8 @@ def GenDataCostVsMetrics(stg_devs):
         " r_avg r_min r_max r_90 r_99 r_999 r_9999" \
         " w_avg w_min w_max w_90 w_99 w_999 w_9999"
         ) + "\n")
-    for stg_dev in stg_devs:
-      lr = YcsbLogReader(stg_dev)
+    for stg_dev, v in Conf.Get(exp_set_id).iteritems():
+      lr = YcsbLogReader(exp_set_id, stg_dev)
       fo.write((fmt + "\n") % (
         stg_dev, float(Conf.Get("stg_cost")[stg_dev]), lr.GetStat("db_iops")
         , lr.GetStat("r_avg")
@@ -57,8 +57,8 @@ def GenDataCostVsMetrics(stg_devs):
 
 
 class YcsbLogReader:
-  def __init__(self, stg_dev):
-    conf_sd = Conf.Get(stg_dev)
+  def __init__(self, exp_set_id, stg_dev):
+    conf_sd = Conf.Get(exp_set_id)[stg_dev]
 
     t = conf_sd["jobid_expdt"].split("/")
     job_id = t[0]

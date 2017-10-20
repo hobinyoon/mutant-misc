@@ -119,7 +119,7 @@ if (1) {
 if (1) {
   reset
   set xlabel "Cost ($/GB/month)"
-  set ylabel "Write latency (ms)" offset 2,0
+  set ylabel "Write latency (ms)" offset 1,0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
