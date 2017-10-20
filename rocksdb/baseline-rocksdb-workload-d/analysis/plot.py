@@ -16,6 +16,16 @@ import RocksdbLog
 import YcsbLog
 
 
+# Automatically figuring out the time range doesn't seem to be easy. Do manually for now.
+#   Start from when the file system cache gets full
+#   Stop when the EBS rate limiting kicks in
+#
+# Performance
+#   Increases during the file system cache warm-up.
+#   Dips (DB IOPS dips or DB latency valleys) are caused by by SSTable flushes and compactions
+#   (EBS volumes only) Drops eventually from the EBS volume rate limiting
+
+
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
   stg_devs = ["ls", "e-gp2", "e-st1", "e-sc1"]
@@ -27,29 +37,21 @@ def main(argv):
     for stg_dev in stg_devs:
       params.append(stg_dev)
     p = multiprocessing.Pool()
-    p.map(Plot, params)
+    p.map(PlotByTime, params)
   else:
     for stg_dev in stg_devs:
-      Plot(stg_dev)
-
-  # Automatically figuring out the time range doesn't seem to be easy. Do manually for now.
-  #   Start from when the file system cache gets full
-  #   Stop when the EBS rate limiting kicks in
-  #
-  # Performance
-  #   Increases during the file system cache warm-up.
-  #   Dips (DB IOPS dips or DB latency valleys) are caused by by SSTable flushes and compactions
-  #   (EBS volumes only) Drops eventually from the EBS volume rate limiting
+      PlotByTime(stg_dev)
 
   # TODO: Plot (cost vs latency) by storage devices
   #   Latency in avg and tail latencies
   #
   # The goal:
-  #   to show there are limited options.
-  #   (or) just show the baseline.
+  #   to show there are limited options
+  #   and show the baseline performances.
+  PlotCostLatency(stg_devs)
 
 
-def Plot(stg_dev):
+def PlotByTime(stg_dev):
   conf_sd = Conf.Get(stg_dev)
 
   t = conf_sd["jobid_expdt"].split("/")
@@ -86,6 +88,16 @@ def Plot(stg_dev):
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/rocksdb-ycsb-by-time.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+
+
+def PlotCostLatency(stg_devs):
+  # TODO: Parse the comment section of the output files
+  # Reuse this one
+  # (fn_ycsb, time_max, params) = YcsbLog.GenDataFileForGnuplot(dn_log_job, exp_dt, exp_time_begin, exp_time_end)
+
+
+
+
 
 
 if __name__ == "__main__":
