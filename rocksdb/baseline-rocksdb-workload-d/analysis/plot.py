@@ -18,52 +18,52 @@ import YcsbLog
 
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
-  dn_log = Conf.GetDir("dn")
   stg_devs = ["ls", "e-gp2", "e-st1", "e-sc1"]
+  #stg_devs = ["ls"]
 
   parallel_processing = True
   if parallel_processing:
     params = []
     for stg_dev in stg_devs:
-      t = Conf.Get(stg_dev).split("/")
-      job_id = t[0]
-      exp_dt = t[1]
-      params.append((stg_dev, dn_log, job_id, exp_dt))
+      params.append(stg_dev)
     p = multiprocessing.Pool()
     p.map(Plot, params)
   else:
     for stg_dev in stg_devs:
-      t = Conf.Get(stg_dev).split("/")
-      job_id = t[0]
-      exp_dt = t[1]
-      Plot((stg_dev, dn_log, job_id, exp_dt))
-
+      Plot(stg_dev)
 
   # Automatically figuring out the time range doesn't seem to be easy. Do manually for now.
+  #   Start from when the file system cache gets full
+  #   Stop when the EBS rate limiting kicks in
   #
   # Performance
   #   Increases during the file system cache warm-up.
-  # The DB IOPS dips (latency valleys) are caused by SSTable flushes and compactions
-
-  # TODO: Figure out the time interval to get IOPS and read/write latencies.
-  #   Plot time vs cache size and see when the cache saturates. From there you can set the time range to look at.
-  #   The memory usage was increasing. Because YCSB kept the raw data statistics in memory!
+  #   Dips (DB IOPS dips or DB latency valleys) are caused by by SSTable flushes and compactions
+  #   (EBS volumes only) Drops eventually from the EBS volume rate limiting
 
   # TODO: Plot (cost vs latency) by storage devices
+  #   Latency in avg and tail latencies
   #
   # The goal:
   #   to show there are limited options.
   #   (or) just show the baseline.
 
 
-def Plot(param):
-  stg_dev = param[0]
-  dn_log = param[1]
-  job_id = param[2]
-  exp_dt = param[3]
+def Plot(stg_dev):
+  conf_sd = Conf.Get(stg_dev)
+
+  t = conf_sd["jobid_expdt"].split("/")
+  job_id = t[0]
+  exp_dt = t[1]
+
+  t = conf_sd["time_window"].split("-")
+  exp_time_begin = t[0]
+  exp_time_end   = t[1]
+
+  dn_log = Conf.GetDir("dn")
   dn_log_job = "%s/%s" % (dn_log, job_id)
 
-  (fn_ycsb, time_max, params) = YcsbLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
+  (fn_ycsb, time_max, params) = YcsbLog.GenDataFileForGnuplot(dn_log_job, exp_dt, exp_time_begin, exp_time_end)
   #Cons.P(time_max)
 
   params_formatted = pprint.pformat(params[0]) + "\n" + pprint.pformat(params[1])

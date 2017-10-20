@@ -1,9 +1,18 @@
 dn: ~/work/mutant/log/ycsb/baseline-rocksdb-by-storages
 
-ls:    171013-134330/171013-204051.385
-e-gp2: 171013-150426/171013-211753.261
-e-st1: 171013-134330/171013-212649.477
-e-sc1: 171013-150351/171013-211537.893
+ls:
+  jobid_expdt: 171013-134330/171013-204051.385
+  time_window: 00:05:00-00:19:00
+e-gp2:
+  jobid_expdt: 171013-150426/171013-211753.261
+  # TODO: this and below
+  time_window: 00:05:00-00:19:00
+e-st1:
+  jobid_expdt: 171013-134330/171013-212649.477
+  time_window: 00:05:00-00:19:00
+e-sc1:
+  jobid_expdt: 171013-150351/171013-211537.893
+  time_window: 00:05:00-00:19:00
 
 # These were with latency stat kept in memory, pressing file system cache 
 #ls: 171012-122913/171012-211308.328
