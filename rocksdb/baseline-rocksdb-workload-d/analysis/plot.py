@@ -29,10 +29,11 @@ import YcsbLog
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
 
-  exp_set_id = "171013-134330"
+  exp_set_id = "171020-091649"
+  #exp_set_id = "171021-180257"
   conf_exp_set = Conf.Get(exp_set_id)
 
-  if True:
+  if False:
     parallel_processing = True
     if parallel_processing:
       params = []

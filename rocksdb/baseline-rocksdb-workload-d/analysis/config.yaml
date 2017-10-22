@@ -1,8 +1,43 @@
 dn: ~/work/mutant/log/ycsb/baseline-rocksdb-by-storages
 
+# TODO: Target IOPS of 1300.
+# Present either this one or 171020-091649:
 
-# TODO: Redo the experiment. Will take about 3 hours: an hour to setup, another to run, and another to plot.
 
+# Target IOPS of 1000. So that sc1 doesn't get saturated.
+#   sc1 didn't get saturated
+#   Now, st1 and sc1 are too close to each other.
+#   For the write latency, gp2 beats ls. Interesting. Dont' think it matters much.
+171021-180257:
+  ls:
+    # Strange that the YCSB log has the options screwed up at the end. It's okay for now.
+    jobid_expdt: 171021-180257/171021-231740.931
+    time_window: 00:36:00-04:00:00
+  e-gp2:
+    jobid_expdt: 171021-180320/171021-231812.077
+    time_window: 00:36:00-04:00:00
+  e-st1:
+    jobid_expdt: 171021-180338/171021-231900.642
+    time_window: 00:36:00-04:00:00
+  e-sc1:
+    jobid_expdt: 171021-180401/171021-231936.964
+    time_window: 00:36:00-04:00:00
+
+# With target IOPS 1500 for each storage device.
+#   sc1 is having trouble keeping up with 1500. It barely does.
+171020-091649:
+  ls:
+    jobid_expdt: 171020-093855/171020-201159.870
+    time_window: 00:30:00-04:00:00
+  e-gp2:
+    jobid_expdt: 171020-091649/171020-200943.207
+    time_window: 00:30:00-04:00:00
+  e-st1:
+    jobid_expdt: 171020-091742/171020-201118.558
+    time_window: 00:30:00-04:00:00
+  e-sc1:
+    jobid_expdt: 171020-093800/171020-201335.579
+    time_window: 01:00:00-04:00:00
 
 # These were not a fair comparison. Everyone went as fast as they can. To be fair, their target IOPSes should be the same.
 171013-134330:
@@ -25,7 +60,7 @@ stg_cost:
   e-st1: 0.045
   e-sc1: 0.025
 
-# These were with latency stat kept in memory, pressing file system cache 
+# These were with latency stat kept in memory, pressing file system cache
 #ls: 171012-122913/171012-211308.328
 #e-gp2: 171012-152750/171012-210417.339
 #e-st1: 171012-152717/171012-210236.540

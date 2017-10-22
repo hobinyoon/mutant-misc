@@ -178,6 +178,7 @@ if (1) {
   set border back lc rgb "#808080" back
 
   set lmargin LMARGIN
+  set yrange[0:]
 
   plot \
   IN_YCSB u 2:($3/1000) w p pt 7 ps 0.4 not
