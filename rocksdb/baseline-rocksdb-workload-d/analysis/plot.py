@@ -29,11 +29,11 @@ import YcsbLog
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
 
-  exp_set_id = "171020-091649"
-  #exp_set_id = "171021-180257"
+  exp_set_id = "171013-134330"
+  #exp_set_id = "171022-160102"
   conf_exp_set = Conf.Get(exp_set_id)
 
-  if False:
+  if True:
     parallel_processing = True
     if parallel_processing:
       params = []
@@ -53,7 +53,8 @@ def main(argv):
   #   and show the baseline performances.
   #
   # Finish this and show that this was not a fair comparison.
-  PlotCostLatency(exp_set_id)
+  if True:
+    PlotCostLatency(exp_set_id)
 
 
 def PlotByTime(params):
@@ -67,7 +68,7 @@ def PlotByTime(params):
   (fn_ycsb, time_max, params1) = YcsbLog.GenDataMetricsByTime(exp_set_id, stg_dev)
   #Cons.P(time_max)
 
-  params_formatted = pprint.pformat(params1[0]) + "\n" + pprint.pformat(params1[1])
+  params_formatted = exp_set_id + "\n" + pprint.pformat(params1[0]) + "\n" + pprint.pformat(params1[1])
   params_formatted = params_formatted.replace("_", "\\\\_").replace(" ", "\\ ").replace("\n", "\\n").replace("{", "\{").replace("}", "\}")
   #Cons.P(params_formatted)
 
@@ -85,6 +86,7 @@ def PlotByTime(params):
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
+    env["EXP_SET_ID"] = exp_set_id
     env["PARAMS"] = params_formatted
     env["STG_DEV"] = stg_dev
     env["TIME_MAX"] = str(time_max)

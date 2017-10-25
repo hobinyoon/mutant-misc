@@ -1,5 +1,6 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
+EXP_SET_ID = system("echo $EXP_SET_ID")
 PARAMS = system("echo $PARAMS")
 STG_DEV = system("echo $STG_DEV")
 TIME_MAX = system("echo $TIME_MAX")
@@ -49,11 +50,22 @@ if (1) {
 
   set xrange ["00:00:00":TIME_MAX]
 
+  i_x=-1
+  i_y=-1
   if (STG_DEV eq "ls") {
-    plot IN_FN_DSTAT u 21:($14/1048576) w lp pt 7 ps 0.08 lc rgb "red" not
+    if (EXP_SET_ID eq "171013-134330") {
+      i_x=25
+      i_y=18
+    } else {
+      i_x=21
+      i_y=14
+    }
   } else {
-    plot IN_FN_DSTAT u 25:($18/1048576) w lp pt 7 ps 0.08 lc rgb "red" not
+    i_x=25
+    i_y=18
   }
+
+  plot IN_FN_DSTAT u (column(i_x)):(column(i_y)/1048576) w lp pt 7 ps 0.08 lc rgb "red" not
 }
 
 # Disk IOs in MiB
@@ -79,16 +91,21 @@ if (1) {
   i_x=-1
   i_y=-1
   if (STG_DEV eq "ls") {
-    i_x=21
-    i_y = 5
+    if (EXP_SET_ID eq "171013-134330") {
+      i_x = 25
+      i_y = 5
+    } else {
+      i_x = 21
+      i_y = 5
+    }
   } else { if (STG_DEV eq "e-gp2") {
-    i_x=25
+    i_x = 25
     i_y = 7
   } else { if (STG_DEV eq "e-st1") {
-    i_x=25
+    i_x = 25
     i_y = 7
   } else { if (STG_DEV eq "e-sc1") {
-    i_x=25
+    i_x = 25
     # xvdf. 7, 8
     i_y = 7
   } } } }
@@ -133,8 +150,13 @@ if (1) {
   i_x = -1
   i_y = -1
   if (STG_DEV eq "ls") {
-    i_x = 21
-    i_y = 13
+    if (EXP_SET_ID eq "171013-134330") {
+      i_x = 25
+      i_y = 13
+    } else {
+      i_x = 21
+      i_y = 13
+    }
   } else { if (STG_DEV eq "e-gp2") {
     i_x = 25
     i_y = 15

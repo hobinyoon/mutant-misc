@@ -1,8 +1,21 @@
 dn: ~/work/mutant/log/ycsb/baseline-rocksdb-by-storages
 
-# TODO: Target IOPS of 1300.
-# Present either this one or 171020-091649:
-
+# Target IOPS of 1300. Looking good.
+#   This is for the latency comparison. No throttling one is for the IOPS.
+171022-160102:
+  ls:
+    jobid_expdt: 171022-160102/171023-000320.828
+    time_window: 00:30:00-04:00:00
+  e-gp2:
+    jobid_expdt: 171022-160126/171023-000322.649
+    time_window: 00:30:00-04:00:00
+  e-st1:
+    jobid_expdt: 171022-160149/171023-000324.413
+    time_window: 00:30:00-04:00:00
+  e-sc1:
+    # sc1 took a long time to catch up with the target IOPS
+    jobid_expdt: 171022-160214/171023-000352.903
+    time_window: 01:40:00-04:00:00
 
 # Target IOPS of 1000. So that sc1 doesn't get saturated.
 #   sc1 didn't get saturated
@@ -43,7 +56,7 @@ dn: ~/work/mutant/log/ycsb/baseline-rocksdb-by-storages
 171013-134330:
   ls:
     jobid_expdt: 171013-134330/171013-204051.385
-    time_window: 00:05:00-00:19:00
+    time_window: 00:05:00-00:10:00
   e-gp2:
     jobid_expdt: 171013-150426/171013-211753.261
     time_window: 00:04:00-00:30:00

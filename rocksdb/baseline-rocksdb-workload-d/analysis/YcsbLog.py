@@ -10,6 +10,7 @@ import Cons
 import Util
 
 import Conf
+import Stat
 
 
 # These are not thread-safe. Okay for now.
@@ -25,18 +26,36 @@ def GenDataMetricsByTime(exp_set_id, stg_dev):
 def GenDataCostVsMetrics(exp_set_id):
   fn_out = "%s/rocksdb-ycsb-cost-vs-perf-%s" % (Conf.GetOutDir(), exp_set_id)
 
-  fmt = "%5s %5.3f %14.6f" \
+  fmt = "%5s %5.3f" \
+      " %14.6f" \
+      " %14.6f" \
+      " %14.6f" \
+      " %14.6f" \
+      " %14.6f" \
+      " %14.6f" \
       " %13.6f %10.6f %14.6f %14.6f %14.6f %14.6f %14.6f" \
       " %13.6f %10.6f %14.6f %14.6f %14.6f %14.6f %14.6f"
   with open(fn_out, "w") as fo:
-    fo.write(Util.BuildHeader(fmt, "stg_dev cost_dollar_per_gb_per_month db_iops" \
+    fo.write(Util.BuildHeader(fmt, "stg_dev cost_dollar_per_gb_per_month" \
+        " db_iops.avg" \
+        " db_iops.min" \
+        " db_iops.max" \
+        " db_iops._25" \
+        " db_iops._50" \
+        " db_iops._75" \
         " r_avg r_min r_max r_90 r_99 r_999 r_9999" \
         " w_avg w_min w_max w_90 w_99 w_999 w_9999"
         ) + "\n")
     for stg_dev, v in Conf.Get(exp_set_id).iteritems():
       lr = YcsbLogReader(exp_set_id, stg_dev)
       fo.write((fmt + "\n") % (
-        stg_dev, float(Conf.Get("stg_cost")[stg_dev]), lr.GetStat("db_iops")
+        stg_dev, float(Conf.Get("stg_cost")[stg_dev])
+        , lr.GetStat("db_iops.avg")
+        , lr.GetStat("db_iops.min")
+        , lr.GetStat("db_iops.max")
+        , lr.GetStat("db_iops._25")
+        , lr.GetStat("db_iops._50")
+        , lr.GetStat("db_iops._75")
         , lr.GetStat("r_avg")
         , lr.GetStat("r_min")
         , lr.GetStat("r_max")
@@ -126,7 +145,7 @@ class YcsbLogReader:
             continue
 
       cnt = 0
-      db_iops = 0.0
+      db_iops = []
       r_cnt = 0
       r_avg = 0.0
       r_min = 0
@@ -147,7 +166,7 @@ class YcsbLogReader:
         rel_time = e[0]
         if (exp_time_begin < rel_time) and (rel_time < exp_time_end):
           mo = e[1]
-          db_iops += float(mo.group("db_iops"))
+          db_iops.append(float(mo.group("db_iops")))
           r_cnt   += int(mo.group("r_cnt"))
           r_avg   += float(mo.group("r_avg"))
           r_min   += int(mo.group("r_min"))
@@ -166,24 +185,19 @@ class YcsbLogReader:
           w_9999  += int(mo.group("w_9999"))
           cnt += 1
 
-      fmt = "%8s %9.2f" \
-          " %6d %8.2f %3d %6d" \
-          " %6d %6d %6d %6d" \
-          " %6d %8.2f %3d %6d" \
-          " %6d %6d %6d %6d"
-      header = Util.BuildHeader(fmt, "rel_time db_iops" \
-            " read_cnt read_lat_avg read_lat_min read_lat_max" \
-            " read_lat_90p read_lat_99p read_lat_99.9p read_lat_99.99p" \
-            " write_cnt write_lat_avg write_lat_min write_lat_max" \
-            " write_lat_90p write_lat_99p write_lat_99.9p write_lat_99.99p" \
-            )
+      db_iops_stat = Stat.Gen(db_iops)
 
       with open(self.fn_out, "w") as fo_out:
         fo_out.write("# %s" % line_params)
         fo_out.write("# %s" % line_run)
         fo_out.write("\n")
         fo_out.write("# In the time range (%s, %s):\n" % (exp_time_begin, exp_time_end))
-        fo_out.write("#   db_iops= %14f\n" % (float(db_iops) / cnt))
+        fo_out.write("#   db_iops.avg= %14f\n" % db_iops_stat.avg)
+        fo_out.write("#   db_iops.min= %14f\n" % db_iops_stat.min)
+        fo_out.write("#   db_iops.max= %14f\n" % db_iops_stat.max)
+        fo_out.write("#   db_iops._25= %14f\n" % db_iops_stat._25)
+        fo_out.write("#   db_iops._50= %14f\n" % db_iops_stat._50)
+        fo_out.write("#   db_iops._75= %14f\n" % db_iops_stat._75)
         fo_out.write("#   r_cnt  = %14f\n" % (float(r_cnt ) / cnt))
         fo_out.write("#   r_avg  = %14f\n" % (float(r_avg ) / cnt))
         fo_out.write("#   r_min  = %14f\n" % (float(r_min ) / cnt))
@@ -202,6 +216,20 @@ class YcsbLogReader:
         fo_out.write("#   w_9999 = %14f\n" % (float(w_9999) / cnt))
         fo_out.write("\n")
 
+        fmt = "%8s" \
+            " %9.2f" \
+            " %6d %8.2f %3d %6d" \
+            " %6d %6d %6d %6d" \
+            " %6d %8.2f %3d %6d" \
+            " %6d %6d %6d %6d"
+        header = Util.BuildHeader(fmt, "rel_time" \
+              " db_iops" \
+              " read_cnt read_lat_avg read_lat_min read_lat_max" \
+              " read_lat_90p read_lat_99p read_lat_99.9p read_lat_99.99p" \
+              " write_cnt write_lat_avg write_lat_min write_lat_max" \
+              " write_lat_90p write_lat_99p write_lat_99.9p write_lat_99.99p" \
+              )
+
         i = 0
         for e in mo_list:
           rel_time = e[0]
@@ -209,7 +237,8 @@ class YcsbLogReader:
           if i % 40 == 0:
             fo_out.write(header + "\n")
           fo_out.write((fmt + "\n") % (
-            rel_time , float(mo.group("db_iops"))
+            rel_time
+            , float(mo.group("db_iops"))
             , int(mo.group("r_cnt")) , float(mo.group("r_avg")) , int(mo.group("r_min")) , int(mo.group("r_max"))
             , int(mo.group("r_90")) , int(mo.group("r_99")) , int(mo.group("r_999")) , int(mo.group("r_9999"))
             , int(mo.group("w_cnt")) , float(mo.group("w_avg")) , int(mo.group("w_min")) , int(mo.group("w_max"))
