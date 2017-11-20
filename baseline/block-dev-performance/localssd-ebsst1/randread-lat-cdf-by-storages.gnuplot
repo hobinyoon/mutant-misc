@@ -18,6 +18,9 @@ set grid xtics ytics mytics back lc rgb "#808080"
 set xlabel "Latency (ms)"
 set ylabel "CDF" offset 0.5,0
 
+set label "Local\nSSD" at 0.1, 0.6 left tc rgb "red"
+set label "EBS\nMag" at 2.5, 0.6 left tc rgb "blue"
+
 set logscale x
 
 set xrange [:100]

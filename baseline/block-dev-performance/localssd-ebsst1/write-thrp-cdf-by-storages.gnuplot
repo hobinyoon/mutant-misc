@@ -18,6 +18,9 @@ set grid xtics ytics mytics back lc rgb "#808080"
 set xlabel "Throughput (MB/sec)"
 set ylabel "CDF" offset 0.5,0 tc rgb "white"
 
+set label "EBS\nMag"   at 105, 0.6 right tc rgb "blue"
+set label "Local\nSSD" at 175, 0.6 left  tc rgb "red"
+
 #set logscale x
 
 set xrange [0:]
