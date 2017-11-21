@@ -32,7 +32,7 @@ def main(argv):
 
 class WriteStat():
   def __init__(self, logs):
-    with Cons.MT("Read stat:", print_time=False):
+    with Cons.MT("Write stat:", print_time=False):
       self.fns_cdf = []
 
       self.logs = logs
