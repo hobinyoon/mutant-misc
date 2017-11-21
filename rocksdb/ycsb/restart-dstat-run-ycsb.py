@@ -40,11 +40,8 @@ def main(argv):
       if "load" in r:
         YcsbLoad(params, r)
       if "run" in r:
-        if r["run"]["evict_cached_data"].lower() == "true":
-          if socket.gethostname() == "node3":
-            pass
-          else:
-            _EvictCache()
+        if ("evict_cached_data" in r["run"]) and (r["run"]["evict_cached_data"].lower() == "true"):
+          _EvictCache()
 
         Dstat.Restart()
         YcsbRun(params, r)
@@ -144,18 +141,17 @@ def YcsbRun(params, r):
       " -s" \
       " -P workloads/workload%s" \
       " -p rocksdb.dir=%s" \
-      " -p measurementtype=raw" \
-      " -p measurement.raw.output_file=/mnt/local-ssd0/ycsb-lat-raw" \
       " -threads 100" \
       " -p status.interval=1" \
       " -p fieldcount=10" \
       " -p fieldlength=100" \
-      " -p readproportion=0.95" \
-      " -p insertproportion=0.05" \
       " %s" \
       % (params["workload_type"], params["db_path"], r["run"]["ycsb_params"])
   # YCSB raw output shouldn't go to the root file system, which is heavily rate limited.
-  #   -p measurement.raw.output_file=/tmp/ycsb-lat-raw
+  #    " -p measurementtype=raw" \
+  #    " -p measurement.raw.output_file=/mnt/local-ssd0/ycsb-lat-raw" \
+  #    " -p readproportion=0.95" \
+  #    " -p insertproportion=0.05" \
 
   mutant_options = base64.b64encode(zlib.compress(json.dumps(r["mutant_options"])))
   cmd0 = "cd %s && bin/ycsb run rocksdb %s -m %s > %s 2>&1" % (_dn_ycsb, ycsb_params, mutant_options, fn_ycsb_log)
