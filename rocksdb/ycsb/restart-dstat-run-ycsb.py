@@ -35,19 +35,20 @@ def main(argv):
   params = json.loads(zlib.decompress(base64.b64decode(argv[1])))
   #Cons.P(pprint.pformat(params))
 
-  for r in params["runs"]:
-    if "load" in r:
-      YcsbLoad(params, r)
-    if "run" in r:
-      if r["run"]["evict_cached_data"].lower() == "true":
-        if socket.gethostname() == "node3":
-          pass
-        else:
-          _EvictCache()
+  if "runs" in params:
+    for r in params["runs"]:
+      if "load" in r:
+        YcsbLoad(params, r)
+      if "run" in r:
+        if r["run"]["evict_cached_data"].lower() == "true":
+          if socket.gethostname() == "node3":
+            pass
+          else:
+            _EvictCache()
 
-      Dstat.Restart()
-      YcsbRun(params, r)
-      Dstat.Stop()
+        Dstat.Restart()
+        YcsbRun(params, r)
+        Dstat.Stop()
 
   UploadCloudInitLog()
 
@@ -330,6 +331,9 @@ def CheckRocksDBLog(fn):
 
 
 def UploadCloudInitLog():
+  if _dn_log_root is None:
+    return
+
   dn_ci_log = "%s/cloud-init" % _dn_log_root
   Util.MkDirs(dn_ci_log)
   Util.RunSubp("cp /var/log/cloud-init.log %s" % dn_ci_log)
