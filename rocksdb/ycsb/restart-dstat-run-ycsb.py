@@ -195,8 +195,10 @@ def YcsbRun(params, r):
 
 def _EvictCache():
   with Cons.MT("Drop caches ..."):
-    # We drop all rather than cherry picking
-    Util.RunSubp("sudo sh -c \"sync; echo 3 >/proc/sys/vm/drop_caches\"")
+    # We drop pagecache, dentries, and inodes rather than cherry picking
+    #   We don't sync before dropping caches, thus keeping the dirty pages in memory.
+    #     This should be ok. Those should be outside RocksDB. Keeping the OS fast. It might be super slow otherwise.
+    Util.RunSubp("sudo sh -c \"echo 3 >/proc/sys/vm/drop_caches\"")
 
 
 class Dstat:
