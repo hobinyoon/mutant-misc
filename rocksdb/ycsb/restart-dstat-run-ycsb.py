@@ -196,7 +196,7 @@ def YcsbRun(params, r):
 def _EvictCache():
   with Cons.MT("Drop caches ..."):
     # We drop all rather than cherry picking
-    Util.RunSubp("sudo sh -c \"echo 3 >/proc/sys/vm/drop_caches\"")
+    Util.RunSubp("sudo sh -c \"sync; echo 3 >/proc/sys/vm/drop_caches\"")
 
 
 class Dstat:
