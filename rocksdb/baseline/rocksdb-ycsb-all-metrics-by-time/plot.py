@@ -47,8 +47,6 @@ def main(argv):
 
   sys.exit(0)
 
-  # TODO: think about this later
-  #
   # Plot (cost vs latency) by storage devices
   #   Latency in avg and tail latencies
   #
