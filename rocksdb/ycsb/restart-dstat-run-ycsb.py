@@ -71,7 +71,9 @@ def YcsbLoad(params, r):
 
     if ("use_preloaded_db" in r["load"]) and len(r["load"]["use_preloaded_db"]) > 0:
       cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s ; sync" % (r["load"]["use_preloaded_db"], params["db_path"])
-      Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
+      # Repeat 10 times. It fails sometimes. Not sure why
+      for i in range(10):
+        Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
       paths = params["db_stg_dev_paths"]
       for i in range(1, len(paths)):
         Util.RunSubp("rm -rf %s || true" % paths[i])
