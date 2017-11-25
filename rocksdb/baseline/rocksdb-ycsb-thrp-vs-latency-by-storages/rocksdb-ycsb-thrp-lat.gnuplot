@@ -6,7 +6,7 @@ OUT_FN = system("echo $OUT_FN")
 set print "-"
 #print sprintf("TIME_MAX=%s", TIME_MAX)
 
-set terminal pdfcairo enhanced size 3.6in, (2.3*0.85)in
+set terminal pdfcairo enhanced size 3.3in, (2.3*0.85)in
 set output OUT_FN
 
 BW=0.04
@@ -53,7 +53,7 @@ if (1) {
   } else {
     # x-axis true to the scale
     set logscale xy
-    set xrange[0.8:200]
+    set xrange[0.8:150]
     plot \
     IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 0) ? ($4/1000) : 1/0) \
       :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "blue" lw LW fillstyle transparent solid F_TP not whiskerbars, \
@@ -89,7 +89,7 @@ if (1) {
 
   set logscale xy
 
-  set xrange[0.8:200]
+  set xrange[0.8:150]
   set yrange[0.01:200]
 
   set boxwidth BW
