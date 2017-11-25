@@ -127,34 +127,76 @@ if (1) {
   set bmargin 0
   set tmargin 0
 
-  xm=0.17
-  bw=0.025
-  xl=xm-bw/2
-  xr=xm+bw/2
-  yt=0.95
-  yb=yt-0.35
-  y1=yb+(yt-yb)*1/3
-  y2=yb+(yt-yb)*2/3
-
   LW=2
 
-  set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "black"
-  set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "black"
-  set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "black"
+  if (1) {
+    xm=0.18
+    bw=0.025
+    xl=xm-bw/2
+    xr=xm+bw/2
+    yt=0.95
+    yb=yt-0.35
+    y1=yb+(yt-yb)*1/3
+    y2=yb+(yt-yb)*2/3
 
-  # Draw the box twice: face and border
-  set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
-  set obj rect from graph xl,y1 to graph xr,y2 fs transparent solid 0.3 border lc rgb "black" fc rgb "black" lw LW front
+    set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "blue"
+    set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "blue"
+    set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "blue"
 
-  x1=xl-0.03
-  set label "99.99th" at graph x1,yt right #font ",10"
-  set label "99.9th"  at graph x1,y2 right #font ",10"
-  set label "99th"    at graph x1,y1 right #font ",10"
-  set label "90th"    at graph x1,yb right #font ",10"
+    # Draw the box twice: face and border
+    set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
+    set obj rect from graph xl,y1 to graph xr,y2 fs transparent solid 0.3 border lc rgb "blue" fc rgb "blue" lw LW front
 
-  yb1=yb-0.12
-  set obj circle at graph xm,yb1 size graph .007 fs transparent solid 0.3 fc rgb "black" front
-  set label "Avg"     at graph x1,yb1 right #font ",10"
+    x1=xl-0.04
+    set label "99.99th" at graph x1,yt right #font ",10"
+    set label "99.9th"  at graph x1,y2 right #font ",10"
+    set label "99th"    at graph x1,y1 right #font ",10"
+    set label "90th"    at graph x1,yb right #font ",10"
+
+    yb1=yb-0.12
+    set obj circle at graph xm,yb1 size graph .007 fs transparent solid 0.3 fc rgb "blue" front
+    set label "Avg"     at graph x1,yb1 right #font ",10"
+
+    yb2=yb1-0.12
+    set label "EBS\nMag" at graph xm,yb2 center tc rgb "blue"
+  }
+
+  if (1) {
+    xm=0.28
+    xl=xm-bw/2
+    xr=xm+bw/2
+
+    set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "red"
+    set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "red"
+    set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "red"
+
+    # Draw the box twice: face and border
+    set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
+    set obj rect from graph xl,y1 to graph xr,y2 fs transparent solid 0.3 border lc rgb "red" fc rgb "red" lw LW front
+
+    set obj circle at graph xm,yb1 size graph .007 fs transparent solid 0.3 fc rgb "red" front
+
+    set label "Local\nSSD" at graph xm,yb2 center tc rgb "red"
+  }
+
+  if (1) {
+    xm=0.38
+    xl=xm-bw/2
+    xr=xm+bw/2
+
+    set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "black"
+    set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "black"
+    set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "black"
+
+    # Draw the box twice: face and border
+    set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
+    set obj rect from graph xl,y1 to graph xr,y2 fs transparent solid 0 border lc rgb "black" fc rgb "black" lw LW front
+
+    set obj circle at graph xm,yb1 size graph .007 fs transparent solid 0 fc rgb "black" front
+
+    set label "Unsustainable\nthroughput" at graph xm,yb2 left offset -1,0 tc rgb "black"
+    # Or "System saturated"
+  }
 
   f(x)=x
   plot f(x) lc rgb "white" not
