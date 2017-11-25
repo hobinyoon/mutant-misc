@@ -2,6 +2,7 @@ import ast
 import csv
 import datetime
 import os
+import pprint
 import re
 import sys
 
@@ -33,14 +34,14 @@ def GenDataThrpVsLat():
         t = v["time"].split("-")
         time_begin = t[0]
         time_end = t[1]
-        #Cons.P("%s %s %s" % (fn, time_begin, time_end))
-        stgdev_tio_ylr[stgdev][target_iops] = YcsbLogReader(fn, time_begin, time_end)
+        overloaded = ("overloaded" in v) and v["overloaded"]
+        stgdev_tio_ylr[stgdev][target_iops] = YcsbLogReader(fn, time_begin, time_end, overloaded)
 
     with open(fn_out, "w") as fo:
-      fmt = "%9s %6.0f %6.0f" \
+      fmt = "%9s %6.0f %1d %6.0f" \
           " %8.2f %8.2f %9.2f %10.2f %10.2f" \
           " %8.2f %8.2f %8.2f %9.2f %9.2f"
-      fo.write("%s\n" % Util.BuildHeader(fmt, "stg_dev target_iops iops" \
+      fo.write("%s\n" % Util.BuildHeader(fmt, "stg_dev target_iops overloaded iops" \
           " r_avg r_90 r_99 r_99.9 r_99.99" \
           " w_avg w_90 w_99 w_99.9 w_99.99"
           ))
@@ -49,6 +50,7 @@ def GenDataThrpVsLat():
           fo.write((fmt + "\n") % (
             stgdev
             , tio
+            , (1 if ylr.overloaded else 0)
             , ylr.db_iops_stat.avg
             , ylr.r_avg
             , ylr.r_90
@@ -63,12 +65,6 @@ def GenDataThrpVsLat():
             ))
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
     return fn_out
-
-
-# Generate a formatted output file for gnuplot. The csv file has headers that's not ideal for gnuplot.
-#def GenDataMetricsByTime(fn_in, exp_dt):
-#  lr = YcsbLogReader(fn_in, exp_dt)
-#  return (lr.FnMetricByTime(), lr.TimeMax(), lr.GetParams())
 
 
 def GenDataCostVsMetrics(exp_set_id):
@@ -124,7 +120,9 @@ def GenDataCostVsMetrics(exp_set_id):
 
 
 class YcsbLogReader:
-  def __init__(self, fn_in, time_begin, time_end):
+  def __init__(self, fn_in, time_begin, time_end, overloaded):
+    self.overloaded = overloaded
+
     # Unzip when the file is not there
     if not os.path.exists(fn_in):
       fn_zipped = "%s.bz2" % fn_in

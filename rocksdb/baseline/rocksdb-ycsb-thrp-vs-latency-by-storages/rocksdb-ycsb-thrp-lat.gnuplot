@@ -9,6 +9,13 @@ set print "-"
 set terminal pdfcairo enhanced size 3.6in, (2.3*0.85)in
 set output OUT_FN
 
+BW=0.04
+LW=2
+PS=0.5
+# Fill transparency
+F_TP=0.4
+CR=0.005
+
 # Read latency
 if (1) {
   set xlabel "K IOPS"
@@ -18,29 +25,50 @@ if (1) {
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
-  set logscale xy
-  #set logscale y
+  set yrange[0.01:]
 
-  set xrange[0.8:200]
-  set yrange[0.01:200]
-
-  set boxwidth 0.06
-
-  LW=2
-  PS=0.4
+  set boxwidth BW
+  set style circle radius screen CR
 
   # Base index
-  b=4
+  b=5
 
-  plot \
-  IN_YCSB u (strcol(1) eq "ebs-st1" ? ($3/1000) : 1/0) \
-    :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "blue" lw LW not whiskerbars, \
-  IN_YCSB u (strcol(1) eq "ebs-st1" ? ($3/1000) : 1/0) \
-    :(column(b)/1000) w p pt 7 ps PS lc rgb "blue" not, \
-  IN_YCSB u (strcol(1) eq "local-ssd" ? ($3/1000) : 1/0) \
-    :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "red" lw LW not whiskerbars, \
-  IN_YCSB u (strcol(1) eq "local-ssd" ? ($3/1000) : 1/0) \
-    :(column(b)/1000) w p pt 7 ps PS lc rgb "red" not, \
+  if (0) {
+    set logscale y
+    plot \
+    IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 0) ? $0 : 1/0) \
+      :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000):xticlabel(4) w candlesticks lc rgb "blue" lw LW fillstyle solid not whiskerbars, \
+    IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 0) ? $0 : 1/0):(column(b)/1000) w p pt 7 ps PS lc rgb "blue" not, \
+    IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 1) ? $0 : 1/0) \
+      :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "blue" lw LW not whiskerbars, \
+    IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 1) ? $0 : 1/0):(column(b)/1000) w p pt 6 ps PS lc rgb "blue" not, \
+    \
+    IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 0) ? $0 : 1/0) \
+      :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "red" lw LW fillstyle solid not whiskerbars, \
+    IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 0) ? $0 : 1/0):(column(b)/1000) w p pt 7 ps PS lc rgb "red" not, \
+    IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 1) ? $0 : 1/0) \
+      :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "red" lw LW not whiskerbars, \
+    IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 1) ? $0 : 1/0):(column(b)/1000) w p pt 6 ps PS lc rgb "red" not
+
+  } else {
+    # x-axis true to the scale
+    set logscale xy
+    set xrange[0.8:200]
+    plot \
+    IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 0) ? ($4/1000) : 1/0) \
+      :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "blue" lw LW fillstyle transparent solid F_TP not whiskerbars, \
+    IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 0) ? ($4/1000) : 1/0):(column(b)/1000) w circles lc rgb "blue" fillstyle transparent solid F_TP not, \
+    IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 1) ? ($4/1000) : 1/0) \
+      :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "blue" lw LW not whiskerbars, \
+    IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 1) ? ($4/1000) : 1/0):(column(b)/1000) w circles lc rgb "blue" fillstyle transparent solid 0 not, \
+    \
+    IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 0) ? ($4/1000) : 1/0) \
+      :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "red" lw LW fillstyle transparent solid F_TP not whiskerbars, \
+    IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 0) ? ($4/1000) : 1/0):(column(b)/1000) w circles lc rgb "red" fillstyle transparent solid F_TP not, \
+    IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 1) ? ($4/1000) : 1/0) \
+      :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "red" lw LW not whiskerbars, \
+    IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 1) ? ($4/1000) : 1/0):(column(b)/1000) w circles lc rgb "red" fillstyle transparent solid 0 not, \
+  }
 
   # whisker plot: x box_min whisker_min whisker_high box_high
   #            iops      99          90        99.99     99.9
@@ -64,23 +92,27 @@ if (1) {
   set xrange[0.8:200]
   set yrange[0.01:200]
 
-  set boxwidth 0.06
-
-  LW=2
-  PS=0.4
+  set boxwidth BW
+  set style circle radius screen CR
 
   # Base index
-  b=9
+  b=10
 
   plot \
-  IN_YCSB u (strcol(1) eq "ebs-st1" ? ($3/1000) : 1/0) \
+  IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 0) ? ($4/1000) : 1/0) \
+    :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "blue" lw LW fillstyle transparent solid F_TP not whiskerbars, \
+  IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 0) ? ($4/1000) : 1/0):(column(b)/1000) w circles lc rgb "blue" fillstyle transparent solid F_TP not, \
+  IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 1) ? ($4/1000) : 1/0) \
     :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "blue" lw LW not whiskerbars, \
-  IN_YCSB u (strcol(1) eq "ebs-st1" ? ($3/1000) : 1/0) \
-    :(column(b)/1000) w p pt 7 ps PS lc rgb "blue" not, \
-  IN_YCSB u (strcol(1) eq "local-ssd" ? ($3/1000) : 1/0) \
+  IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 1) ? ($4/1000) : 1/0):(column(b)/1000) w circles lc rgb "blue" fillstyle transparent solid 0 not, \
+  \
+  IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 0) ? ($4/1000) : 1/0) \
+    :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "red" lw LW fillstyle transparent solid F_TP not whiskerbars, \
+  IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 0) ? ($4/1000) : 1/0):(column(b)/1000) w circles lc rgb "red" fillstyle transparent solid F_TP not, \
+  IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 1) ? ($4/1000) : 1/0) \
     :(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) w candlesticks lc rgb "red" lw LW not whiskerbars, \
-  IN_YCSB u (strcol(1) eq "local-ssd" ? ($3/1000) : 1/0) \
-    :(column(b)/1000) w p pt 7 ps PS lc rgb "red" not, \
+  IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 1) ? ($4/1000) : 1/0):(column(b)/1000) w circles lc rgb "red" fillstyle transparent solid 0 not, \
+
 }
 
 
@@ -112,7 +144,7 @@ if (1) {
 
   # Draw the box twice: face and border
   set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
-  set obj rect from graph xl,y1 to graph xr,y2 fs empty border lc rgb "black" lw LW front
+  set obj rect from graph xl,y1 to graph xr,y2 fs transparent solid 0.3 border lc rgb "black" fc rgb "black" lw LW front
 
   x1=xl-0.03
   set label "99.99th" at graph x1,yt right #font ",10"
@@ -121,7 +153,7 @@ if (1) {
   set label "90th"    at graph x1,yb right #font ",10"
 
   yb1=yb-0.12
-  set obj circle at graph xm,yb1 size graph .007 fs solid fc rgb "black" front
+  set obj circle at graph xm,yb1 size graph .007 fs transparent solid 0.3 fc rgb "black" front
   set label "Avg"     at graph x1,yb1 right #font ",10"
 
   f(x)=x
