@@ -19,7 +19,7 @@ CR=0.005
 # Read latency
 if (1) {
   set xlabel "K IOPS"
-  set ylabel "Read latency (ms)" offset 1,0
+  set ylabel "Read latency (ms)" offset 1.5,0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
@@ -81,7 +81,7 @@ if (1) {
 if (1) {
   reset
   set xlabel "K IOPS"
-  set ylabel "Write latency (ms)" offset 1,0
+  set ylabel "Write latency (ms)" offset 1.5,0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
@@ -130,7 +130,7 @@ if (1) {
   LW=2
 
   if (1) {
-    xm=0.18
+    xm=0.04
     bw=0.025
     xl=xm-bw/2
     xr=xm+bw/2
@@ -147,22 +147,15 @@ if (1) {
     set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
     set obj rect from graph xl,y1 to graph xr,y2 fs transparent solid 0.3 border lc rgb "blue" fc rgb "blue" lw LW front
 
-    x1=xl-0.04
-    set label "99.99th" at graph x1,yt right #font ",10"
-    set label "99.9th"  at graph x1,y2 right #font ",10"
-    set label "99th"    at graph x1,y1 right #font ",10"
-    set label "90th"    at graph x1,yb right #font ",10"
-
     yb1=yb-0.12
     set obj circle at graph xm,yb1 size graph .007 fs transparent solid 0.3 fc rgb "blue" front
-    set label "Avg"     at graph x1,yb1 right #font ",10"
 
     yb2=yb1-0.12
     set label "EBS\nMag" at graph xm,yb2 center tc rgb "blue"
   }
 
   if (1) {
-    xm=0.28
+    xm=xm+0.1
     xl=xm-bw/2
     xr=xm+bw/2
 
@@ -180,7 +173,7 @@ if (1) {
   }
 
   if (1) {
-    xm=0.38
+    xm=xm+0.1
     xl=xm-bw/2
     xr=xm+bw/2
 
@@ -194,7 +187,14 @@ if (1) {
 
     set obj circle at graph xm,yb1 size graph .007 fs transparent solid 0 fc rgb "black" front
 
-    set label "Unsustainable\nthroughput" at graph xm,yb2 left offset -1,0 tc rgb "black"
+    x1=xl+0.07
+    set label "99.99th" at graph x1,yt left
+    set label "99.9th"  at graph x1,y2 left
+    set label "99th"    at graph x1,y1 left
+    set label "90th"    at graph x1,yb left
+    set label "Avg"     at graph x1,yb1 left
+
+    set label "Unsustainable\nthroughput\n(Empty fill)" at graph xm,yb2 left offset -1,0 tc rgb "black"
     # Or "System saturated"
   }
 
