@@ -71,26 +71,23 @@ def YcsbLoad(params, r):
 
     if ("use_preloaded_db" in r["load"]) and len(r["load"]["use_preloaded_db"]) > 0:
       cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use_preloaded_db"], params["db_path"])
-      Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
       # aws s3 sync fails sometimes when pounded with requests and it seems that it doesn't tell you whether it succeeded or not.
       #   Repeat 10 times. It fixed the issue.
       #   A better approach would be doing the checksum.
       for i in range(10):
         Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
       Util.RunSubp("sync", measure_time=True, shell=True, gen_exception=False)
-      paths = params["db_stg_dev_paths"]
+      paths = params["db_stg_devs"]
       for i in range(1, len(paths)):
-        Util.RunSubp("rm -rf %s || true" % paths[i])
-        Util.MkDirs(paths[i])
+        Util.RunSubp("rm -rf %s || true" % paths[i][0])
+        Util.MkDirs(paths[i][0])
     else:
       # Delete existing data
-      if socket.gethostname() == "node3":
-        Util.RunSubp("rm -rf %s || true" % params["db_path"])
-      else:
-        Util.RunSubp("sudo rm -rf %s || true" % params["db_path"])
+      Util.RunSubp("sudo rm -rf %s || true" % params["db_path"])
 
-      for p in params["db_stg_dev_paths"]:
-        Util.MkDirs(p)
+      for p in params["db_stg_devs"]:
+        Util.RunSubp("rm -rf %s || true" % p[0])
+        Util.MkDirs(p[0])
 
       ycsb_params = \
           " -s" \
@@ -216,11 +213,7 @@ class Dstat:
       # Get a list of all block devices
       devs = []
       for f in os.listdir("/dev"):
-        mo = None
-        if socket.gethostname() == "node3":
-          mo = re.match(r"sd\w$", f)
-        else:
-          mo = re.match(r"xvd\w$", f)
+        mo = re.match(r"xvd\w$", f)
         if mo is not None:
           devs.append(f)
 
