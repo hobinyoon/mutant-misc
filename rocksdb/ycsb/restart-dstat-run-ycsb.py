@@ -69,16 +69,22 @@ def YcsbLoad(params, r):
     _dn_log_rocksdb = "%s/rocksdb" % _dn_log_root
     Util.MkDirs(_dn_log_rocksdb)
 
-    if ("use_preloaded_db" in r["load"]) and len(r["load"]["use_preloaded_db"]) > 0:
-      cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use_preloaded_db"], params["db_path"])
+    if ("use_preloaded_db" in r["load"]) and (r["load"]["use_preloaded_db"] is not None):
+      cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use_preloaded_db"][0], params["db_path"])
       # aws s3 sync fails sometimes when pounded with requests and it seems that it doesn't tell you whether it succeeded or not.
-      #   Repeat 10 times. It fixed the issue.
-      #   A better approach would be doing the checksum.
-      for i in range(10):
+      #   Repeat many times. It fixed the issue.
+      #   A better approach would be running a checksum. Oh well.
+      for i in range(5):
         Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
+      if 2 <= len(r["load"]["use_preloaded_db"]):
+        cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use_preloaded_db"][1], params["db_stg_devs"][1][0])
+        for i in range(5):
+          Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
       Util.RunSubp("sync", measure_time=True, shell=True, gen_exception=False)
+
+      # Re-create the directories when a preloaded DB is not specified.
       paths = params["db_stg_devs"]
-      for i in range(1, len(paths)):
+      for i in range(len(r["load"]["use_preloaded_db"]), len(paths)):
         Util.RunSubp("rm -rf %s || true" % paths[i][0])
         Util.MkDirs(paths[i][0])
     else:
