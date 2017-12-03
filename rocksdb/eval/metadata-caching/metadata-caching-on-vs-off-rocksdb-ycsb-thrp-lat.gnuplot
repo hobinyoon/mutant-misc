@@ -109,7 +109,7 @@ if (1) {
   stg_dev="ebs-st1"
 
   set label "Metadata\ncaching\nOff" at 7.5-x_offset,150 center tc rgb "blue"
-  set label "On"  at 9.5+x_offset,25 center tc rgb "red"
+  set label "On"                     at 9.5+x_offset,25  center tc rgb "red"
 
   x(a)=(a < 5 ? a : (a+0.5))
 
@@ -129,6 +129,10 @@ if (1) {
   #               3     7+1         7+0          7+3      7+2
 }
 
+
+TP=0.3
+
+# Latency increase or reduction
 if (1) {
   reset
   set xlabel "K IOPS"
@@ -168,9 +172,9 @@ if (1) {
   x_w2=0.22
 
   plot IN_W_O_WO_LAT u (x($0)-x_w2):($3 < 1.0 ? $3*100 - 100 : 1/0):(x($0)-x_w2):(x($0)+x_w2):(0):($3*100 - 100) w boxxyerrorbars \
-    lc rgb "blue" fillstyle transparent solid 0.5 not, \
+    lc rgb "blue" fillstyle transparent solid TP not, \
   IN_W_O_WO_LAT u (x($0)-x_w2):(1.0 <= $3 ? $3*100 - 100 : 1/0):(x($0)-x_w2):(x($0)+x_w2):(0):($3*100 - 100) w boxxyerrorbars \
-    lc rgb "red" fillstyle transparent solid 0.5 not
+    lc rgb "red" fillstyle transparent solid TP not
 
   # boxxyerrorbars
   # x  y  xlow  xhigh  ylow  yhigh
@@ -210,6 +214,9 @@ if (1) {
   set xrange [x_min:x_max]
   set yrange [4.3:4.5]
 
+  set label "Metadata\ncaching\nOff" at 9.5-x_offset    ,4.5 center tc rgb "blue" front
+  set label "On"                     at 9.5+x_offset+0.2,4.4 center tc rgb "red"  front
+
   x(a)=(a < 5 ? a : (a+0.5))
 
   set lmargin LMARGIN
@@ -221,10 +228,11 @@ if (1) {
   x0=x1-x_w
   x3=x2+x_w
 
-  plot IN_W_O_WO_MEM u (x($0)+x2):($3/1024):(x($0)+x2):(x($0)+x3):(0):($3/1024) w boxxyerrorbars \
-    lc rgb "red" fillstyle transparent solid 0.5 not, \
+  plot \
   IN_W_O_WO_MEM u (x($0)+x0):($5/1024):(x($0)+x0):(x($0)+x1):(0):($5/1024) w boxxyerrorbars \
-    lc rgb "blue" fillstyle transparent solid 0.5 not
+    lc rgb "blue" lw LW fillstyle pattern 0 not, \
+  IN_W_O_WO_MEM u (x($0)+x2):($3/1024):(x($0)+x2):(x($0)+x3):(0):($3/1024) w boxxyerrorbars \
+    lc rgb "red" lw LW fillstyle pattern 2 not
 }
 
 
@@ -258,6 +266,9 @@ if (1) {
   set xrange [x_min:x_max]
   set yrange [0.9:1.05]
 
+  set label "Metadata\ncaching\nOff" at 9.5-x_offset    ,1.045 center tc rgb "blue" front
+  set label "On"                     at 9.5+x_offset+0.2,0.965 center tc rgb "red"  front
+
   x(a)=(a < 5 ? a : (a+0.5))
 
   set lmargin LMARGIN
@@ -269,8 +280,9 @@ if (1) {
   x0=x1-x_w
   x3=x2+x_w
 
-  plot IN_W_O_WO_MEM u (x($0)+x2):($6/1024):(x($0)+x2):(x($0)+x3):(0):($6/1024) w boxxyerrorbars \
-    lc rgb "red" fillstyle transparent solid 0.5 not, \
+  plot \
   IN_W_O_WO_MEM u (x($0)+x0):($4/1024):(x($0)+x0):(x($0)+x1):(0):($4/1024) w boxxyerrorbars \
-    lc rgb "blue" fillstyle transparent solid 0.5 not
+    lc rgb "blue" lw LW fillstyle pattern 0 not, \
+  IN_W_O_WO_MEM u (x($0)+x2):($6/1024):(x($0)+x2):(x($0)+x3):(0):($6/1024) w boxxyerrorbars \
+    lc rgb "red" lw LW fillstyle pattern 2 not
 }
