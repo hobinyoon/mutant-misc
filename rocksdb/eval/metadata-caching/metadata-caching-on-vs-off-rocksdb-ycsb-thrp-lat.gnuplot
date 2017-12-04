@@ -10,7 +10,7 @@ OUT_FN = "metadata-caching-on-vs-off-rocksdb-ycsbd-thrp-vs-lat.pdf"
 set print "-"
 #print sprintf("TIME_MAX=%s", TIME_MAX)
 
-set terminal pdfcairo enhanced size 4.3in, (4.3*0.35)in
+set terminal pdfcairo enhanced size 3.8in, (3.8*0.35)in
 set output OUT_FN
 
 x_min=-0.5
@@ -18,6 +18,8 @@ x_max=15
 LW=2
 PS=0.5
 LMARGIN=9
+RMARGIN=0.5
+TMARGIN=0.50
 
 # Legend
 if (1) {
@@ -26,6 +28,8 @@ if (1) {
 
   # Align the stacked plots
   set lmargin LMARGIN
+  set rmargin RMARGIN
+  set tmargin TMARGIN
   set bmargin 0
 
   set xrange [x_min:x_max]
@@ -44,7 +48,7 @@ if (1) {
     set arrow from x1,y_t to x1,y_b nohead lw LW lc rgb LC front
 
     x_c=(x0+x1)/2
-    set label "EBS Mag" at x_c,y_t center offset 0,0.5
+    set label "EBS Mag" at x_c,y_t center offset 0,0.5 front
   }
 
   if (1) {
@@ -58,7 +62,7 @@ if (1) {
     set arrow from x1,y_t to x1,y_b nohead lw LW lc rgb LC front
 
     x_c=(x0+x1)/2
-    set label "Local SSD" at x_c,y_t center offset 0,0.5
+    set label "Local SSD" at x_c,y_t center offset 0,0.5 front
   }
 
   f(x)=x
@@ -70,7 +74,7 @@ if (1) {
 if (1) {
   reset
   set xlabel "K IOPS"
-  set ylabel "Latency (ms)" offset 1,0
+  set ylabel "Latency (ms)" offset 0,0
   set xtics nomirror tc rgb "black" ( \
       "1"   0 \
     , "1.5" 1 \
@@ -108,14 +112,17 @@ if (1) {
   x_offset=0.18
   stg_dev="ebs-st1"
 
-  set label "Metadata\ncaching\nOff" at 7.5-x_offset,150 center tc rgb "blue"
-  set label "On"                     at 9.5+x_offset,25  center tc rgb "red"
+  #set label "Metadata\ncaching\nOff" at 7.5-x_offset,150 center tc rgb "blue"
+  set label "MO\noff" at 8.5-x_offset+0.1,90 right tc rgb "blue"
+  set label "on"      at 8.5+x_offset-0.1,30 left  tc rgb "red"
 
   x(a)=(a < 5 ? a : (a+0.5))
 
   set boxwidth BW
 
   set lmargin LMARGIN
+  set rmargin RMARGIN
+  set tmargin TMARGIN
 
   plot IN_WO u (x($0) - x_offset):(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000) \
       w candlesticks lc rgb "blue" lw LW fillstyle transparent solid F_TP not whiskerbars, \
@@ -137,7 +144,8 @@ if (1) {
   reset
   set xlabel "K IOPS"
   #set ylabel "Relative change (%)" offset 1,0
-  set ylabel "Latency increase\nor reduction (%)" offset 0.5,0
+  #set ylabel "Latency increase\nor reduction (%)" offset 0,0
+  set ylabel "Changes in\navg latency (%)" offset 0,0
   set xtics nomirror tc rgb "black" ( \
       "1"   0 \
     , "1.5" 1 \
@@ -166,6 +174,8 @@ if (1) {
   x(a)=(a < 5 ? a : (a+0.5))
 
   set lmargin LMARGIN
+  set rmargin RMARGIN
+  set tmargin TMARGIN
 
   set arrow from x_min,0 to x_max,0 lc rgb "#808080" nohead
 
@@ -214,12 +224,15 @@ if (1) {
   set xrange [x_min:x_max]
   set yrange [4.3:4.5]
 
-  set label "Metadata\ncaching\nOff" at 9.5-x_offset    ,4.5 center tc rgb "blue" front
-  set label "On"                     at 9.5+x_offset+0.2,4.4 center tc rgb "red"  front
+  #set label "Metadata\ncaching\nOff" at 9.5-x_offset    ,4.5 center tc rgb "blue" front
+  set label "MO\noff" at 9.5-x_offset,4.48       center tc rgb "blue" front
+  set label "on"      at 9.5+x_offset+0.25,4.405 center tc rgb "red"  front
 
   x(a)=(a < 5 ? a : (a+0.5))
 
   set lmargin LMARGIN
+  set rmargin RMARGIN
+  set tmargin TMARGIN
 
   set arrow from x_min,0 to x_max,0 lc rgb "#808080" nohead
 
@@ -266,12 +279,14 @@ if (1) {
   set xrange [x_min:x_max]
   set yrange [0.9:1.05]
 
-  set label "Metadata\ncaching\nOff" at 9.5-x_offset    ,1.045 center tc rgb "blue" front
-  set label "On"                     at 9.5+x_offset+0.2,0.965 center tc rgb "red"  front
+  set label "MO\nOff" at 9.5-x_offset    ,1.0325 center tc rgb "blue" front
+  set label "on"      at 9.5+x_offset+0.2,0.965 center tc rgb "red"  front
 
   x(a)=(a < 5 ? a : (a+0.5))
 
   set lmargin LMARGIN
+  set rmargin RMARGIN
+  set tmargin TMARGIN
 
   set arrow from x_min,0 to x_max,0 lc rgb "#808080" nohead
 
