@@ -1,8 +1,4 @@
-import ast
-import csv
-import datetime
 import os
-import pprint
 import re
 import sys
 
@@ -19,12 +15,11 @@ def GenDataThrpVsLat():
   if os.path.exists(fn_out):
     return fn_out
 
-  conf_root = Conf.Get("mutant")
-
   # {clst_slo: {target_iops: YcsbLogReader}}
   costslo_tio_ylr = {}
 
   with Cons.MT("Generating thrp vs lat data file ..."):
+    conf_root = Conf.Get("mutant")
     dn_base = conf_root["dn_base"].replace("~", os.path.expanduser("~"))
 
     for k, v in sorted(conf_root["by_cost_slos"].iteritems()):
@@ -46,36 +41,62 @@ def GenDataThrpVsLat():
         # Not sure if you want to parallelize this. This whole thing takes only about 4 secs.
         costslo_tio_ylr[cost_slo][target_iops] = YcsbLogReader(fn, time_begin, time_end)
 
-    with open(fn_out, "w") as fo:
-      fmt = "%5.2f %6s %6.0f %6.0f" \
-          " %8.2f %8.2f %9.2f %10.2f %10.2f" \
-          " %8.2f %8.2f %8.2f %9.2f %9.2f"
-      fo.write("%s\n" % Util.BuildHeader(fmt, "cost_slo cost_slo_label target_iops iops" \
-          " r_avg r_90 r_99 r_99.9 r_99.99" \
-          " w_avg w_90 w_99 w_99.9 w_99.99"
+    conf_root = Conf.Get("rocksdb")
+    dn_base = conf_root["dn_base"].replace("~", os.path.expanduser("~"))
+    cost_ebsst1   = 0.045
+    cost_localssd = 0.528
+
+    cost_slo = cost_localssd
+    costslo_tio_ylr[cost_slo] = {}
+    for target_iops, v1 in sorted(conf_root["local-ssd"].iteritems()):
+      fn = "%s/%s" % (dn_base, v1["fn"])
+      t = v1["time"].split("-")
+      time_begin = t[0]
+      time_end = t[1]
+      costslo_tio_ylr[cost_slo][target_iops] = YcsbLogReader(fn, time_begin, time_end)
+
+    cost_slo = cost_ebsst1
+    costslo_tio_ylr[cost_slo] = {}
+    for target_iops, v1 in sorted(conf_root["ebs-st1"].iteritems()):
+      fn = "%s/%s" % (dn_base, v1["fn"])
+      t = v1["time"].split("-")
+      time_begin = t[0]
+      time_end = t[1]
+      costslo_tio_ylr[cost_slo][target_iops] = YcsbLogReader(fn, time_begin, time_end)
+
+  with open(fn_out, "w") as fo:
+    fmt = "%5.2f %8s %6.0f %6.0f" \
+        " %8.2f %8.2f %9.2f %10.2f %10.2f" \
+        " %8.2f %8.2f %8.2f %9.2f %9.2f"
+    fo.write("%s\n" % Util.BuildHeader(fmt, "cost_slo cost_slo_label target_iops iops" \
+        " r_avg r_90 r_99 r_99.9 r_99.99" \
+        " w_avg w_90 w_99 w_99.9 w_99.99"
+        ))
+    for cost_slo, v in sorted(costslo_tio_ylr.iteritems()):
+      last_tio = sorted(v.keys())[-1]
+      for tio, ylr in sorted(v.iteritems()):
+
+        cost_slo_label = ("\"%s $%.1f\"" % ("R" if cost_slo in [cost_localssd, cost_ebsst1] else "M", cost_slo)) if tio == last_tio else "\"\""
+
+        fo.write((fmt + "\n") % (
+          cost_slo
+          , cost_slo_label
+          , tio
+          , ylr.db_iops_stat.avg
+          , ylr.r_avg
+          , ylr.r_90
+          , ylr.r_99
+          , ylr.r_999
+          , ylr.r_9999
+          , ylr.w_avg
+          , ylr.w_90
+          , ylr.w_99
+          , ylr.w_999
+          , ylr.w_9999
           ))
-      for cost_slo, v in sorted(costslo_tio_ylr.iteritems()):
-        last_tio = sorted(v.keys())[-1]
-        for tio, ylr in sorted(v.iteritems()):
-          fo.write((fmt + "\n") % (
-            cost_slo
-            , (("\"$%.1f\"" % cost_slo) if last_tio == tio else "\"\"")
-            , tio
-            , ylr.db_iops_stat.avg
-            , ylr.r_avg
-            , ylr.r_90
-            , ylr.r_99
-            , ylr.r_999
-            , ylr.r_9999
-            , ylr.w_avg
-            , ylr.w_90
-            , ylr.w_99
-            , ylr.w_999
-            , ylr.w_9999
-            ))
-        fo.write("\n")
-    Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-    return fn_out
+      fo.write("\n")
+  Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+  return fn_out
 
 
 class YcsbLogReader:

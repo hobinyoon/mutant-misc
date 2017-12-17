@@ -49,13 +49,15 @@ if (1) {
   l_y = 0.9
   labels = "Average 90th 99th 99.9th 99.99th"
 
+  RB = 35
+
   # Base index
   b=5
 
   do for [i=1:words(labels)] {
     set label 1 word(labels, i) at graph l_x,l_y right
     plot \
-    IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color($1)) w labels left offset 0.5,0.5 rotate by 40 tc rgb variable not, \
+    IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color($1)) w labels left offset 0.5,0.5 rotate by RB tc rgb variable not, \
     IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color($1)) w lp pt 6 ps 0.5 lc rgb variable lw LW not
   }
 
@@ -64,7 +66,7 @@ if (1) {
   do for [i=1:words(labels)] {
     set label 1 word(labels, i) at graph l_x,l_y right
     plot \
-    IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color($1)) w labels left offset 0.5,0.5 rotate by 40 tc rgb variable not, \
+    IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color($1)) w labels left offset 0.5,0.5 rotate by RB tc rgb variable not, \
     IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color($1)) w lp pt 6 ps 0.5 lc rgb variable lw LW not
   }
 }
