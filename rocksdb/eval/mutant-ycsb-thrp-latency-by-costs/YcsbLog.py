@@ -65,7 +65,7 @@ def GenDataThrpVsLat():
       costslo_tio_ylr[cost_slo][target_iops] = YcsbLogReader(fn, time_begin, time_end)
 
   with open(fn_out, "w") as fo:
-    fmt = "%5.2f %8s %6.0f %6.0f" \
+    fmt = "%5.2f %10s %6.0f %6.0f" \
         " %8.2f %8.2f %9.2f %10.2f %10.2f" \
         " %8.2f %8.2f %8.2f %9.2f %9.2f"
     fo.write("%s\n" % Util.BuildHeader(fmt, "cost_slo cost_slo_label target_iops iops" \
@@ -75,8 +75,9 @@ def GenDataThrpVsLat():
     for cost_slo, v in sorted(costslo_tio_ylr.iteritems()):
       last_tio = sorted(v.keys())[-1]
       for tio, ylr in sorted(v.iteritems()):
-
-        cost_slo_label = ("\"%s $%.1f\"" % ("R" if cost_slo in [cost_localssd, cost_ebsst1] else "M", cost_slo)) if tio == last_tio else "\"\""
+        cost_slo_label = ("\"%s $%s\"" % ("R" if cost_slo in [cost_localssd, cost_ebsst1] else "M", ("%f" % cost_slo).rstrip("0").rstrip("."))) \
+            if tio == last_tio \
+            else "\"\""
 
         fo.write((fmt + "\n") % (
           cost_slo
