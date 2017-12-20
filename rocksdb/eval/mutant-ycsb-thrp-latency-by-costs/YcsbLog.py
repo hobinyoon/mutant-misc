@@ -65,7 +65,7 @@ def GenDataThrpVsLat():
       costslo_tio_ylr[cost_slo][target_iops] = YcsbLogReader(fn, time_begin, time_end)
 
   with open(fn_out, "w") as fo:
-    fmt = "%5.2f %10s %6.0f %6.0f" \
+    fmt = "%6.3f %10s %6.0f %6.0f" \
         " %8.2f %8.2f %9.2f %10.2f %10.2f" \
         " %8.2f %8.2f %8.2f %9.2f %9.2f"
     fo.write("%s\n" % Util.BuildHeader(fmt, "cost_slo cost_slo_label target_iops iops" \

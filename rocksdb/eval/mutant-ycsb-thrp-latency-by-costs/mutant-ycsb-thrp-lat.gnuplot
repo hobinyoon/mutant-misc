@@ -6,7 +6,8 @@ OUT_FN = system("echo $OUT_FN")
 set print "-"
 #print sprintf("TIME_MAX=%s", TIME_MAX)
 
-set terminal pdfcairo enhanced size 3.3in, (2.3*0.85)in
+#set terminal pdfcairo enhanced size 2.3in, (2.3*0.85)in
+set terminal pdfcairo enhanced size 2.5in, (2.5*0.85)in
 set output OUT_FN
 
 BW=0.04
@@ -16,8 +17,14 @@ PS=0.4
 F_TP=0.4
 CR=0.005
 
+# TODO: Legend
+if (1) {
+}
+
+
 # Read latency
 if (1) {
+  reset
   set xlabel "K IOPS"
   set ylabel "Read latency (ms)" offset 1.5,0
   set xtics nomirror tc rgb "black"
@@ -25,14 +32,12 @@ if (1) {
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
-  #set yrange[0.01:]
-
   set boxwidth BW
   set style circle radius screen CR
 
   set logscale xy
+  #set logscale x
   set xrange[0.8:150]
-  #set yrange[:30]
 
   # 0.1 - 0.5
   c_min = 0.045
@@ -55,12 +60,19 @@ if (1) {
   b=5
 
   do for [i=1:words(labels)] {
+    if (i == 1) {
+      set yrange[0.05:3]
+      #set yrange[0:3]
+    } else {
+      set autoscale y
+    }
     set label 1 word(labels, i) at graph l_x,l_y right
     plot \
     IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color($1)) w labels left offset 0.5,0.5 rotate by RB tc rgb variable not, \
     IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color($1)) w lp pt 6 ps PS lc rgb variable lw LW not
   }
 
+  set autoscale y
   set ylabel "Write latency (ms)" offset 1.5,0
   b = 10
   do for [i=1:words(labels)] {
