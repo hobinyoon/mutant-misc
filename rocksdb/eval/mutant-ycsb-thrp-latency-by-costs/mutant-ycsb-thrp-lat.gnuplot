@@ -11,7 +11,7 @@ set output OUT_FN
 
 BW=0.04
 LW=2
-PS=0.5
+PS=0.4
 # Fill transparency
 F_TP=0.4
 CR=0.005
@@ -58,7 +58,7 @@ if (1) {
     set label 1 word(labels, i) at graph l_x,l_y right
     plot \
     IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color($1)) w labels left offset 0.5,0.5 rotate by RB tc rgb variable not, \
-    IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color($1)) w lp pt 6 ps 0.5 lc rgb variable lw LW not
+    IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color($1)) w lp pt 6 ps PS lc rgb variable lw LW not
   }
 
   set ylabel "Write latency (ms)" offset 1.5,0
@@ -67,6 +67,6 @@ if (1) {
     set label 1 word(labels, i) at graph l_x,l_y right
     plot \
     IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color($1)) w labels left offset 0.5,0.5 rotate by RB tc rgb variable not, \
-    IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color($1)) w lp pt 6 ps 0.5 lc rgb variable lw LW not
+    IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color($1)) w lp pt 6 ps PS lc rgb variable lw LW not
   }
 }
