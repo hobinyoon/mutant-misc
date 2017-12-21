@@ -10,30 +10,40 @@ set print "-"
 set terminal pdfcairo enhanced size 2.5in, (2.5*0.85)in
 set output OUT_FN
 
-# https://www.particleincell.com/2014/colormap/
-# Short rainbow
-c_a(x) = (1-x)/0.25
-c_x(x) = floor(c_a(x))
-c_y(x) = floor(255.999 * (c_a(x)-c_x(x)))
-c_r(x) = \
-  c_x(x) == 0 ? 255          : ( \
-  c_x(x) == 1 ? 255 - c_y(x) : ( \
-  c_x(x) == 2 ? 0            : ( \
-  c_x(x) == 3 ? 0            : ( \
-  0 ))))
-c_g(x) = \
-  c_x(x) == 0 ? c_y(x)       : ( \
-  c_x(x) == 1 ? 255          : ( \
-  c_x(x) == 2 ? 255          : ( \
-  c_x(x) == 3 ? 255 - c_y(x) : ( \
-  0 ))))
-c_b(x) = \
-  c_x(x) == 0 ? 0      : ( \
-  c_x(x) == 1 ? 0      : ( \
-  c_x(x) == 2 ? c_y(x) : ( \
-  c_x(x) == 3 ? 255    : ( \
-  255 ))))
-color_01(a) = c_r(a) * 256 * 256 + c_g(a) * 256 + c_b(a)
+if (0) {
+  # https://www.particleincell.com/2014/colormap/
+  # Short rainbow
+  # It's nice, but the yellow color is not very visible.
+  c_a(x) = (1-x)/0.25
+  c_x(x) = floor(c_a(x))
+  c_y(x) = floor(255.999 * (c_a(x)-c_x(x)))
+  c_r(x) = \
+    c_x(x) == 0 ? 255          : ( \
+    c_x(x) == 1 ? 255 - c_y(x) : ( \
+    c_x(x) == 2 ? 0            : ( \
+    c_x(x) == 3 ? 0            : ( \
+    0 ))))
+  c_g(x) = \
+    c_x(x) == 0 ? c_y(x)       : ( \
+    c_x(x) == 1 ? 255          : ( \
+    c_x(x) == 2 ? 255          : ( \
+    c_x(x) == 3 ? 255 - c_y(x) : ( \
+    0 ))))
+  c_b(x) = \
+    c_x(x) == 0 ? 0      : ( \
+    c_x(x) == 1 ? 0      : ( \
+    c_x(x) == 2 ? c_y(x) : ( \
+    c_x(x) == 3 ? 255    : ( \
+    255 ))))
+  color_01(a) = c_r(a) * 256 * 256 + c_g(a) * 256 + c_b(a)
+} else {
+  #c_r(a) = floor(255.999 * a)
+  c_r(a) = floor(255.999 * (a < 0.5 ? 2*a : 1))
+  c_g(a) = 0
+  #c_b(a) = floor(255.999 * (1.0 - a))
+  c_b(a) = floor(255.999 * (a < 0.5 ? 1 : 2 - 2*a))
+  color_01(a) = c_r(a) * 256 * 256 + c_g(a) * 256 + c_b(a)
+}
 
 
 # Legend
