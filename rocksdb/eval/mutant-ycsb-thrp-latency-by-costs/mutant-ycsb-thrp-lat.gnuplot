@@ -80,9 +80,7 @@ if (1) {
     cost = word(costs, i) + 0.0
     y0 = y_t + (y_b - y_t) * cost_01(cost)
     set arrow from graph x_r, y0 to graph x_r+0.02, y0 nohead lc rgb "#808080" front
-    # Cost label to black. If you do variable color, yellow is not very visible.
-    #set label cost_str at graph x_r, y0 left offset 1,0 tc rgb color_01(cost_01(cost)) front
-    set label cost_str at graph x_r, y0 left offset 1,0 tc rgb "black" front
+    set label cost_str at graph x_r, y0 left offset 1,0 tc rgb color_01(cost_01(cost)) front
   }
 
   set label "Cost ($/GB/month)" at graph x_r, y_c center offset 7,0 rotate by 90
@@ -96,15 +94,14 @@ if (1) {
 if (1) {
   reset
   set xlabel "K IOPS"
-  set ylabel "Read latency (ms)" offset 1.5,0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
   set logscale xy
-  #set logscale x
   set xrange[0.8:150]
+  #set yrange[0.1:]
 
   # 0.1 - 0.5
   c_min = 0.045
@@ -121,19 +118,18 @@ if (1) {
 
   # Read latency
   if (1) {
+    set ylabel "Read latency (ms)" offset 1.5,0
     # Base index
     b=5
     do for [i=1:words(labels)] {
+      set label 1 word(labels, i) at graph l_x,l_y right
       if (i == 1) {
         set yrange[0.05:3]
-        #set yrange[0:3]
+        plot IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color_cost($1)) w lp pt 6 ps PS lc rgb variable lw LW not
       } else {
         set autoscale y
+        plot IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color_cost($1)) w lp pt 6 ps PS lc rgb variable lw LW not
       }
-      set label 1 word(labels, i) at graph l_x,l_y right
-      plot \
-      IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color_cost($1)) w lp pt 6 ps PS lc rgb variable lw LW not
-      #IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color_cost($1)) w labels left offset 0.5,0.5 rotate by RB tc rgb variable not
     }
   }
 
@@ -149,4 +145,15 @@ if (1) {
       #IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color_cost($1)) w labels left offset 0.5,0.5 rotate by RB tc rgb variable not
     }
   }
+
+  # Read latency avg. y-axis linear scale. This might be better to present.
+  b = 5
+  i = 1
+  set ylabel "Read latency (ms)" offset 1.5,0
+  set label 1 word(labels, i) at graph l_x,l_y right
+  unset logscale
+  set logscale x
+  set yrange[0:1.6]
+  set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5
+  plot IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color_cost($1)) w lp pt 6 ps PS lc rgb variable lw LW not
 }
