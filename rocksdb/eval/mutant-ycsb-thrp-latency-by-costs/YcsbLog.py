@@ -38,7 +38,7 @@ def GenDataThrpVsLat():
         t = v1["time"].split("-")
         time_begin = t[0]
         time_end = t[1]
-        # Not sure if you want to parallelize this. This whole thing takes only about 4 secs.
+        # Not sure if you want to parallelize this. This whole thing takes only about 6 secs.
         costslo_tio_ylr[cost_slo][target_iops] = YcsbLogReader(fn, time_begin, time_end)
 
     conf_root = Conf.Get("rocksdb")
