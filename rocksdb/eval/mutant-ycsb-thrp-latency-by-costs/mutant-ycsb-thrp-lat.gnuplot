@@ -10,13 +10,6 @@ set print "-"
 set terminal pdfcairo enhanced size 2.5in, (2.5*0.85)in
 set output OUT_FN
 
-BW=0.04
-LW=2
-PS=0.4
-# Fill transparency
-F_TP=0.4
-CR=0.005
-
 # https://www.particleincell.com/2014/colormap/
 # Short rainbow
 c_a(x) = (1-x)/0.25
@@ -99,9 +92,6 @@ if (1) {
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
-  set boxwidth BW
-  set style circle radius screen CR
-
   set logscale xy
   #set logscale x
   set xrange[0.8:150]
@@ -111,21 +101,12 @@ if (1) {
   c_max = 0.528
   color_cost(x) = color_01((x - c_min) / (c_max - c_min))
 
-  # TODO: clean up
-  if (0) {
-    c_margin = 0.1
-    c_01(a) = (a - c_min) / (c_max - c_min)
-    c_01_m(a) = (a - c_min) / (c_max - c_min) * (1 - c_margin) + c_margin / 2
-    c_r(a) = floor(255.999 * c_01_m(a))
-    c_g(a) = 0
-    c_b(a) = floor(255.999 * (1.0 - c_01_m(a)))
-    color(a) = c_r(a) * 256 * 256 + c_g(a) * 256 + c_b(a)
-  }
-
   l_x = 0.97
   l_y = 0.9
   labels = "Average 90th 99th 99.9th 99.99th"
 
+  LW = 2
+  PS = 0.4
   RB = 35
 
   # Read latency
