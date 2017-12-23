@@ -65,7 +65,7 @@ if (1) {
   }
 
   # Bounding box
-  set object rect from graph x_l, y_t - y_unit_height * (255+1+y_overlap) to graph x_r, y_t - y_unit_height * (0) \
+  set obj rect from graph x_l, y_t - y_unit_height * (255+1+y_overlap) to graph x_r, y_t - y_unit_height * (0) \
     fs transparent solid 0.0 border fc rgb "#808080" front
 
   # For Mutant, these are cost SLOs, not actual costs.
@@ -80,10 +80,11 @@ if (1) {
     cost = word(costs, i) + 0.0
     y0 = y_t + (y_b - y_t) * cost_01(cost)
     set arrow from graph x_r, y0 to graph x_r+0.02, y0 nohead lc rgb "#808080" front
-    set label cost_str at graph x_r, y0 left offset 1,0 tc rgb color_01(cost_01(cost)) front
+    set label at graph x_r + 0.05, y0 point pt i ps 0.5 lc rgb color_01(cost_01(cost)) front
+    set label cost_str at graph x_r, y0 left offset 2.5,0 tc rgb color_01(cost_01(cost)) front
   }
 
-  set label "Cost ($/GB/month)" at graph x_r, y_c center offset 7,0 rotate by 90
+  set label "Cost ($/GB/month)" at graph x_r, y_c center offset 8,0 rotate by 90
 
   set notics
   set noborder
@@ -116,6 +117,8 @@ if (1) {
   PS = 0.4
   RB = 35
 
+  costs = "0.045 0.1 0.2 0.3 0.4 0.5 0.528"
+
   # Read latency
   if (1) {
     set ylabel "Read latency (ms)" offset 1.5,0
@@ -125,10 +128,11 @@ if (1) {
       set label 1 word(labels, i) at graph l_x,l_y right
       if (i == 1) {
         set yrange[0.05:3]
-        plot IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color_cost($1)) w lp pt 6 ps PS lc rgb variable lw LW not
+
+        plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
       } else {
         set autoscale y
-        plot IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color_cost($1)) w lp pt 6 ps PS lc rgb variable lw LW not
+        plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
       }
     }
   }
@@ -140,9 +144,7 @@ if (1) {
     b = 10
     do for [i=1:words(labels)] {
       set label 1 word(labels, i) at graph l_x,l_y right
-      plot \
-      IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color_cost($1)) w lp pt 6 ps PS lc rgb variable lw LW not
-      #IN_YCSB u ($4/1000):(column(b + i - 1)/1000):2:(color_cost($1)) w labels left offset 0.5,0.5 rotate by RB tc rgb variable not
+      plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
     }
   }
 
@@ -155,5 +157,5 @@ if (1) {
   set logscale x
   set yrange[0:1.6]
   set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5
-  plot IN_YCSB u ($4/1000):(column(b + i - 1)/1000):(color_cost($1)) w lp pt 6 ps PS lc rgb variable lw LW not
+  plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
 }
