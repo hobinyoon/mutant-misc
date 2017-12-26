@@ -30,6 +30,8 @@ def PlotThrpLat():
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
     env["IN_YCSB"] = fn_ycsb
+    #env["IN_YCSB_NOMC"] = ""
+    env["IN_YCSB_NOMC"] = "../mutant-ycsb-thrp-latency-by-costs/.output/mutant-ycsb-thrp-vs-lat-by-costslos"
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/mutant-ycsb-thrp-lat.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))

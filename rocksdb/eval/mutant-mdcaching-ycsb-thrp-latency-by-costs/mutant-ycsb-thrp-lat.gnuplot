@@ -1,6 +1,7 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
 IN_YCSB = system("echo $IN_YCSB")
+IN_YCSB_NOMC = system("echo $IN_YCSB_NOMC")
 OUT_FN = system("echo $OUT_FN")
 
 set print "-"
@@ -8,6 +9,7 @@ set print "-"
 
 #set terminal pdfcairo enhanced size 2.3in, (2.3*0.85)in
 set terminal pdfcairo enhanced size 2.5in, (2.5*0.85)in
+#set terminal pdfcairo enhanced size 5.0in, (5.0*0.85)in
 set output OUT_FN
 
 if (0) {
@@ -129,7 +131,12 @@ if (1) {
       if (i == 1) {
         set yrange[0.05:3]
 
-        plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
+        if (IN_YCSB_NOMC eq "") {
+          plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
+        } else {
+          plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not, \
+            for [j=1:words(costs)] IN_YCSB_NOMC u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000) w lp pt j ps PS lc rgb "#808080" lw LW not
+        }
       } else {
         set autoscale y
         plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
@@ -157,5 +164,10 @@ if (1) {
   set logscale x
   set yrange[0:1.6]
   set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5
-  plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
+  if (IN_YCSB_NOMC eq "") {
+    plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
+  } else {
+    plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not, \
+      for [j=1:words(costs)] IN_YCSB_NOMC u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000) w lp pt j ps PS lc rgb "#808080" lw LW not
+  }
 }
