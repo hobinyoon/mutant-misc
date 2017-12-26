@@ -131,12 +131,10 @@ if (1) {
       if (i == 1) {
         set yrange[0.05:3]
 
-        if (IN_YCSB_NOMC eq "") {
-          plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
-        } else {
-          plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not, \
-            for [j=1:words(costs)] IN_YCSB_NOMC u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000) w lp pt j ps PS lc rgb "#808080" lw LW not
-        }
+        plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
+
+        plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not, \
+          for [j=1:words(costs)] IN_YCSB_NOMC u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000) w lp pt j ps PS lc rgb "#808080" lw LW not
       } else {
         set autoscale y
         plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
@@ -164,10 +162,9 @@ if (1) {
   set logscale x
   set yrange[0:1.6]
   set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5
-  if (IN_YCSB_NOMC eq "") {
-    plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
-  } else {
-    plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not, \
-      for [j=1:words(costs)] IN_YCSB_NOMC u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000) w lp pt j ps PS lc rgb "#808080" lw LW not
-  }
+
+  plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
+
+  plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not, \
+    for [j=1:words(costs)] IN_YCSB_NOMC u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000) w lp pt j ps PS lc rgb "#808080" lw LW not
 }
