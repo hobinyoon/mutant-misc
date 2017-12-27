@@ -390,10 +390,12 @@ rocksdb:
     # The lowest 2 have super high latencies. Interesting. EBS cache being cold due to less request density  might explain this.
     1000:
       fn: 171123-204507/ycsb/171124-020349.217-d
-      time: 00:40:00-04:00:00
+      #time: 00:40:00-04:00:00
+      time: 00:40:00-01:36:00
     1500:
       fn: 171123-204532/ycsb/171124-020342.520-d
-      time: 00:25:00-02:40:00
+      #time: 00:25:00-02:40:00
+      time: 01:12:00-01:57:00
 
     # Strangely high
     #2000:
