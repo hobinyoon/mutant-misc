@@ -125,12 +125,12 @@ if (1) {
     # Base index
     b=5
     do for [i=1:words(labels)] {
-      set label 1 word(labels, i) at graph l_x,l_y right
       if (i == 1) {
+        unset label 1
         set yrange[0.05:3]
-
         plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
       } else {
+        set label 1 word(labels, i) at graph l_x,l_y right
         set autoscale y
         plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
       }
@@ -143,7 +143,11 @@ if (1) {
     set ylabel "Write latency (ms)" offset 1.5,0
     b = 10
     do for [i=1:words(labels)] {
-      set label 1 word(labels, i) at graph l_x,l_y right
+      if (i == 1) {
+        unset label 1
+      } else {
+        set label 1 word(labels, i) at graph l_x,l_y right
+      }
       plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
     }
   }
@@ -151,8 +155,9 @@ if (1) {
   # Read latency avg. y-axis linear scale. This might be better to present.
   b = 5
   i = 1
-  set ylabel "Read latency (ms)" offset 1.5,0
-  set label 1 word(labels, i) at graph l_x,l_y right
+  set ylabel "Read latency (ms)" offset 0.0,0
+  #set label 1 word(labels, i) at graph l_x,l_y right
+  unset label 1
   unset logscale
   set logscale x
   set yrange[0:1.6]
