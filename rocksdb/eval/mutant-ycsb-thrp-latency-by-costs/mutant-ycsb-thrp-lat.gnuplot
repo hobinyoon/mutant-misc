@@ -49,7 +49,7 @@ if (0) {
 # Legend
 if (1) {
   x_l = 0.1
-  x_r = x_l + 0.05
+  x_r = x_l + 0.04
   y_t = 0.9
   y_height = 0.8
   y_b = y_t - y_height
@@ -92,6 +92,9 @@ if (1) {
 }
 
 
+c_min = 0.045
+c_max = 0.528
+
 if (1) {
   reset
   set xlabel "K IOPS"
@@ -101,12 +104,9 @@ if (1) {
   set border back lc rgb "#808080" back
 
   set logscale xy
-  set xrange[0.8:150]
+  set xrange[1/1.5:100*1.5]
   #set yrange[0.1:]
 
-  # 0.1 - 0.5
-  c_min = 0.045
-  c_max = 0.528
   color_cost(x) = color_01((x - c_min) / (c_max - c_min))
 
   l_x = 0.97
@@ -163,4 +163,122 @@ if (1) {
   set yrange[0:1.6]
   set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5
   plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
+}
+
+
+# Unmodified DB performance with tail latencies
+if (1) {
+  reset
+  set xlabel "K IOPS"
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  set logscale xy
+  set xrange[1/1.5:100*1.5]
+  set yrange[:100*1.5]
+
+  color_cost(x) = color_01((x - c_min) / (c_max - c_min))
+
+  LW = 2
+  PS = 0.4
+  BW = 0.06
+
+  set boxwidth BW
+
+  costs = "0.045 0.528"
+
+  # Read latency
+  if (1) {
+    set ylabel "Read latency (ms)" offset 1.5,0
+
+    # Base index
+    b=5
+
+    plot \
+      for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000):(color_cost($1)) w candlesticks lc rgb variable lw LW fillstyle empty not whiskerbars, \
+      for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b)/1000):(color_cost($1)) w lp pt 7 ps PS lc rgb variable lt 0 lw LW not
+  }
+
+  # Write latency
+  if (1) {
+    #set autoscale y
+    set ylabel "Write latency (ms)" offset 1.5,0
+    b = 10
+    plot \
+      for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000):(color_cost($1)) w candlesticks lc rgb variable lw LW fillstyle empty not whiskerbars, \
+      for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b)/1000):(color_cost($1)) w lp pt 7 ps PS lc rgb variable lt 0 lw LW not
+
+    #plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
+  }
+}
+
+
+# Legend for the tail latencies
+if (1) {
+  reset
+
+  set notics
+  set noborder
+  set lmargin 0
+  set rmargin 0
+  set bmargin 0
+  set tmargin 0
+
+  LW=2
+
+  if (1) {
+    xm=0.08
+    bw=0.03
+    xl=xm-bw/2
+    xr=xm+bw/2
+    yt=0.95
+    yb=yt-0.25
+    y1=yb+(yt-yb)*1/3
+    y2=yb+(yt-yb)*2/3
+
+    set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "blue"
+    set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "blue"
+    set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "blue"
+
+    # Draw the box twice (face and border) to erase the vertical line behind the box
+    set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
+    set obj rect from graph xl,y1 to graph xr,y2 fs empty border lc rgb "blue" fc rgb "blue" lw LW front
+
+    yb1=yb-0.10
+    set obj circle at graph xm,yb1 size graph .007 fs transparent solid fc rgb "blue" front
+
+    yb2=yb1-0.12
+    set label "$0.045\nEBS\nMag" at graph xm,yb2 center tc rgb "blue"
+  }
+
+  if (1) {
+    xm=xm+0.20
+    xl=xm-bw/2
+    xr=xm+bw/2
+
+    set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "red"
+    set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "red"
+    set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "red"
+
+    set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
+    set obj rect from graph xl,y1 to graph xr,y2 fs empty border lc rgb "red" fc rgb "red" lw LW front
+
+    set obj circle at graph xm,yb1 size graph .007 fs transparent solid fc rgb "red" front
+
+    set label "$0.528\nLocal\nSSD" at graph xm,yb2 center tc rgb "red"
+  }
+
+  if (1) {
+    xm=xm+0.10
+    set label "99.99th" at graph xm,yt left
+    set label "99.9th"  at graph xm,y2 left
+    set label "99th"    at graph xm,y1 left
+    set label "90th"    at graph xm,yb left
+    set label "Avg"     at graph xm,yb1 left
+  }
+
+  f(x)=x
+  plot f(x) lc rgb "white" not
 }

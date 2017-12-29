@@ -34,6 +34,7 @@ if (1) {
   b=5
 
   if (0) {
+    # x-axis true to the scale
     set logscale y
     plot \
     IN_YCSB u ((strcol(1) eq "ebs-st1") && (strcol(3) == 0) ? $0 : 1/0) \
@@ -51,7 +52,6 @@ if (1) {
     IN_YCSB u ((strcol(1) eq "local-ssd") && (strcol(3) == 1) ? $0 : 1/0):(column(b)/1000) w p pt 6 ps PS lc rgb "red" not
 
   } else {
-    # x-axis true to the scale
     set logscale xy
     set xrange[0.8:150]
     plot \
