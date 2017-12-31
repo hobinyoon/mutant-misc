@@ -305,4 +305,42 @@ if (1) {
   #IN_FN_ROCKSDB u 1:($3/1048576) w p pt 7 ps 0.15 lc rgb "blue" not
 }
 
+
+# CPU usage
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "CPU usage (%)"
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":TIME_MAX]
+  set yrange [0:100]
+
+  if (STG_DEV eq "local-ssd") {
+    i_x=17
+    i_y=19
+  } else { if (STG_DEV eq "ebs-st1") {
+    # TODO
+    i_x = 21
+    i_y = 11
+  } else {
+    print(sprintf("Unexpected %s", STG_DEV))
+    exit
+  } }
+
+  plot \
+  IN_FN_DSTAT u i_x:(100 - column(i_y)) w p pt 7 ps 0.15 lc rgb "#8080FF" not, \
+  IN_FN_DSTAT u i_x:(100 - column(i_y)) w l smooth bezier lw 3 lc rgb "blue" not
+}
+
 # exit

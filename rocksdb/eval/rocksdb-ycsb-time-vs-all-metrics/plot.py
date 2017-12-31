@@ -30,12 +30,14 @@ def main(argv):
   Util.MkDirs(Conf.GetOutDir())
 
   # Experiment root
-  r = Conf.Get("rocksdb-metadata-org")
+  #r = Conf.Get("rocksdb-metadata-org")
+  r = Conf.Get("rocksdb-baseline")
 
   dn_base = r["dn_base"].replace("~", os.path.expanduser("~"))
 
   params = []
-  for stgdev in ["ebs-st1", "local-ssd"]:
+  #for stgdev in ["ebs-st1", "local-ssd"]:
+  for stgdev in ["local-ssd"]:
     for target_iops, jobid_expdt in r[stgdev].iteritems():
       fn_in = "%s/%s" % (dn_base, jobid_expdt)
       params.append((fn_in, stgdev))
