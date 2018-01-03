@@ -84,10 +84,6 @@ class RocksdbLogReader:
 class SstEvents:
   exp_begin_dt = None
 
-  # Number of new SSTables and their sizes. 1-second binning for a histogram.
-  # {rel_ts: [new_sst_file_size]}
-  ts_nsfs = {}
-
   # {sst_id: file_size}
   sstid_size = {}
 
@@ -107,9 +103,6 @@ class SstEvents:
   @staticmethod
   def Created(ts0, sst_id, sst_size):
     ts1 = SstEvents._GetRelTs(ts0)
-    if ts1 not in SstEvents.ts_nsfs:
-      SstEvents.ts_nsfs[ts1] = []
-    SstEvents.ts_nsfs[ts1].append(sst_size)
 
     SstEvents.sstid_size[sst_id] = sst_size
     SstEvents.cur_sstsize += sst_size
@@ -134,20 +127,31 @@ class SstEvents:
 
   @staticmethod
   def Write(fn):
-    fmt = "%12s %4d %12d %2d %10d"
+    fmt = "%12s %12s %7.3f %4d %4d %12d"
     with open(fn, "w") as fo:
-      fo.write(Util.BuildHeader(fmt, "rel_ts_HHMMSS" \
-        " num_sstables" \
-        " sstable_size_sum" \
-        " num_new_sstables" \
-        " new_sst_sizes") + "\n")
+      fo.write(Util.BuildHeader(fmt, "rel_ts_HHMMSS_begin" \
+        " rel_ts_HHMMSS_end" \
+        " ts_dur" \
+        " num_sstables_begin" \
+        " num_sstables_end" \
+        " sstable_size_sum_end") + "\n")
+      ts_prev = datetime.timedelta(0)
+      ts_str_prev = "00:00:00.000"
+      num_ssts_prev = 0
+      total_sst_size_prev = 0
       for ts, num_ssts in sorted(SstEvents.ts_numssts.iteritems()):
-        fo.write((fmt + "\n") % (_ToStr(ts)
+        ts_str = _ToStr(ts)
+        fo.write((fmt + "\n") % (ts_str_prev
+          , ts_str
+          , (ts.total_seconds() - ts_prev.total_seconds())
+          , num_ssts_prev
           , num_ssts
-          , SstEvents.ts_sstsize[ts]
-          , (len(SstEvents.ts_nsfs[ts]) if ts in SstEvents.ts_nsfs else 0)
-          , (sum(SstEvents.ts_nsfs[ts]) if ts in SstEvents.ts_nsfs else 0)
+          , total_sst_size_prev
           ))
+        ts_str_prev = ts_str
+        ts_prev = ts
+        num_ssts_prev = num_ssts
+        total_sst_size_prev = SstEvents.ts_sstsize[ts]
     Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
 
 

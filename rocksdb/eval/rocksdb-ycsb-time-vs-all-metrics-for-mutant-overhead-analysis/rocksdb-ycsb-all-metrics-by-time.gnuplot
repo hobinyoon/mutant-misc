@@ -252,7 +252,7 @@ if (1) {
   set format x "%H:%M"
 
   set xlabel "Time (HH:MM)"
-  set ylabel "SSTables created"
+  set ylabel "# of SSTables"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
@@ -261,17 +261,22 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":TIME_MAX]
+  set xrange ["00:00:00.000":TIME_MAX]
   set yrange [0:]
 
-  set boxwidth "00:00:01"
+  LW = 2
+
   plot \
-  IN_FN_ROCKSDB u 1:2 w boxes lc rgb "blue" not
+  IN_FN_ROCKSDB u 1:4:3:(0) w vectors nohead lc rgb "blue" lw LW not, \
+  IN_FN_ROCKSDB u 2:4:(0):($5-$4) w vectors nohead lc rgb "blue" lw LW not
+
+  # vectors: x y xdelta ydelta
 }
 
 
 # Number of SSTables created either from flush or compaction
-if (1) {
+# TODO: needs to be updated
+if (0) {
   reset
   set xdata time
   set timefmt "%H:%M:%S"

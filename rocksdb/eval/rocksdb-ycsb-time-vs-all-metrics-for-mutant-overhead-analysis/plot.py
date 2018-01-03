@@ -49,10 +49,9 @@ def PlotByTime(params):
 
   (fn_ycsb, time_max, params1) = YcsbLog.GenDataMetricsByTime(fn_ycsb_log, exp_dt)
   #Cons.P("%s\n%s\n%s\n%s" % (fn_ycsb, time_max, params1[0], params1[1]))
-  # TODO
+  # For dev
+  #time_max = "00:10:00"
   #time_max = "03:00:00"
-  # TODO: for dev
-  time_max = "00:10:00"
 
   params_formatted = fn_ycsb_log + "\n" + pprint.pformat(params1[0]) + "\n" + pprint.pformat(params1[1])
   # The last, space substitution doesn't seem to work all of a sudden. Not the highest priority.
