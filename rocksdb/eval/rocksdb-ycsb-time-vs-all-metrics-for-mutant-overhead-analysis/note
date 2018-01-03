@@ -1,0 +1,3 @@
+This automatically figures out the number of storage devices and can replace the other two:
+  mutant-ycsb-time-vs-all-metrics
+  rocksdb-ycsb-time-vs-all-metrics

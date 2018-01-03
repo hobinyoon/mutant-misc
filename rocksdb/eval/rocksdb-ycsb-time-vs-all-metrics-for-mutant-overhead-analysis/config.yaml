@@ -1,0 +1,4 @@
+dn_base: ~/work/mutant/log/ycsb/mutant-overhead
+unmodified_db: 171231-174845/ycsb/180101-052616.302-d
+#computation_overhead: 180101-104649/ycsb/180101-174115.499-d
+#io_overhead: 180101-134217/ycsb/180102-052911.809-d
