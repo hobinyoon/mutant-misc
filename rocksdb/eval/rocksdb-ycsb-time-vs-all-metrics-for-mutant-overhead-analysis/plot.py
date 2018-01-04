@@ -23,10 +23,11 @@ def main(argv):
   dn_base = Conf.GetDir("dn_base")
 
   params = []
-  fn = "%s/%s" % (dn_base, Conf.Get("unmodified_db"))
-  params.append((fn, ))
+  for db_type in ["unmodified_db", "computation_overhead", "io_overhead"]:
+    fn = "%s/%s" % (dn_base, Conf.Get(db_type))
+    params.append((fn, ))
 
-  parallel_processing = False
+  parallel_processing = True
   if parallel_processing:
     p = multiprocessing.Pool()
     p.map(PlotByTime, params)
