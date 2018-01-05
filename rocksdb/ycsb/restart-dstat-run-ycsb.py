@@ -303,6 +303,9 @@ class ProcMon:
   @staticmethod
   def Run():
     with Cons.MT("Starting ProcMon ...", print_time=False):
+      ProcMon.cur_datetime = datetime.datetime.now().strftime("%y%m%d-%H%M%S.%f")[:-3]
+      #Cons.P(ProcMon.cur_datetime)
+
       ProcMon.t = threading.Thread(target = ProcMon._Run)
       ProcMon.t.start()
 
@@ -310,12 +313,6 @@ class ProcMon:
   def _Run():
     ProcMon.dn_procmon = "%s/procmon" % _dn_log_root
     Util.MkDirs(ProcMon.dn_procmon)
-
-    ProcMon.cur_datetime = datetime.datetime.now().strftime("%y%m%d-%H%M%S.%f")[:-3]
-    #Cons.P(ProcMon.cur_datetime)
-
-    # ps -ef | grep system[d] | grep ubunt[u] | awk '{print $2}'
-    # ps -ef | grep jav[a] | grep ycs[b] | awk '{print $2}'
 
     fn_out = "%s/%s" % (ProcMon.dn_procmon, ProcMon.cur_datetime)
 
