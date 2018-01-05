@@ -19,7 +19,6 @@ import YcsbLog
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
 
-  # Experiment root
   dn_base = Conf.GetDir("dn_base")
 
   params = []
