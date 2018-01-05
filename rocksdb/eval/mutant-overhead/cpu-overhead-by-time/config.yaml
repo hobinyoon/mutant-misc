@@ -1,0 +1,6 @@
+dn_base: ~/work/mutant/log/ycsb/mutant-overhead
+
+# With 10 K IOPS
+unmodified_db: 180102-233916/ycsb/180103-045616.929-d
+computation_overhead: 180103-011127/ycsb/180103-062835.306-d
+io_overhead: 180103-011200/ycsb/180103-062835.782-d
