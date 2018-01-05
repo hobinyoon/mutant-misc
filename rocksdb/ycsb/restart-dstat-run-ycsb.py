@@ -11,6 +11,7 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import yaml
 import zlib
 
@@ -44,7 +45,9 @@ def main(argv):
           _EvictCache()
 
         Dstat.Restart()
+        ProcMon.Run()
         YcsbRun(params, r)
+        ProcMon.Stop()
         Dstat.Stop()
 
   UploadCloudInitLog()
@@ -286,6 +289,72 @@ class Dstat:
             Cons.P("Process %s has terminated" % pid)
             break
           time.sleep(0.1)
+
+
+# Monitors java ycsb process
+class ProcMon:
+  cur_datetime = None
+  dn_procmon = None
+  t = None
+  stop_requested = False
+  stop_requested_lock = threading.Lock()
+  stop_requested_cv = threading.Condition(stop_requested_lock)
+
+  @staticmethod
+  def Run():
+    with Cons.MT("Starting ProcMon ...", print_time=False):
+      ProcMon.t = threading.Thread(target = ProcMon._Run)
+      ProcMon.t.start()
+
+  @staticmethod
+  def _Run():
+    ProcMon.dn_procmon = "%s/procmon" % _dn_log_root
+    Util.MkDirs(ProcMon.dn_procmon)
+
+    ProcMon.cur_datetime = datetime.datetime.now().strftime("%y%m%d-%H%M%S.%f")[:-3]
+    #Cons.P(ProcMon.cur_datetime)
+
+    # ps -ef | grep system[d] | grep ubunt[u] | awk '{print $2}'
+    # ps -ef | grep jav[a] | grep ycs[b] | awk '{print $2}'
+
+    fn_out = "%s/%s" % (ProcMon.dn_procmon, ProcMon.cur_datetime)
+
+    cmd = "touch %s" % fn_out
+    Util.RunSubp(cmd)
+
+    while True:
+      Util.RunSubp("%s/java-ycsb-statm.sh %s" % (os.path.dirname(__file__), fn_out), print_cmd=False)
+      # Wait for up to 1 sec
+      with ProcMon.stop_requested_cv:
+        ProcMon.stop_requested_cv.wait(1)
+        if ProcMon.stop_requested:
+          break
+
+  @staticmethod
+  def Stop():
+    with Cons.MT("Stopping ProcMon ...", print_time=False):
+      with ProcMon.stop_requested_cv:
+        ProcMon.stop_requested = True
+        ProcMon.stop_requested_cv.notify()
+      if ProcMon.t is None:
+        raise RuntimeError("Unexpected")
+      ProcMon.t.join()
+
+    # Change the current procmon log file name to match that of the last ycsb log datetime and upload to S3
+    if ProcMon.cur_datetime is None:
+      raise RuntimeError("Unexpected")
+    with Cons.MT("Renaming, zipping, and uploading the log file ..."):
+      global _ycsb_run_dt
+      if _ycsb_run_dt is None:
+        raise RuntimeError("Unexpected")
+      if _ycsb_run_dt < ProcMon.cur_datetime:
+        raise RuntimeError("Unexpected")
+      fn0 = "%s/%s" % (ProcMon.dn_procmon, ProcMon.cur_datetime)
+      fn1 = "%s/%s" % (ProcMon.dn_procmon, _ycsb_run_dt)
+      Cons.P("renaming %s to %s" % (fn0, fn1))
+      os.rename(fn0, fn1)
+      Util.RunSubp("pbzip2 -k %s" % fn1)
+      UploadToS3("%s.bz2" % fn1)
 
 
 # Draw attention if there is any WARN or ERROR in the RocksDB log
