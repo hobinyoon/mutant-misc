@@ -2,6 +2,7 @@
 
 TIME_MAX = system("echo $TIME_MAX")
 CPU_STAT = system("echo $CPU_STAT")
+MEM_STAT = system("echo $MEM_STAT")
 ROCKSDB = system("echo $ROCKSDB")
 OUT_FN = system("echo $OUT_FN")
 
@@ -20,7 +21,7 @@ if (1) {
   set timefmt "%H:%M:%S"
   set format x "%1H"
 
-  set xlabel "Time (hour)"
+  set xlabel "Time (hour)" offset 0,0.2
   set ylabel "# of SSTables" offset 0.5, 0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
@@ -50,7 +51,7 @@ if (1) {
   set timefmt "%H:%M:%S"
   set format x "%1H"
 
-  set xlabel "Time (hour)"
+  set xlabel "Time (hour)" offset 0,0.2
   set ylabel "CPU usage (%)" offset 0.5,0
   set xtics nomirror tc rgb "black" #autofreq 0,2*3600
   set ytics nomirror tc rgb "black"
@@ -80,34 +81,47 @@ if (1) {
   set boxwidth 15 * 60
   PS = 0.4
 
+  # Whiskers can represnt either 1st and 99th percentiles or min and max.
+  whisker_1_99 = 0
+
+  o0 = 3
+  o3 = 5
+  if (whisker_1_99) {
+    o1 = 2
+    o2 = 6
+  } else {
+    o1 = 1
+    o2 = 7
+  }
+
   plot \
-  CPU_STAT u (x0($1)):(column(b0+3)):(column(b0+2)):(column(b0+6)):(column(b0+5)) w candlesticks whiskerbars lc rgb C_U lw C_LW not, \
+  CPU_STAT u (x0($1)):(column(b0+o0)):(column(b0+o1)):(column(b0+o2)):(column(b0+o3)) w candlesticks whiskerbars lc rgb C_U lw C_LW not, \
   CPU_STAT u (x0($1)):(column(b0)) w p pt 7 ps PS lc rgb C_U not, \
-  CPU_STAT u (x1($1)):(column(b1+3)):(column(b1+2)):(column(b1+6)):(column(b1+5)) w candlesticks whiskerbars lc rgb C_C lw C_LW not, \
+  CPU_STAT u (x1($1)):(column(b1+o0)):(column(b0+o1)):(column(b0+o2)):(column(b0+o3)) w candlesticks whiskerbars lc rgb C_C lw C_LW not, \
   CPU_STAT u (x1($1)):(column(b1)) w p pt 7 ps PS lc rgb C_C not
 
   # candlesticks: x box_min whisker_min whisker_high box_high
 }
 
 
-# TODO: Time vs. memory usage
-if (0) {
+# Time vs. memory usage
+if (1) {
   reset
   set xdata time
   set timefmt "%H:%M:%S"
   set format x "%1H"
 
-  set xlabel "Time (hour)"
-  set ylabel "Memory usage (GB)" offset 0.5,0
-  set xtics nomirror tc rgb "black" #autofreq 0,2*3600
-  set ytics nomirror tc rgb "black"
+  set xlabel "Time (hour)" offset 0,0.2
+  set ylabel "Memory usage (GB)" offset -0.5,0
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black" format "%.1f"
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
   set lmargin LMARGIN
 
   set xrange ["00:00:00.000":TIME_MAX]
-  set yrange [0:100]
+  #set yrange [0:100]
 
   C_U = "blue"
   C_C = "red"
@@ -127,11 +141,24 @@ if (0) {
   set boxwidth 15 * 60
   PS = 0.4
 
-  plot \
-  CPU_STAT u (x0($1)):(column(b0+3)):(column(b0+2)):(column(b0+6)):(column(b0+5)) w candlesticks whiskerbars lc rgb C_U lw C_LW not, \
-  CPU_STAT u (x0($1)):(column(b0)) w p pt 7 ps PS lc rgb C_U not, \
-  CPU_STAT u (x1($1)):(column(b1+3)):(column(b1+2)):(column(b1+6)):(column(b1+5)) w candlesticks whiskerbars lc rgb C_C lw C_LW not, \
-  CPU_STAT u (x1($1)):(column(b1)) w p pt 7 ps PS lc rgb C_C not
+  # Whiskers can represnt either 1st and 99th percentiles or min and max.
+  whisker_1_99 = 0
 
-  # candlesticks: x box_min whisker_min whisker_high box_high
+  o0 = 3
+  o3 = 5
+  if (whisker_1_99) {
+    o1 = 2
+    o2 = 6
+  } else {
+    o1 = 1
+    o2 = 7
+  }
+
+  plot \
+  MEM_STAT u (x0($1)):(column(b0+o0)/1024/1024/1024):(column(b0+o1)/1024/1024/1024):(column(b0+o2)/1024/1024/1024):(column(b0+o3)/1024/1024/1024) \
+    w candlesticks whiskerbars lc rgb C_U lw C_LW not, \
+  MEM_STAT u (x0($1)):(column(b0)/1024/1024/1024) w p pt 7 ps PS lc rgb C_U not, \
+  MEM_STAT u (x1($1)):(column(b1+o0)/1024/1024/1024):(column(b0+o1)/1024/1024/1024):(column(b0+o2)/1024/1024/1024):(column(b0+o3)/1024/1024/1024) \
+    w candlesticks whiskerbars lc rgb C_C lw C_LW not, \
+  MEM_STAT u (x1($1)):(column(b1)/1024/1024/1024) w p pt 7 ps PS lc rgb C_C not
 }

@@ -1,6 +1,17 @@
 dn_base: ~/work/mutant/log/ycsb/mutant-overhead
 
 # With 10 K IOPS
-unmodified_db: 180102-233916/ycsb/180103-045616.929-d
-computation_overhead: 180103-011127/ycsb/180103-062835.306-d
-io_overhead: 180103-011200/ycsb/180103-062835.782-d
+#unmodified_db:        180102-233916/ycsb/180103-045616.929-d
+#computation_overhead: 180103-011127/ycsb/180103-062835.306-d
+#io_overhead:          180103-011200/ycsb/180103-062835.782-d
+
+# TODO: What was this?
+#180104-150130/ycsb/180104-202010.549-d.bz2
+
+# So with the computation overhead, it uses less CPU.
+#   It must have been from the unstable cloud performance, where the latter's IO overhead was somehow smaller.
+#     Still, it drives me crazy.
+#   	TODO: what if we compare the user and kernel time only? Or even the user time?
+unmodified_db:        180105-004823/ycsb/180105-081022.523-d.bz2
+computation_overhead: 180105-031211/ycsb/180105-082850.700-d.bz2
+io_overhead:          180105-031503/ycsb/180105-083222.854-d.bz2
