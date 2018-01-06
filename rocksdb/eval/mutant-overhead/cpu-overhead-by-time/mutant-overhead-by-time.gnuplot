@@ -162,3 +162,72 @@ if (1) {
     w candlesticks whiskerbars lc rgb C_C lw C_LW not, \
   MEM_STAT u (x1($1)):(column(b1)/1024/1024/1024) w p pt 7 ps PS lc rgb C_C not
 }
+
+
+# Legend for the tail latencies
+if (1) {
+  reset
+
+  set notics
+  set noborder
+  set lmargin 0
+  set rmargin 0
+  set bmargin 0
+  set tmargin 0
+
+  LW=2
+
+  if (1) {
+    xm=0.08
+    bw=0.03
+    xl=xm-bw/2
+    xr=xm+bw/2
+    yt=0.97
+    yb=yt-0.45
+    y1=yb+(yt-yb)*1/4
+    y2=yb+(yt-yb)*3/4
+
+    set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "blue"
+    set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "blue"
+    set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "blue"
+
+    # Draw the box twice (face and border) to erase the vertical line behind the box
+    set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
+    set obj rect from graph xl,y1 to graph xr,y2 fs empty border lc rgb "blue" fc rgb "blue" lw LW front
+
+    yc=(yt+yb)/2
+    set obj circle at graph xm,yc size graph .007 fs transparent solid fc rgb "blue" front
+
+    yb1=yb-0.03
+    set label "Unmodified" at graph xm,yb1 right rotate by 90 tc rgb "blue" front
+  }
+
+  if (1) {
+    xm=xm+0.06
+    xl=xm-bw/2
+    xr=xm+bw/2
+
+    set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "red"
+    set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "red"
+    set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "red"
+
+    set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
+    set obj rect from graph xl,y1 to graph xr,y2 fs empty border lc rgb "red" fc rgb "red" lw LW front
+
+    set obj circle at graph xm,yc size graph .007 fs transparent solid fc rgb "red" front
+
+    set label "Computation" at graph xm,yb1 right rotate by 90 tc rgb "red" front
+  }
+
+  if (1) {
+    xm=xm+0.05
+    set label "Max" at graph xm,yt left
+    set label "75th"  at graph xm,y2 left
+    set label "25th"    at graph xm,y1 left
+    set label "Min"    at graph xm,yb left
+    set label "Avg"     at graph xm,yc left
+  }
+
+  f(x)=x
+  plot f(x) lc rgb "white" not
+}
