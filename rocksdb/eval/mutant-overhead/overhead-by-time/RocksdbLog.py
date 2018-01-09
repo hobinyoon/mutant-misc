@@ -11,9 +11,182 @@ import Util
 
 import Conf
 
-def GenDataFileForGnuplot(dn_log_job, exp_dt):
-  lr = RocksdbLogReader(dn_log_job, exp_dt)
-  return lr.FnMetricByTime()
+def GenDataFilesForGnuplot():
+  dn_base = Conf.GetDir("dn_base")
+
+  # Analyze the number of compactions and migrations with
+  #   (a) an unmodified DB as a baseline
+  #   and (b) Mutant
+  fns_ycsb = []
+  log_readers = []
+  for db_type in ["unmodified_db", "io_overhead"]:
+    fn_ycsb = "%s/%s" % (dn_base, Conf.Get(db_type))
+    mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb)
+    dn_log = mo.group("dn_log")
+    job_id = mo.group("job_id")
+    exp_dt = mo.group("exp_dt")
+    #Cons.P(dn_log)
+    #Cons.P(job_id)
+    #Cons.P(exp_dt)
+    dn_log_job = "%s/%s" % (dn_log, job_id)
+    log_readers.append(RocksdbLogReader(dn_log_job, exp_dt))
+
+  fn_metrics_by_time_0 = log_readers[0].FnMetricByTime()
+  fn_metrics_by_time_1 = log_readers[1].FnMetricByTime()
+  fn_rdb_compmigr = _GetFnRocksdbNumCompMigrHisto(fn_metrics_by_time_0, fn_metrics_by_time_1)
+  return (fn_metrics_by_time_0, fn_metrics_by_time_1, fn_rdb_compmigr)
+
+
+def _GetFnRocksdbNumCompMigrHisto(fn0, fn1):
+  # TODO: Total number of compactions
+  # TODO: Average number of sstables per compaction
+
+
+
+  # Every hour: number of compactions, compaction-migrations, pure migrations
+  #   {fn: {hour: {sstable creation reason: cnt}}}
+  fn_h_cr_cnt = {}
+  # {fn: {hour: {migration type: cnt}}}
+  fn_h_migrtype = {}
+
+  fn_h_jobid_sstidset = {}
+  fn_jobid_sstidset = {}
+
+  for fn in [fn0, fn1]:
+    if fn not in fn_h_cr_cnt:
+      fn_h_cr_cnt[fn] = {}
+    if fn not in fn_h_migrtype:
+      fn_h_migrtype[fn] = {}
+    if fn not in fn_jobid_sstidset:
+      fn_jobid_sstidset[fn] = {}
+    if fn not in fn_h_jobid_sstidset:
+      fn_h_jobid_sstidset[fn] = {}
+    with open(fn) as fo:
+      for line in fo:
+        if line.startswith("#"):
+          continue
+        line = line.strip()
+        t = re.split(r" +", line)
+        hour = int(t[1].split(":")[0])
+        if hour not in fn_h_cr_cnt[fn]:
+          fn_h_cr_cnt[fn][hour] = {}
+        if hour not in fn_h_migrtype[fn]:
+          fn_h_migrtype[fn][hour] = {}
+        if hour not in fn_h_jobid_sstidset[fn]:
+          fn_h_jobid_sstidset[fn][hour] = {}
+        reason = t[8]
+        if reason == "R":
+          cr = "R"
+        elif reason == "F":
+          cr = "F"
+        elif reason == "C":
+          cr = "C"
+          migr_type = t[9]
+          migr_dirc = t[10]
+
+          # Single, temperature-triggered migration
+          #   The number is too high. Not sure if this is the right way to go.
+          #if migr_type == "SM":
+          #  if migr_type not in fn_h_migrtype[fn][hour]:
+          #    fn_h_migrtype[fn][hour][migr_type] = 1
+          #  else:
+          #    fn_h_migrtype[fn][hour][migr_type] += 1
+          # Compactions and compaction-migrations
+          if migr_type == "CM":
+            if migr_dirc in ["S", "F"]:
+              if "CM" not in fn_h_migrtype[fn][hour]:
+                fn_h_migrtype[fn][hour]["CM"] = 1
+              else:
+                fn_h_migrtype[fn][hour]["CM"] += 1
+
+          sst_id = int(t[6])
+          job_id = int(t[7])
+          if job_id not in fn_jobid_sstidset[fn]:
+            fn_jobid_sstidset[fn][job_id] = set()
+          fn_jobid_sstidset[fn][job_id].add(sst_id)
+          if job_id not in fn_h_jobid_sstidset[fn][hour]:
+            fn_h_jobid_sstidset[fn][hour][job_id] = set()
+          fn_h_jobid_sstidset[fn][hour][job_id].add(sst_id)
+
+        elif reason == "-":
+          continue
+        else:
+          raise RuntimeError("Unexpected: %s" % reason)
+        if cr not in fn_h_cr_cnt[fn][hour]:
+          fn_h_cr_cnt[fn][hour][cr] = 1
+        else:
+          fn_h_cr_cnt[fn][hour][cr] += 1
+
+  # Hard coded for now
+  max_hour = 10
+
+  # Number of compaction jobs
+  #Cons.P(pprint.pformat(fn_jobid_sstidset))
+  keys = ["RocksDB", "Mutant"]
+  for k in keys:
+    Cons.P("%s" % k)
+    fn = fn0 if k == "RocksDB" else fn1
+    Cons.P("  num_compactions=%d" % len(fn_jobid_sstidset[fn]))
+    # Check the number of output sstables
+    histo_num_out_sstables = {}
+    for job_id, sst_id_set in fn_jobid_sstidset[fn].iteritems():
+      if len(sst_id_set) not in histo_num_out_sstables:
+        histo_num_out_sstables[len(sst_id_set)] = 1
+      else:
+        histo_num_out_sstables[len(sst_id_set)] += 1
+    Cons.P("  num_out_ssts_per_comp_histo=%s" % histo_num_out_sstables)
+
+    for hour in range(max_hour):
+      for job_id, out_sst_id_set in fn_h_jobid_sstidset[fn][hour].iteritems():
+        if len(out_sst_id_set) == 1:
+          if "SM" not in fn_h_migrtype[fn][hour]:
+            fn_h_migrtype[fn][hour]["SM"] = 1
+          else:
+            fn_h_migrtype[fn][hour]["SM"] += 1
+
+  #Cons.P(pprint.pformat(fn_h_cr_cnt))
+
+  # The number of temperature-triggered migrations seems about right now.
+  # TODO: Check if you are counting the compaction-migrations correctly
+
+
+  fmt = "%1d" \
+      " %6d %6d %6d %6d %6d" \
+      " %10d %6d %6d %6d %6d"
+  Cons.P(Util.BuildHeader(fmt,
+    "hour" \
+    " r_num_ssts_from_flushes" \
+    " r_num_compactions" \
+    " r_num_ssts_from_compactions" \
+    " r_num_ssts_from_compaction_migrations" \
+    " r_num_ssts_from_temp_triggered_migrations" \
+    " m_num_ssts_from_flushes" \
+    " m_num_compactions" \
+    " m_num_ssts_from_compactions" \
+    " m_num_ssts_from_compaction_migrations" \
+    " m_num_ssts_from_temp_triggered_migrations" \
+    ))
+  for h in range(max_hour):
+    Cons.P(fmt % (
+        h
+        , fn_h_cr_cnt[fn0][h]["F"]
+        , len(fn_h_jobid_sstidset[fn0][h])
+        , fn_h_cr_cnt[fn0][h]["C"]
+        , (fn_h_migrtype[fn0][h]["CM"] if "CM" in fn_h_migrtype[fn0][h] else 0)
+        , (fn_h_migrtype[fn0][h]["SM"] if "SM" in fn_h_migrtype[fn0][h] else 0)
+        , fn_h_cr_cnt[fn1][h]["F"]
+        , len(fn_h_jobid_sstidset[fn1][h])
+        , fn_h_cr_cnt[fn1][h]["C"]
+        , (fn_h_migrtype[fn1][h]["CM"] if "CM" in fn_h_migrtype[fn1][h] else 0)
+        , (fn_h_migrtype[fn1][h]["SM"] if "SM" in fn_h_migrtype[fn1][h] else 0)
+        ))
+
+  sys.exit(1)
+  fn_out = "%s/rocksdb-sst-creation-cnt-by-reasons-by-time" % Conf.GetOutDir()
+  with open(fn_out, "w") as fo:
+    fo.write("\n")
+  Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+  return fn_out
 
 
 class RocksdbLogReader:
@@ -371,14 +544,14 @@ class CompInfo:
     job_id_set = False
     #Cons.P("%s %s %d" % (line, in_sst_ids, len(CompInfo.insstids_compinfo)))
     for k, ci in CompInfo.insstids_compinfo.iteritems():
-      #Cons.P("  %s" % ci.in_sst_ids)
+      #Cons.P("ci.in_sst_ids=%s" % ci.in_sst_ids)
       if ci.Included(in_sst_ids):
         ci.job_id = job_id
         CompInfo.jobid_compinfo[job_id] = ci
         job_id_set = True
         break
     if not job_id_set:
-      raise RuntimeError("Unexpected")
+      raise RuntimeError("Can't set job_id %d in_sst_ids=%s" % (job_id, in_sst_ids))
 
   def __init__(self, j1):
     self.in_sstid_pathid = {}
