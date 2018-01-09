@@ -21,13 +21,15 @@ import YcsbLog
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
 
-  PlotCpuOverheadByTime()
+  PlotOverheadByTime()
 
     
-def PlotCpuOverheadByTime():
+def PlotOverheadByTime():
+  (fn_rocksdb0, fn_rocksdb1) = _GetFnRocksDB()
+  # TODO
+  sys.exit(0)
   fn_cpu_stat_by_time = _GetFnCpuOverhead()
   fn_mem_stat_by_time = _GetFnMemOverhead()
-  fn_rocksdb = _GetFnRocksDB()
   #time_max = "09:00:00"
   time_max = "08:00:00"
   fn_out = "%s/mutant-overhead.pdf" % Conf.GetOutDir()
@@ -37,7 +39,8 @@ def PlotCpuOverheadByTime():
     env["TIME_MAX"] = str(time_max)
     env["CPU_STAT"] = fn_cpu_stat_by_time
     env["MEM_STAT"] = fn_mem_stat_by_time
-    env["ROCKSDB"] = fn_rocksdb
+    env["ROCKSDB0"] = fn_rocksdb0
+    env["ROCKSDB1"] = fn_rocksdb1
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/mutant-overhead-by-time.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
@@ -45,17 +48,29 @@ def PlotCpuOverheadByTime():
 
 def _GetFnRocksDB():
   dn_base = Conf.GetDir("dn_base")
+
   fn_ycsb_0 = "%s/%s" % (dn_base, Conf.Get("unmodified_db"))
   mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb_0)
   dn_log = mo.group("dn_log")
-  job_id = mo.group("job_id")
-  exp_dt = mo.group("exp_dt")
+  job_id0 = mo.group("job_id")
+  exp_dt0 = mo.group("exp_dt")
   #Cons.P(dn_log)
-  #Cons.P(job_id)
-  #Cons.P(exp_dt)
+  #Cons.P(job_id0)
+  #Cons.P(exp_dt0)
+  dn_log_job0 = "%s/%s" % (dn_log, job_id0)
 
-  dn_log_job = "%s/%s" % (dn_log, job_id)
-  return RocksdbLog.GenDataFileForGnuplot(dn_log_job, exp_dt)
+  fn_ycsb_1 = "%s/%s" % (dn_base, Conf.Get("io_overhead"))
+  mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb_1)
+  dn_log = mo.group("dn_log")
+  job_id1 = mo.group("job_id")
+  exp_dt1 = mo.group("exp_dt")
+  dn_log_job1 = "%s/%s" % (dn_log, job_id1)
+
+  # TODO: Make 2 rocksdb log files from 2 separate instances of RocksdbLog.RocksdbLogReader.
+  #   That should be easier for plotting.
+  #   TODO: The baseline one is for comparison. You may or may not need it for the plotting.
+
+  return (RocksdbLog.GenDataFileForGnuplot(dn_log_job0, exp_dt0), RocksdbLog.GenDataFileForGnuplot(dn_log_job1, exp_dt1))
 
 
 def _GetFnCpuOverhead():
