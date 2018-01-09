@@ -22,7 +22,10 @@ class RocksdbLogReader:
     if os.path.isfile(self.fn_out):
       return
 
-    SstEvents.SetExpBeginDt(exp_dt)
+    # These classes are not thread-safe. Fine for now.
+    SstEvents.Init(exp_dt)
+    HowCreated.Init()
+    CompInfo.Init()
 
     with Cons.MT("Generating rocksdb time-vs-metrics file for plot ..."):
       fn_log_rocksdb = "%s/rocksdb/%s" % (dn_log_job, exp_dt)
@@ -122,8 +125,16 @@ class SstEvents:
   migrate_sstables = None
 
   @staticmethod
-  def SetExpBeginDt(exp_begin_dt):
+  def Init(exp_begin_dt):
     SstEvents.exp_begin_dt = datetime.datetime.strptime(exp_begin_dt, "%y%m%d-%H%M%S.%f")
+    SstEvents.sstid_size = {}
+    SstEvents.cur_sstsize = 0
+    SstEvents.cur_numssts = 0
+    SstEvents.ts_sstsize = {}
+    SstEvents.ts_numssts = {}
+    SstEvents.sstid_createts = {}
+    SstEvents.createts_sstid = {}
+    SstEvents.migrate_sstables = None
 
   @staticmethod
   def Created(line):
@@ -142,8 +153,7 @@ class SstEvents:
     sst_size = int(j1["file_size"])
     sst_id = int(j1["file_number"])
 
-    ts0 = mo.group("ts")
-    ts1 = SstEvents._GetRelTs(ts0)
+    ts1 = SstEvents._GetRelTs(mo.group("ts"))
 
     SstEvents.sstid_size[sst_id] = sst_size
     SstEvents.cur_sstsize += sst_size
@@ -154,6 +164,7 @@ class SstEvents:
 
     SstEvents.sstid_createts[sst_id] = ts1
     SstEvents.createts_sstid[ts1] = sst_id
+
     if SstEvents.migrate_sstables:
       HowCreated.Add(sst_id, j1)
 
@@ -200,7 +211,7 @@ class SstEvents:
         if SstEvents.migrate_sstables:
           if ts in SstEvents.createts_sstid:
             sst_id = SstEvents.createts_sstid[ts]
-            hc = HowCreated.Get(SstEvents.createts_sstid[ts])
+            hc = HowCreated.Get(sst_id)
             job_id = hc.JobId()
             creation_reason = hc.Reason()
             if creation_reason == "C":
@@ -228,6 +239,10 @@ class SstEvents:
 # How an SSTable was created
 class HowCreated:
   sstid_howcreated = {}
+
+  @staticmethod
+  def Init():
+    HowCreated.sstid_howcreated = {}
 
   @staticmethod
   def Add(sst_id, j1):
@@ -280,6 +295,12 @@ class CompInfo:
   jobid_compinfo = {}
   insstids_compinfo = {}
   insstid_compinfo = {}
+
+  @staticmethod
+  def Init():
+    CompInfo.jobid_compinfo = {}
+    CompInfo.insstids_compinfo = {}
+    CompInfo.insstid_compinfo = {}
 
   @staticmethod
   def Add(line):
