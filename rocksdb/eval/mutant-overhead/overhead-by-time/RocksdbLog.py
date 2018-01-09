@@ -50,6 +50,7 @@ class RocksdbLogReader:
               raise RuntimeError("Unexpected: [%s]" % line)
             self.migrate_sstables = (mo.group("v") == "1")
             SstEvents.migrate_sstables = self.migrate_sstables
+            HowCreated.migrate_sstables = self.migrate_sstables
 
           # 2017/10/13-20:41:54.872056 7f604a7e4700 EVENT_LOG_v1 {"time_micros": 1507927314871238, "cf_name": "usertable", "job": 3, "event":
           # "table_file_creation", "file_number": 706, "file_size": 258459599, "path_id": 0, "table_properties": {"data_size": 256772973, "index_size": 1685779,
@@ -165,8 +166,7 @@ class SstEvents:
     SstEvents.sstid_createts[sst_id] = ts1
     SstEvents.createts_sstid[ts1] = sst_id
 
-    if SstEvents.migrate_sstables:
-      HowCreated.Add(sst_id, j1)
+    HowCreated.Add(sst_id, j1)
 
   @staticmethod
   def Deleted(ts0, sst_id):
@@ -208,12 +208,12 @@ class SstEvents:
         creation_reason = "-"
         migr_type = "-"
         migr_direction = "-"
-        if SstEvents.migrate_sstables:
-          if ts in SstEvents.createts_sstid:
-            sst_id = SstEvents.createts_sstid[ts]
-            hc = HowCreated.Get(sst_id)
-            job_id = hc.JobId()
-            creation_reason = hc.Reason()
+        if ts in SstEvents.createts_sstid:
+          sst_id = SstEvents.createts_sstid[ts]
+          hc = HowCreated.Get(sst_id)
+          job_id = hc.JobId()
+          creation_reason = hc.Reason()
+          if SstEvents.migrate_sstables:
             if creation_reason == "C":
               (migr_type, migr_direction) = CompInfo.MigrType(job_id, sst_id)
 
@@ -239,10 +239,12 @@ class SstEvents:
 # How an SSTable was created
 class HowCreated:
   sstid_howcreated = {}
+  migrate_sstables = None
 
   @staticmethod
   def Init():
     HowCreated.sstid_howcreated = {}
+    HowCreated.migrate_sstables = None
 
   @staticmethod
   def Add(sst_id, j1):
@@ -265,11 +267,12 @@ class HowCreated:
       raise RuntimeError("Unexpected: %s" % reason)
 
     self.job_id = int(j1["job"])
-    if self.reason == "C":
-      self.comp_info = CompInfo.Get(self.job_id)
-      self.comp_info.AddOutSstId(self.sst_id)
-    else:
-      self.comp_info = None
+    self.comp_info = None
+
+    if HowCreated.migrate_sstables:
+      if self.reason == "C":
+        self.comp_info = CompInfo.Get(self.job_id)
+        self.comp_info.AddOutSstId(self.sst_id)
 
   def __repr__(self):
     return " ".join("%s=%s" % item for item in sorted(vars(self).items()))
