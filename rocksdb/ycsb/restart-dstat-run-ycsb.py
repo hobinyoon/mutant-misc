@@ -320,7 +320,7 @@ class ProcMon:
     Util.RunSubp(cmd)
 
     while True:
-      Util.RunSubp("%s/java-ycsb-statm.sh %s" % (os.path.dirname(__file__), fn_out), print_cmd=False)
+      Util.RunSubp("%s/java-ycsb-statm.sh %s || true" % (os.path.dirname(__file__), fn_out), print_cmd=False)
       # Wait for up to 1 sec
       with ProcMon.stop_requested_cv:
         ProcMon.stop_requested_cv.wait(1)
