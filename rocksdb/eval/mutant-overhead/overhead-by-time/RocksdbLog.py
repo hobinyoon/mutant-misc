@@ -247,37 +247,26 @@ class RocksdbLogReader:
 
           # 2018/01/01-05:33:49.183505 7f97d0ff1700 EVENT_LOG_v1 {"time_micros": 1514784829183496, "job": 6, "event": "table_file_deletion", "file_number": 21}
           elif "\"event\": \"table_file_deletion\"" in line:
-            mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .+EVENT_LOG_v1 (?P<json>.+)", line)
-            if mo is None:
-              raise RuntimeError("Unexpected: [%s]" % line)
-            j = mo.group("json")
-            try:
-              j1 = json.loads(j)
-            except ValueError as e:
-              Cons.P("%s [%s]" % (e, line))
-              sys.exit(1)
-
-            sst_id = int(j1["file_number"])
-            SstEvents.Deleted(mo.group("ts"), sst_id)
+            SstEvents.Deleted(line)
 
           # Figure out how an SSTable is created
           # (a) start building CompInfo
           # 2018/01/05-08:40:21.078219 7fd13ffff700 EVENT_LOG_v1 {"time_micros": 1515141621078214, "mutant_sst_compaction_migration": {"in_sst": "(sst_id=16
           # temp=57.345 level=0 path_id=0 size=258423184 age=30) (sst_id=13 temp=3738.166 level=0 path_id=1 size=118885 age=440)", "out_sst_path_id": 1,
           # "temp_triggered_single_sst_compaction": 1}}
-          elif "mutant_sst_compaction_migration" in line:
-            if not self.migrate_sstables:
-              continue
-            CompInfo.Add(line)
+          #
+          # Some SSTables are created without this log, meaning not going through _CalcOutputPathId(). Use the other one.
+          #elif "mutant_sst_compaction_migration" in line:
+          #  if not self.migrate_sstables:
+          #    continue
+          #  CompInfo.Add(line)
 
-          # (b) Assign job_id to CompInfo
-          # We parse this just because there are multiple files_L0 and json would probably not be able to parse it
-          # 2018/01/05-08:40:21.078303 7fd13ffff700 EVENT_LOG_v1 {"time_micros": 1515141621078294, "job": 5, "event": "compaction_started", "files_L0": [16,
-          # 13], "files_L0": [16, 13], "score": 0, "input_data_size": 517084138}
+          # Build CompInfo
+          #   We manually parse this just because there are multiple keys with "files_L0" and json would probably not be able to parse it
+          #   2018/01/05-08:40:21.078303 7fd13ffff700 EVENT_LOG_v1 {"time_micros": 1515141621078294, "job": 5, "event": "compaction_started", "files_L0": [16,
+          #   13], "files_L0": [16, 13], "score": 0, "input_data_size": 517084138}
           elif "compaction_started" in line:
-            if not self.migrate_sstables:
-              continue
-            CompInfo.AssociateJobId(line)
+            CompInfo.SetCompStarted(line)
 
           # (c) Assign out_sst_info to CompInfo using job_id. It is done when parsing table_file_creation above.
 
@@ -355,10 +344,23 @@ class SstEvents:
     HowCreated.Add(sst_id, j1)
 
   @staticmethod
-  def Deleted(ts0, sst_id):
+  def Deleted(line):
+    mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .+EVENT_LOG_v1 (?P<json>.+)", line)
+    if mo is None:
+      raise RuntimeError("Unexpected: [%s]" % line)
+    j = mo.group("json")
+    try:
+      j1 = json.loads(j)
+    except ValueError as e:
+      Cons.P("%s [%s]" % (e, line))
+      sys.exit(1)
+
+    ts0 = mo.group("ts")
+    sst_id = int(j1["file_number"])
+
     ts1 = SstEvents._GetRelTs(ts0)
     if sst_id not in SstEvents.sstid_size:
-      Cons.P("Interesting. sst (id %d) deleted without a creation. Ignore." % sst_id)
+      Cons.P("Interesting: Sst (id %d) deleted without a creation. Ignore." % sst_id)
       return
     SstEvents.cur_sstsize -= SstEvents.sstid_size[sst_id]
     SstEvents.cur_numssts -= 1
@@ -438,6 +440,9 @@ class HowCreated:
   @staticmethod
   def Add(sst_id, j1):
     HowCreated.sstid_howcreated[sst_id] = HowCreated(j1)
+    # TODO
+    #if sst_id == 155:
+    #  Cons.P(HowCreated.sstid_howcreated[sst_id])
 
   def __init__(self, j1):
     self.sst_id = int(j1["file_number"])
@@ -456,12 +461,16 @@ class HowCreated:
       raise RuntimeError("Unexpected: %s" % reason)
 
     self.job_id = int(j1["job"])
+    # TODO: Do you need this?
     self.comp_info = None
 
     if HowCreated.migrate_sstables:
       if self.reason == "C":
-        self.comp_info = CompInfo.Get(self.job_id)
-        self.comp_info.AddOutSstId(self.sst_id)
+        # TODO: self.comp_info needed?
+        self.comp_info = CompInfo.AddOutSstInfo(self.job_id, j1)
+
+        # TODO
+        #self.comp_info = CompInfo.Get(self.job_id)
 
   def __repr__(self):
     return " ".join("%s=%s" % item for item in sorted(vars(self).items()))
@@ -483,8 +492,11 @@ class HowCreated:
     return self.job_id
 
 
+# TODO: All I need is what kind of compaction it was: pure compaction, compaction-migration, or migration.
 class CompInfo:
   jobid_compinfo = {}
+
+  # TODO: why do you need this?
   insstids_compinfo = {}
   insstid_compinfo = {}
 
@@ -495,27 +507,77 @@ class CompInfo:
     CompInfo.insstid_compinfo = {}
 
   @staticmethod
-  def Add(line):
-    mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .+EVENT_LOG_v1 (?P<json>.+)", line)
-    if mo is None:
-      raise RuntimeError("Unexpected: [%s]" % line)
-    j = mo.group("json")
-    try:
-      j1 = json.loads(j)
-    except ValueError as e:
-      Cons.P("%s [%s]" % (e, line))
-      sys.exit(1)
+  def AddOutSstInfo(job_id, j1):
+    if job_id not in CompInfo.jobid_compinfo:
+      raise RuntimeError("Unexpected")
+    ci = CompInfo.jobid_compinfo[job_id]
+    ci._AddOutSstInfo(j1)
 
-    # "in_sst": "(sst_id=61 temp=-1.000 level=0 path_id=0 size=258426536 age=0) (sst_id=51 temp=1621.734 level=0 path_id=0 size=67554476 age=373) (sst_id=52
-    # temp=1595.033 level=0 path_id=0 size=67554678 age=372) (sst_id=53 temp=1545.246 level=0 path_id=0 size=55755263 age=371)"
-    ci = CompInfo(j1)
-    #Cons.P(ci)
-    CompInfo.insstids_compinfo[ci.in_sstid_str] = ci
-    for sst_id in ci.in_sst_ids:
-      CompInfo.insstid_compinfo[sst_id] = ci
+  def _AddOutSstInfo(self, j1):
+    osi = OutSstInfo(j1)
+    self.out_ssts[osi.sst_id] = osi
+    #Cons.P(j1)
+    #Cons.P(self)
+
+
+  #@staticmethod
+  #def Add(line):
+  #  mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .+EVENT_LOG_v1 (?P<json>.+)", line)
+  #  if mo is None:
+  #    raise RuntimeError("Unexpected: [%s]" % line)
+  #  j = mo.group("json")
+  #  try:
+  #    j1 = json.loads(j)
+  #  except ValueError as e:
+  #    Cons.P("%s [%s]" % (e, line))
+  #    sys.exit(1)
+
+  #  # "in_sst": "(sst_id=61 temp=-1.000 level=0 path_id=0 size=258426536 age=0) (sst_id=51 temp=1621.734 level=0 path_id=0 size=67554476 age=373) (sst_id=52
+  #  # temp=1595.033 level=0 path_id=0 size=67554678 age=372) (sst_id=53 temp=1545.246 level=0 path_id=0 size=55755263 age=371)"
+  #  ci = CompInfo(j1)
+  #  #Cons.P(ci)
+  #  CompInfo.insstids_compinfo[ci.in_sstid_str] = ci
+  #  for sst_id in ci.in_sst_ids:
+  #    CompInfo.insstid_compinfo[sst_id] = ci
 
   @staticmethod
-  def AssociateJobId(line):
+  def SetCompStarted(line):
+    ci = CompInfo(line)
+    if ci.job_id in CompInfo.jobid_compinfo:
+      raise RuntimeError("Unexpected")
+    CompInfo.jobid_compinfo[ci.job_id] = ci
+
+    # TODO: clean up
+    #job_id_set = False
+    ##Cons.P("%s %s %d" % (line, in_sst_ids, len(CompInfo.insstids_compinfo)))
+    #for k, ci in CompInfo.insstids_compinfo.iteritems():
+    #  #Cons.P("ci.in_sst_ids=%s" % ci.in_sst_ids)
+    #  if ci.Included(in_sst_ids):
+    #    ci.job_id = job_id
+    #    CompInfo.jobid_compinfo[job_id] = ci
+    #    job_id_set = True
+    #    break
+    #if not job_id_set:
+    #  # TODO
+    #  for k, v in CompInfo.insstids_compinfo.iteritems():
+    #    if "155" in k:
+    #      Cons.P(pprint.pformat(CompInfo.insstids_compinfo[k]))
+    #    if "192" in k:
+    #      Cons.P(pprint.pformat(CompInfo.insstids_compinfo[k]))
+
+    #  #Cons.P(pprint.pformat(CompInfo.insstids_compinfo))
+    #  raise RuntimeError("Can't set job_id %d in_sst_ids=%s line=[%s]" % (job_id, in_sst_ids, line))
+
+  # 2017/10/13-20:41:54.872056 7f604a7e4700 EVENT_LOG_v1 {"time_micros": 1507927314871238, "cf_name": "usertable", "job": 3, "event":
+  # "table_file_creation", "file_number": 706, "file_size": 258459599, "path_id": 0, "table_properties": {"data_size": 256772973, "index_size": 1685779,
+  # "filter_size": 0, "raw_key_size": 6767934, "raw_average_key_size": 30, "raw_value_size": 249858360, "raw_average_value_size": 1140,
+  # "num_data_blocks": 54794, "num_entries": 219174, "filter_policy_name": "", "reason": kFlush, "kDeletedKeys": "0", "kMergeOperands": "0"}}
+  def __init__(self, line):
+    # {out_sst_id: path_id}
+    self.out_ssts = {}
+
+    #Cons.P("** %s" % line)
+
     # Make sure values with duplicated keys such as files_L0 are the same.
     #   From level 0 to level 9. Should be enough.
     #     You can't start from 0 and stop when it stops. Some starts with 1 skipping 0.
@@ -544,72 +606,64 @@ class CompInfo:
       Cons.P("%s [%s]" % (e, line))
       sys.exit(1)
 
-    # TODO: Exact match is supposed to be done here. Was going to used the merged sstable ID string.
+    # Exact match is supposed to be done here. Was going to used the merged sstable ID string.
     #   But some grandparent SSTables were missing.
     #     While fixing the error, work with the old ones by doing an inclusion test instead.
-    in_sst_ids = set()
+    self.in_sst_ids = set()
     for i in range(10):
       k = "files_L%d" % i
       if k not in j1:
         continue
       #Cons.P(j1[k])
       for sst_id in j1[k]:
-        in_sst_ids.add(sst_id)
+        self.in_sst_ids.add(sst_id)
 
-    job_id = int(j1["job"])
-    job_id_set = False
-    #Cons.P("%s %s %d" % (line, in_sst_ids, len(CompInfo.insstids_compinfo)))
-    for k, ci in CompInfo.insstids_compinfo.iteritems():
-      #Cons.P("ci.in_sst_ids=%s" % ci.in_sst_ids)
-      if ci.Included(in_sst_ids):
-        ci.job_id = job_id
-        CompInfo.jobid_compinfo[job_id] = ci
-        job_id_set = True
-        break
-    if not job_id_set:
-      raise RuntimeError("Can't set job_id %d in_sst_ids=%s" % (job_id, in_sst_ids))
+    self.job_id = int(j1["job"])
 
-  def __init__(self, j1):
-    self.in_sstid_pathid = {}
-    self.in_sst_ids = set()
+    #Cons.P(self)
 
-    for l1 in j1["mutant_sst_compaction_migration"]["in_sst"].split(") ("):
-      mo = re.match(r"\(?sst_id=(?P<sst_id>\d+).*path_id=(?P<path_id>\d+).*", l1)
-      if mo is None:
-        raise RuntimeError("Unexpected: [%s]" % l1)
-      sst_id = int(mo.group("sst_id"))
-      path_id = int(mo.group("path_id"))
-      #Cons.P("%d %d" % (sst_id, path_id))
-      self.in_sstid_pathid[sst_id] = path_id
-      self.in_sst_ids.add(sst_id)
-    if len(self.in_sst_ids) == 0:
-      raise RuntimeError("Unexpected")
-    elif len(self.in_sst_ids) == 1:
-      self.migr_type = "SM"
-    else:
-      self.migr_type = "CM"
-    self.in_sstid_str = " ".join(str(i) for i in sorted(self.in_sst_ids))
-    #Cons.P(self.in_sstid_pathid)
-    #Cons.P(self.in_sst_ids)
-    #Cons.P(self.in_sstid_str)
-
-    self.out_path_id = int(j1["mutant_sst_compaction_migration"]["out_sst_path_id"])
-
-    # temp_triggered_single_sst_compaction is not accurate for some reason.
-    #     There are temp_triggered_single_sst_compaction=0 and single SSTable compactions.
-    #     There are temp_triggered_single_sst_compaction=1 and multiple SSTable compactions.
-    #   Ignore it for now. Must be because there has been changed between the flag was set and when a compaction is made.
-    # Use the number of SSTables to determine if it's a pure migration or a compaction-migration
-    #   The classification may not be 100% accurate, it should be more than 95% accurate since the trivial moves without Mutant were super rare.
-
-    # Constructed later
-    self.job_id = None
-
-    # {Output SSTable ID: migration direction}
-    #   Migration direction: (S)to slow, (F)to fast, (-)no change
-    #   We assign assign these proportional to the number of hot and cold InSsts
-    #   The number of output SSTables is not always the same as the number of input SSTables because of duplicated keys.
-    self.out_sstid_migrdir = {}
+    # TODO: use temp_triggered_single_sst_compaction later
+#    self.in_sstid_pathid = {}
+#    self.in_sst_ids = set()
+#
+#    for l1 in j1["mutant_sst_compaction_migration"]["in_sst"].split(") ("):
+#      mo = re.match(r"\(?sst_id=(?P<sst_id>\d+).*path_id=(?P<path_id>\d+).*", l1)
+#      if mo is None:
+#        raise RuntimeError("Unexpected: [%s]" % l1)
+#      sst_id = int(mo.group("sst_id"))
+#      path_id = int(mo.group("path_id"))
+#      #Cons.P("%d %d" % (sst_id, path_id))
+#      self.in_sstid_pathid[sst_id] = path_id
+#      self.in_sst_ids.add(sst_id)
+#    if len(self.in_sst_ids) == 0:
+#      raise RuntimeError("Unexpected")
+#    # TODO: fix this one. You can rely on temp_triggered_single_sst_compaction now
+#    elif len(self.in_sst_ids) == 1:
+#      self.migr_type = "SM"
+#    else:
+#      self.migr_type = "CM"
+#    self.in_sstid_str = " ".join(str(i) for i in sorted(self.in_sst_ids))
+#    #Cons.P(self.in_sstid_pathid)
+#    #Cons.P(self.in_sst_ids)
+#    #Cons.P(self.in_sstid_str)
+#
+#    self.out_path_id = int(j1["mutant_sst_compaction_migration"]["out_sst_path_id"])
+#
+#    # temp_triggered_single_sst_compaction is not accurate for some reason.
+#    #     There are temp_triggered_single_sst_compaction=0 and single SSTable compactions.
+#    #     There are temp_triggered_single_sst_compaction=1 and multiple SSTable compactions.
+#    #   Ignore it for now. Must be because there has been changed between the flag was set and when a compaction is made.
+#    # Use the number of SSTables to determine if it's a pure migration or a compaction-migration
+#    #   The classification may not be 100% accurate, it should be more than 95% accurate since the trivial moves without Mutant were super rare.
+#
+#    # A job_id will be assigned later
+#    self.job_id = None
+#
+#    # {Output SSTable ID: migration direction}
+#    #   Migration direction: (S)to slow, (F)to fast, (-)no change
+#    #   We assign assign these proportional to the number of hot and cold InSsts
+#    #   The number of output SSTables is not always the same as the number of input SSTables because of duplicated keys.
+#    self.out_sstid_migrdir = {}
 
   def __repr__(self):
     return " ".join("%s=%s" % item for item in sorted(vars(self).items()))
@@ -624,49 +678,63 @@ class CompInfo:
   def Get(job_id):
     return CompInfo.jobid_compinfo[job_id]
 
-  def AddOutSstId(self, out_sst_id):
-    # We don't know the migration direction at this point
-    self.out_sstid_migrdir[out_sst_id] = None
-
   @staticmethod
   def CalcMigrDirections():
     for k, ci in CompInfo.jobid_compinfo.iteritems():
       ci._CalcMigrDirections()
 
   def _CalcMigrDirections(self):
-    #Cons.P(self.in_sstid_pathid)
-    #Cons.P(self.out_path_id)
-    #Cons.P(self.out_sstid_migrdir)
+    #Cons.P(self)
 
     # In storage 0 and 1: fast and slow
-    total_in_sst_size = [0, 0]
-    for sst_id in self.in_sstid_pathid:
-      hc = HowCreated.Get(sst_id)
-      total_in_sst_size[hc.PathId()] += hc.Size()
-    in_sst0_size_ratio = float(total_in_sst_size[0]) / sum(total_in_sst_size)
+    total_in_sst_sizes = [0, 0]
+    for in_sst_id in self.in_sst_ids:
+      hc = HowCreated.Get(in_sst_id)
+      total_in_sst_sizes[hc.PathId()] += hc.Size()
+    in_sst0_size_ratio = float(total_in_sst_sizes[0]) / sum(total_in_sst_sizes)
+    #Cons.P("total_in_sst_sizes=%s in_sst0_size_ratio=%d" % (total_in_sst_sizes, in_sst0_size_ratio))
 
-    l = len(self.out_sstid_migrdir)
+    # self.out_ssts={13: how_created=None migr_dirc=None path_id=1 sst_id=13}
+    l = len(self.out_ssts)
     i = 0
-    for sst_id, migrdir in sorted(self.out_sstid_migrdir.iteritems()):
+    for out_sst_id, v in sorted(self.out_ssts.iteritems()):
       i += 1
-      # in_path_id: what would have been the in_path_id based on the input SSTables' info
+      # path_id_before: what the output SSTable's path_id would have been. It is for assigning the migration direction.
+      #   It is calculated based on the input SSTables' path_ids.
       if (i / l) <= in_sst0_size_ratio:
-        in_path_id = 0
+        path_id_before = 0
       else:
-        in_path_id = 1
-      if in_path_id == self.out_path_id:
-        self.out_sstid_migrdir[sst_id] = "N"
-      else:
-        if self.out_path_id == 0:
-          self.out_sstid_migrdir[sst_id] = "F"
-        else:
-          self.out_sstid_migrdir[sst_id] = "S"
-    #Cons.P(self)
+        path_id_before = 1
+      v.SetMigrDirc(path_id_before)
 
   @staticmethod
   def MigrType(job_id, out_sst_id):
     ci = CompInfo.jobid_compinfo[job_id]
     return (ci.migr_type, ci.out_sstid_migrdir[out_sst_id])
+
+
+class OutSstInfo:
+  def __init__(self, j1):
+    self.sst_id = j1["file_number"]
+    self.path_id = j1["path_id"]
+
+    # Created from a pure compaction, compaction-migration, or migration.
+    self.how_created = None
+
+    # Migration direction
+    self.migr_dirc = None
+
+  def SetMigrDirc(self, path_id_before):
+    if path_id_before == self.path_id:
+      self.migr_dirc = "N"
+    else:
+      if self.path_id == 0:
+        self.migr_dirc = "F"
+      else:
+        self.migr_dirc = "S"
+
+  def __repr__(self):
+    return " ".join("%s=%s" % item for item in sorted(vars(self).items()))
 
 
 def _ToStr(td):
