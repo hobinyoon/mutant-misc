@@ -9,9 +9,12 @@ dn_base: ~/work/mutant/log/ycsb/mutant-overhead
 #   It must have been from the unstable cloud performance, where the latter's IO overhead was somehow smaller.
 #     It drives me crazy.
 #     Tried user time only and user+kernel, but none of them looked good.
-unmodified_db:        180105-004823/ycsb/180105-081022.523-d.bz2
-computation_overhead: 180105-031211/ycsb/180105-082850.700-d.bz2
-io_overhead:          180105-031503/ycsb/180105-083222.854-d.bz2
+unmodified_db:        1/180105-004823/ycsb/180105-081022.523-d
+computation_overhead: 1/180105-031211/ycsb/180105-082850.700-d
+#io_overhead:          1/180105-031503/ycsb/180105-083222.854-d
+
+#io_overhead:          cost-slo-epsilon/180117-181337/ycsb/180117-232324.094-d
+io_overhead:          cost-slo-epsilon/180117-181400/ycsb/180117-232324.310-d
 
 # These 2 included grandparents for calculating the output sstable path id, which turned out to be wrong.
 #io_overhead:          180108-185724/ycsb/180109-050525.028-d.bz2

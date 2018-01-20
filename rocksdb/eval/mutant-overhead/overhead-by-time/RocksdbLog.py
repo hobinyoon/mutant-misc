@@ -124,9 +124,10 @@ def _GetFnRocksdbNumCompMigrHisto(fn0, fn1):
   #Cons.P(pprint.pformat(fn_jobid_sstidset))
   keys = ["RocksDB", "Mutant"]
   for k in keys:
-    Cons.P("%s" % k)
     fn = fn0 if k == "RocksDB" else fn1
-    Cons.P("  num_compactions=%d" % len(fn_jobid_sstidset[fn]))
+    Cons.P("# %s" % k)
+    Cons.P("#   %s" % fn)
+    Cons.P("#   num_compactions=%d" % len(fn_jobid_sstidset[fn]))
     # Check the number of output sstables
     histo_num_out_sstables = {}
     for job_id, sst_id_set in fn_jobid_sstidset[fn].iteritems():
@@ -134,7 +135,7 @@ def _GetFnRocksdbNumCompMigrHisto(fn0, fn1):
         histo_num_out_sstables[len(sst_id_set)] = 1
       else:
         histo_num_out_sstables[len(sst_id_set)] += 1
-    Cons.P("  num_out_ssts_per_comp_histo=%s" % histo_num_out_sstables)
+    Cons.P("#   num_out_ssts_per_comp_histo=%s" % histo_num_out_sstables)
 
     for hour in range(max_hour):
       for job_id, out_sst_id_set in fn_h_jobid_sstidset[fn][hour].iteritems():
@@ -150,33 +151,45 @@ def _GetFnRocksdbNumCompMigrHisto(fn0, fn1):
   # TODO: Check if you are counting the compaction-migrations correctly
 
 
+  Cons.P("#")
+  Cons.P("# ossts: output sstables")
+  Cons.P("#")
+
   fmt = "%1d" \
-      " %6d %6d %6d %6d %6d" \
-      " %10d %6d %6d %6d %6d"
+      " %4d %4d %4d %5.2f %4d %4d" \
+      " %8d %4d %4d %5.2f %4d %4d"
   Cons.P(Util.BuildHeader(fmt,
     "hour" \
-    " r_num_ssts_from_flushes" \
-    " r_num_compactions" \
-    " r_num_ssts_from_compactions" \
-    " r_num_ssts_from_compaction_migrations" \
-    " r_num_ssts_from_temp_triggered_migrations" \
-    " m_num_ssts_from_flushes" \
-    " m_num_compactions" \
-    " m_num_ssts_from_compactions" \
-    " m_num_ssts_from_compaction_migrations" \
-    " m_num_ssts_from_temp_triggered_migrations" \
+    " r_flushes" \
+    " r_comps" \
+    " r_ossts_comps" \
+    " r_ossts_per_comps" \
+    " r_ossts_comp_migrs" \
+    " r_ossts_single_migrs" \
+    " m_ossts_flushes" \
+    " m_comps" \
+    " m_ossts_comps" \
+    " m_ossts_per_comps" \
+    " m_ossts_comp_migrs" \
+    " m_ossts_single_migrs" \
     ))
   for h in range(max_hour):
+    # Mutant. Number of compactions not counting migrations.
+    m_comps = len(fn_h_jobid_sstidset[fn1][h]) - (fn_h_migrtype[fn1][h]["SM"] if "SM" in fn_h_migrtype[fn1][h] else 0)
+
     Cons.P(fmt % (
         h
         , fn_h_cr_cnt[fn0][h]["F"]
         , len(fn_h_jobid_sstidset[fn0][h])
         , fn_h_cr_cnt[fn0][h]["C"]
+        , (float(fn_h_cr_cnt[fn0][h]["C"]) / len(fn_h_jobid_sstidset[fn0][h]))
         , (fn_h_migrtype[fn0][h]["CM"] if "CM" in fn_h_migrtype[fn0][h] else 0)
         , (fn_h_migrtype[fn0][h]["SM"] if "SM" in fn_h_migrtype[fn0][h] else 0)
+
         , fn_h_cr_cnt[fn1][h]["F"]
-        , len(fn_h_jobid_sstidset[fn1][h])
+        , m_comps
         , fn_h_cr_cnt[fn1][h]["C"]
+        , (float(fn_h_cr_cnt[fn1][h]["C"]) / len(fn_h_jobid_sstidset[fn1][h]))
         , (fn_h_migrtype[fn1][h]["CM"] if "CM" in fn_h_migrtype[fn1][h] else 0)
         , (fn_h_migrtype[fn1][h]["SM"] if "SM" in fn_h_migrtype[fn1][h] else 0)
         ))
@@ -344,6 +357,9 @@ class SstEvents:
   @staticmethod
   def Deleted(ts0, sst_id):
     ts1 = SstEvents._GetRelTs(ts0)
+    if sst_id not in SstEvents.sstid_size:
+      Cons.P("Interesting. sst (id %d) deleted without a creation. Ignore." % sst_id)
+      return
     SstEvents.cur_sstsize -= SstEvents.sstid_size[sst_id]
     SstEvents.cur_numssts -= 1
     SstEvents.ts_sstsize[ts1] = SstEvents.cur_sstsize
