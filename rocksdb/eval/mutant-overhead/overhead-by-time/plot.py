@@ -13,7 +13,10 @@ import Util
 import Conf
 import DstatLog
 import ProcMemLog
+
+sys.path.insert(0, "%s/RocksdbLog" % os.path.dirname(__file__))
 import RocksdbLog
+
 import Stat
 import YcsbLog
 

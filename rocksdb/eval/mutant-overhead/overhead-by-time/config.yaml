@@ -12,8 +12,12 @@ dn_base: ~/work/mutant/log/ycsb/mutant-overhead
 unmodified_db:        1/180105-004823/ycsb/180105-081022.523-d
 computation_overhead: 1/180105-031211/ycsb/180105-082850.700-d
 
-# 0.0
-io_overhead:          by-cost-slo-epsilons/180119-175723/ycsb/180119-230659.615-d
+# cost_slo_epsilon 0.1
+io_overhead: by-cost-slo-epsilons/180122-185607/ycsb/180123-000516.030-d
+
+# This had extra SSTable movements
+# cost_slo_epsilon 0.0
+#io_overhead: by-cost-slo-epsilons/180119-175723/ycsb/180119-230659.615-d
 
 # These included extra SSTables when a temperature-triggered migration is executed.
 #io_overhead:          1/180105-031503/ycsb/180105-083222.854-d
