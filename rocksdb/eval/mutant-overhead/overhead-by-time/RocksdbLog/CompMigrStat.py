@@ -127,10 +127,8 @@ def GetFnStat(fn0, fn1):
     Cons.P("#     num_outssts_comp_level_triggered_compaction_migration=%d" % cur.fetchone()["cnt"])
 
     if True:
-      # From the SSTables created from compaction-migrations, there are more SSTables getting migrated to the fast storage than the slow storage.
-      #   Interesting.
-      #   There was another mistake in the temperature calculation: some input SSTable temperatures were not considered in the output path_id calculation.
-      #     TODO: revisit this after fixing the issue
+      # From the SSTables created from compaction-migrations
+      #   There are more SSTables that get migrated to the slow storage than to the fast storage. Makes sense, since they get old in general.
       cur.execute("SELECT count(distinct(sst_id)) as cnt FROM sst_creation_info" \
           " WHERE db_type='%s' and creation_reason='C' and temp_triggered_single_sst_migr=0 and migr_dirc IN ('S')"
           % db_type)
