@@ -29,7 +29,6 @@ def main(argv):
     
 def PlotOverheadByTime():
   (fn_rocksdb0, fn_rocksdb1, fn_rocksdb_compmigr_histo) = RocksdbLog.GenDataFilesForGnuplot()
-  sys.exit(0)
   fn_cpu_stat_by_time = _GetFnCpuOverhead()
   fn_mem_stat_by_time = _GetFnMemOverhead()
   #time_max = "09:00:00"
@@ -86,15 +85,19 @@ def _GetFnCpuOverhead():
 def _GetCpuStatByHour(fn_ycsb):
   fn_dstat = _GenDstat(fn_ycsb)
 
-  col_time = 21
+  col_time = 17
 
-  col_cpu_idle = 23
-  col_cpu_sys  = 25
-  col_cpu_user = 26
-  # TODO: Find the most satisfactory one.
-  #which_cpu = "overall"
-  which_cpu = "user"
+  col_cpu_idle = 19
+  col_cpu_sys  = col_cpu_idle + 2
+  col_cpu_user = col_cpu_idle + 3
+  col_cpu_iowait = col_cpu_idle + 4
+  # With SSTable organization computation, there is less CPU usage and a bit more iowait time.
+  #   Puzzling. Can't explain why the CPU usage is lower when SSTable organization computation is on
+  #   The slightly increased iowait time towards the end might be from the increased amount of log and the overhead of zipping and uploading them.
+  which_cpu = "overall"
+  #which_cpu = "user"
   #which_cpu = "user+kernel"
+  #which_cpu = "iowait"
 
   #Cons.P(fn_dstat)
   # Bucketize CPU usage
@@ -114,6 +117,8 @@ def _GetCpuStatByHour(fn_ycsb):
         cpu = float(t[col_cpu_user - 1])
       elif which_cpu == "user+kernel":
         cpu = float(t[col_cpu_user - 1]) + float(t[col_cpu_sys - 1])
+      elif which_cpu == "iowait":
+        cpu = float(t[col_cpu_iowait - 1])
       else:
         raise RuntimeError("Unexpected")
 

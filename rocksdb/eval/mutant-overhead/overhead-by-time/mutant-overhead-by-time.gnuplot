@@ -3,7 +3,9 @@
 TIME_MAX = system("echo $TIME_MAX")
 CPU_STAT = system("echo $CPU_STAT")
 MEM_STAT = system("echo $MEM_STAT")
-ROCKSDB = system("echo $ROCKSDB")
+ROCKSDB0 = system("echo $ROCKSDB0")
+# TODO
+ROCKSDB1 = system("echo $ROCKSDB1")
 OUT_FN = system("echo $OUT_FN")
 
 set print "-"
@@ -37,8 +39,8 @@ if (1) {
   LW_NUM_SSTS = 2
 
   plot \
-  ROCKSDB u 1:4:3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
-  ROCKSDB u 2:4:(0):($5-$4) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
+  ROCKSDB0 u 1:4:3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
+  ROCKSDB0 u 2:4:(0):($5-$4) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
 
   # vectors: x y xdelta ydelta
 }

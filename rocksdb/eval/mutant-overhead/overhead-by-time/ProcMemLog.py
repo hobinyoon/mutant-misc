@@ -28,7 +28,7 @@ def GenMemStatByHour(dn_log_job, exp_dt):
   with open(fn) as fo:
     for line in fo:
       t = line.strip().split()
-      dt = datetime.datetime.strptime(t[0], "%y%d%m-%H%M%S")
+      dt = datetime.datetime.strptime(t[0], "%y%m%d-%H%M%S")
       rss = int(t[2]) * 4096
       #Cons.P("%s %d" % (dt, rss))
 
