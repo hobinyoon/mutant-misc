@@ -6,6 +6,7 @@ TIME_MAX = system("echo $TIME_MAX")
 IN_FN_DSTAT = system("echo $IN_FN_DSTAT")
 IN_FN_YCSB = system("echo $IN_FN_YCSB")
 IN_FN_ROCKSDB = system("echo $IN_FN_ROCKSDB")
+IN_FN_MEM = system("echo $IN_FN_MEM")
 OUT_FN = system("echo $OUT_FN")
 
 set print "-"
@@ -39,7 +40,7 @@ if (1) {
   set format x "%H:%M"
 
   set xlabel "Time (HH:MM)"
-  set ylabel "Mem:cache (GB)"
+  set ylabel "File system cache size (GB)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
@@ -90,6 +91,29 @@ if (1) {
   }
 
   plot IN_FN_DSTAT u (column(i_x)):(100 - column(i_y)) w p pt 7 ps 0.08 lc rgb "red" not
+}
+
+
+# Memory (RSS) used by the YCSB Java process
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "Memory usage (GB)"
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":TIME_MAX]
+
+  plot IN_FN_MEM u 1:2 w p pt 7 ps 0.08 lc rgb "red" not
 }
 
 

@@ -6,6 +6,7 @@ sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~")
 import Cons
 import Util
 
+import Conf
 import Stat
 
 
@@ -45,3 +46,50 @@ def GenMemStatByHour(dn_log_job, exp_dt):
   for h, mems in sorted(hour_mems.iteritems()):
     hour_memstat[h] = Stat.Gen(mems)
   return hour_memstat
+
+
+def GetFnForPlot(dn_log, job_id, exp_dt):
+  fn_out = "%s/mem-%s" % (Conf.GetOutDir(), exp_dt)
+  if os.path.exists(fn_out):
+    return fn_out
+
+  with Cons.MT("Creating memory usage file for plotting ..."):
+    fn = "%s/%s/procmon/%s" % (dn_log, job_id, exp_dt)
+    if not os.path.exists(fn):
+      fn_zipped = "%s.bz2" % fn
+      if not os.path.exists(fn_zipped):
+        raise RuntimeError("Unexpected: %s" % fn)
+      Util.RunSubp("cd %s && bzip2 -dk %s > /dev/null" % (os.path.dirname(fn_zipped), os.path.basename(fn_zipped)))
+    if not os.path.exists(fn):
+      raise RuntimeError("Unexpected")
+
+    exp_begin_dt = datetime.datetime.strptime(exp_dt, "%y%m%d-%H%M%S.%f")
+
+    # man proc. statm
+    dt_rss = {}
+    with open(fn) as fo:
+      for line in fo:
+        t = line.strip().split()
+        dt = datetime.datetime.strptime(t[0], "%y%m%d-%H%M%S")
+        rss = float(t[2]) * 4096 / 1024 / 1024 / 1024
+        #Cons.P("%s %d" % (dt, rss))
+
+        # Convert to relative time
+        rel_dt = dt - exp_begin_dt
+        totalSeconds = rel_dt.seconds
+        hours, remainder = divmod(totalSeconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        rel_dt_str = "%02d:%02d:%02d" % (hours, minutes, seconds)
+        dt_rss[rel_dt_str] = rss
+
+    with open(fn_out, "w") as fo:
+      fmt = "%8s %6.2f"
+      header = Util.BuildHeader(fmt, "dt rss_in_gb")
+      i = 0
+      for dt, rss in sorted(dt_rss.iteritems()):
+        if i % 40 == 0:
+          fo.write(header + "\n")
+        fo.write((fmt + "\n") % (dt, rss))
+        i += 1
+    Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+    return fn_out
