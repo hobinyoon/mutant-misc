@@ -18,8 +18,19 @@ _body_rows = None
 
 _exp_begin_dt = None
 
+
+def GetPlotFn(fn_ycsb_log):
+  mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb_log)
+  dn_log = mo.group("dn_log")
+  job_id = mo.group("job_id")
+  exp_dt = mo.group("exp_dt")
+
+  dn_log_job = "%s/%s" % (dn_log, job_id)
+  return GetPlotFn1(dn_log_job, exp_dt)
+
+
 # Generate a formatted output file for gnuplot. The csv file has headers that's not ideal for gnuplot.
-def GenDataFileForGnuplot(dn_log_job, exp_dt):
+def GetPlotFn1(dn_log_job, exp_dt):
   fn_out = "%s/dstat-%s" % (Conf.GetOutDir(), exp_dt)
   if os.path.isfile(fn_out):
     return (fn_out, _GetNumStgDevs(fn_out))

@@ -13,29 +13,31 @@ from HowCreated import HowCreated
 from CompInfo import CompInfo
 import CompMigrStat
 
+def GenDataFileForGnuplot(fn_ycsb):
+  mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb)
+  dn_log = mo.group("dn_log")
+  job_id = mo.group("job_id")
+  exp_dt = mo.group("exp_dt")
+  #Cons.P(dn_log)
+  #Cons.P(job_id)
+  #Cons.P(exp_dt)
+  dn_log_job = "%s/%s" % (dn_log, job_id)
+  log_reader = RocksdbLogReader(dn_log_job, exp_dt)
+  return log_reader.FnMetricByTime()
+
+
 def GenDataFilesForGnuplot():
   dn_base = Conf.GetDir("dn_base")
 
   # Analyze the number of compactions and migrations with
   #   (a) an unmodified DB as a baseline
   #   and (b) Mutant
-  log_readers = []
+  fn_metrics_by_time = []
   for i in range(2):
-    fn_ycsb = "%s/%s" % (dn_base, Conf.Get(i + 1))
-    mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb)
-    dn_log = mo.group("dn_log")
-    job_id = mo.group("job_id")
-    exp_dt = mo.group("exp_dt")
-    #Cons.P(dn_log)
-    #Cons.P(job_id)
-    #Cons.P(exp_dt)
-    dn_log_job = "%s/%s" % (dn_log, job_id)
-    log_readers.append(RocksdbLogReader(dn_log_job, exp_dt))
-
-  fn_metrics_by_time_0 = log_readers[0].FnMetricByTime()
-  fn_metrics_by_time_1 = log_readers[1].FnMetricByTime()
-  fn_rdb_compmigr = CompMigrStat.GetFnStat(fn_metrics_by_time_0, fn_metrics_by_time_1)
-  return (fn_metrics_by_time_0, fn_metrics_by_time_1, fn_rdb_compmigr)
+    fn_ycsb = "%s/%s" % (dn_base, Conf.Get(i))
+    fn_metrics_by_time.append(GenDataFileForGnuplot(fn_ycsb))
+  fn_rdb_compmigr = CompMigrStat.GetFnStat(fn_metrics_by_time[0], fn_metrics_by_time[1])
+  return (fn_metrics_by_time, fn_rdb_compmigr)
 
 
 class RocksdbLogReader:

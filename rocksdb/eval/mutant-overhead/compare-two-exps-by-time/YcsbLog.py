@@ -1,6 +1,5 @@
 import ast
 import csv
-import datetime
 import os
 import re
 import sys
@@ -12,10 +11,6 @@ import Util
 import Conf
 import Stat
 
-
-# These are not thread-safe. Okay for now.
-_num_stg_devs = 0
-_body_rows = None
 
 # Generate a formatted output file for gnuplot. The csv file has headers that's not ideal for gnuplot.
 def GenDataMetricsByTime(fn_in, exp_dt):
