@@ -68,20 +68,20 @@ def _GenDB(fn0, fn1):
           t = re.split(r" +", line)
           hour = int(t[1].split(":")[0])
 
-          sst_id = t[6]
+          sst_id = t[7]
           # Ignore when end sst_id is -, which means an sstable was deleted.
           if sst_id == "-":
             continue
           sst_id = int(sst_id)
 
-          sst_size = int(t[5])
+          sst_size = int(t[8])
 
-          job_id = int(t[7])
+          job_id = int(t[9])
 
           # Creation reason: R, F, C, -
-          cr = t[8]
-          temp_triggered_single_sst_migr = (t[9] == "T")
-          migr_dirc = t[10]
+          cr = t[10]
+          temp_triggered_single_sst_migr = (t[11] == "T")
+          migr_dirc = t[12]
 
           cur.execute(q, (fn, db_type, hour, sst_id, sst_size, job_id, cr, temp_triggered_single_sst_migr, migr_dirc))
     conn.commit()
@@ -126,7 +126,7 @@ def _OverallStat(cur, fn0, fn1, fo):
     cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
         " WHERE db_type='%s' and creation_reason='C' and temp_triggered_single_sst_migr=0"
         % db_type)
-    fo.write("#     total_sst_sizes_comp_level_triggered_in_gb=%.0f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+    fo.write("#     total_sst_size_comp_level_triggered_in_gb=%.3f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
     # Distribution of the number of output SSTables per job
     cur.execute("SELECT job_id, count(distinct(sst_id)) as num_ssts FROM sst_creation_info" \
@@ -219,18 +219,18 @@ def _HourlyStat(cur, fo):
   fo.write("#   JCL: compaction jobs. leveled organization triggered\n")
   fo.write("#     SCL: sstables created. leveled organization triggered\n")
   fo.write("#       SPJCL: sstables created / job. leveled organization triggered\n")
-  fo.write("#     SSCL: sum of the sstable sizes created. leveled organization triggered. In GB.\n")
+  fo.write("#     SSCL: Total sstable size created. leveled organization triggered. In GB.\n")
   fo.write("#     SCLR: sstables created. leveled organization triggered. regular compactions\n")
   fo.write("#     SCLCM: sstables created. leveled organization triggered. compaction-migrations\n")
   fo.write("#   JCT: compaction jobs. temperature-triggered single-sstable migration\n")
-  fo.write("#     SSCT: sum of the sstable sizes created. temperature-triggered single-sstable migration. In GB.\n")
+  fo.write("#     SSCT: Total sstable size created. temperature-triggered single-sstable migration. In GB.\n")
   fo.write("#\n")
 
   fmt = "%1d" \
       " %2d %1d %1d %2d %2d" \
-        " %3d %6.3f %4.0f %3d %3d %2d %4.0f" \
+        " %3d %6.3f %7.3f %3d %3d %2d %7.3f" \
       " %6d %1d %1d %3d %3d" \
-        " %3d %6.3f %4.0f %3d %3d %3d %4.0f"
+        " %3d %6.3f %7.3f %3d %3d %3d %7.3f"
   fo.write(Util.BuildHeader(fmt, "hour" \
       " J JR JF JC JCL" \
         " SCL SPJCL SSCL SCLR SCLCM JCT SSCT" \

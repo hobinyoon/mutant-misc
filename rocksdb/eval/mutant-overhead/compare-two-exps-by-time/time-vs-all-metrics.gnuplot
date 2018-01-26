@@ -32,6 +32,94 @@ if (1) {
 LMARGIN = 10
 set sample 1000
 
+
+# DB IOPS
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "DB IOPS"
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":TIME_MAX]
+
+  #set logscale y
+
+  plot \
+  IN_FN_YCSB u 1:2 w lp pt 7 ps 0.08 lc rgb "red" not
+}
+# DB IOPS breakdown into reads and writes?  We'll see if it's needed. When you specify target IOPS, it's not needed.
+
+
+# Total number of SSTables
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%1H"
+
+  set xlabel "Time (hour)" offset 0,0.2
+  set ylabel "# of SSTables" offset 0.5, 0
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00.000":TIME_MAX]
+
+  C_NUM_SSTS = "red"
+  LW_NUM_SSTS = 2
+
+  plot \
+  IN_FN_ROCKSDB u 1:4:3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
+  IN_FN_ROCKSDB u 2:4:(0):($5-$4) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
+
+  # vectors: x y xdelta ydelta
+}
+
+
+# Total SSTable size
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%1H"
+
+  set xlabel "Time (hour)" offset 0,0.2
+  set ylabel "Total SSTable size (GB)" offset 0.5, 0
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00.000":TIME_MAX]
+
+  C_NUM_SSTS = "red"
+  LW_NUM_SSTS = 2
+
+  plot \
+  IN_FN_ROCKSDB u 1:6:3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
+  IN_FN_ROCKSDB u 2:6:(0):($5-$4) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
+
+  # vectors: x y xdelta ydelta
+}
+
+
 # Memory:cache usage
 if (1) {
   reset
@@ -115,33 +203,6 @@ if (1) {
 
   plot IN_FN_MEM u 1:2 w p pt 7 ps 0.08 lc rgb "red" not
 }
-
-
-# DB IOPS
-if (1) {
-  reset
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%H:%M"
-
-  set xlabel "Time (HH:MM)"
-  set ylabel "DB IOPS"
-  set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
-  set border back lc rgb "#808080" back
-
-  # Align the stacked plots
-  set lmargin LMARGIN
-
-  set xrange ["00:00:00":TIME_MAX]
-
-  #set logscale y
-
-  plot \
-  IN_FN_YCSB u 1:2 w lp pt 7 ps 0.08 lc rgb "red" not
-}
-# DB IOPS breakdown into reads and writes?  We'll see if it's needed. When you specify target IOPS, it's not needed.
 
 
 # Read latency

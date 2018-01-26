@@ -117,15 +117,19 @@ class SstEvents:
 
   @staticmethod
   def Write(fn):
-    fmt = "%12s %12s %7.3f %4d %4d %12d %4s %4s %1s %1s %1s"
+    fmt = "%12s %12s %7.3f %4d %4d %7.3f %7.3f" \
+        " %4s %9s %4s %1s %1s %1s"
     with open(fn, "w") as fo:
       fo.write(Util.BuildHeader(fmt, "rel_ts_HHMMSS_begin" \
         " rel_ts_HHMMSS_end" \
         " ts_dur" \
         " num_sstables_begin" \
         " num_sstables_end" \
-        " sstable_size_sum_end" \
+        " sstable_size_sum_in_gb_begin" \
+        " sstable_size_sum_in_gb_end" \
+        \
         " end_sst_id" \
+        " end_sst_size" \
         " end_sst_creation_jobid" \
         " end_sst_creation_reason" \
         " end_sst_temp_triggered_single_migr" \
@@ -136,7 +140,9 @@ class SstEvents:
       total_sst_size_prev = 0
       for ts, num_ssts in sorted(SstEvents.ts_numssts.iteritems()):
         ts_str = _ToStr(ts)
+        total_sst_size = SstEvents.ts_sstsize[ts]
         sst_id = "-"
+        sst_size = "-"
         job_id = "-"
         creation_reason = "-"
         # Temperature-triggered single-sstable migration
@@ -144,6 +150,7 @@ class SstEvents:
         migr_dirc = "-"
         if ts in SstEvents.createts_sstid:
           sst_id = SstEvents.createts_sstid[ts]
+          sst_size = SstEvents.sstid_size[sst_id]
           hc = HowCreated.Get(sst_id)
           job_id = hc.JobId()
           creation_reason = hc.Reason()
@@ -157,8 +164,11 @@ class SstEvents:
           , (ts.total_seconds() - ts_prev.total_seconds())
           , num_ssts_prev
           , num_ssts
-          , total_sst_size_prev
+          , (float(total_sst_size_prev) / 1024 / 1024 / 1024)
+          , (float(total_sst_size) / 1024 / 1024 / 1024)
+
           , sst_id
+          , sst_size
           , job_id
           , creation_reason
           , temp_triggered_migr
@@ -167,7 +177,7 @@ class SstEvents:
         ts_str_prev = ts_str
         ts_prev = ts
         num_ssts_prev = num_ssts
-        total_sst_size_prev = SstEvents.ts_sstsize[ts]
+        total_sst_size_prev = total_sst_size
     Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
 
 
