@@ -2,6 +2,7 @@
 
 TIME_MAX = system("echo $TIME_MAX")
 CPU_STAT = system("echo $CPU_STAT")
+FN_CPU_1MIN_AVG = system("echo $FN_CPU_1MIN_AVG")
 MEM_STAT = system("echo $MEM_STAT")
 ROCKSDB0 = system("echo $ROCKSDB0")
 # TODO
@@ -47,6 +48,34 @@ if (1) {
 
 
 # Time vs. CPU usage
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%1H"
+
+  set xlabel "Time (hour)" offset 0,0.2
+  set ylabel "CPU usage (%)" offset 0.5,0
+  set xtics nomirror tc rgb "black" #autofreq 0,2*3600
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  set lmargin LMARGIN
+
+  set xrange ["00:00:00":TIME_MAX]
+  set yrange [0:100]
+
+  PS = 0.1
+
+  # Blue and red
+  c0(a) = (a == 0 ? 255 : 255 * 256 * 256)
+
+  plot FN_CPU_1MIN_AVG u 1:2:(c0($3)) w p pt 7 ps PS lc rgb variable not
+}
+
+
+# Time vs. CPU usage. Hourly stat
 if (1) {
   reset
   set xdata time

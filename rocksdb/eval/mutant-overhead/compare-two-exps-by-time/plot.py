@@ -68,7 +68,7 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
   (fn_dstat, num_stgdevs)  = DstatLog.GetPlotFn1(dn_log_job, exp_dt)
   fn_rocksdb = RocksdbLog.GenDataFileForGnuplot(fn_ycsb_log)
 
-  fn_cpu_avg = CpuAvg.GetFnForPlot(fn_ycsb_log, exp_dt)
+  fn_cpu_avg = CpuAvg.GetFnForPlot(fn_ycsb_log)
   fn_mem_usage = ProcMemLog.GetFnForPlot(dn_log, job_id, exp_dt)
 
   with Cons.MT("Plotting ..."):
@@ -88,7 +88,8 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
 
 def PlotComparison():
   (fns_rocksdb, fn_sst_creation_stat) = RocksdbLog.GenDataFilesForGnuplot()
-  fn_cpu_stat_by_time = CompareCpu.GetFn()
+  fn_cpu_stat_by_time = CompareCpu.GetHourlyFn()
+  fn_cpu_1min_avg = CompareCpu.Get1minAvgFn()
   fn_mem_stat_by_time = CompareMem.GetFn()
   #time_max = "09:00:00"
   time_max = "08:00:00"
@@ -98,6 +99,7 @@ def PlotComparison():
     env = os.environ.copy()
     env["TIME_MAX"] = str(time_max)
     env["CPU_STAT"] = fn_cpu_stat_by_time
+    env["FN_CPU_1MIN_AVG"] = fn_cpu_1min_avg
     env["MEM_STAT"] = fn_mem_stat_by_time
     env["ROCKSDB0"] = fns_rocksdb[0]
     env["ROCKSDB1"] = fns_rocksdb[1]

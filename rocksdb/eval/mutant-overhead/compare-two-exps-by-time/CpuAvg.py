@@ -10,13 +10,17 @@ import Conf
 import DstatLog
 
 # Note: This depends on the DstatLog output file format
-def GetFnForPlot(fn_ycsb, exp_dt):
+def GetFnForPlot(fn_ycsb_log):
+  # 171121-194901/ycsb/171122-010708.903-d
+  mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb_log)
+  exp_dt = mo.group("exp_dt")
+
   fn_out = "%s/cpu-avg-%s" % (Conf.GetOutDir(), exp_dt)
   if os.path.exists(fn_out):
     return fn_out
 
   with Cons.MT("Creating avg cpu usage file for plotting ..."):
-    (fn_dstat, num_stgdevs) = DstatLog.GetPlotFn(fn_ycsb)
+    (fn_dstat, num_stgdevs) = DstatLog.GetPlotFn(fn_ycsb_log)
 
     col_time = 17
 
