@@ -119,8 +119,7 @@ class SstEvents:
   def Write(fn):
     fmt = "%12s %12s %7.3f %4d %4d %7.3f %7.3f" \
         " %4s %9s %4s %1s %1s %1s"
-    with open(fn, "w") as fo:
-      fo.write(Util.BuildHeader(fmt, "rel_ts_HHMMSS_begin" \
+    header = Util.BuildHeader(fmt, "rel_ts_HHMMSS_begin" \
         " rel_ts_HHMMSS_end" \
         " ts_dur" \
         " num_sstables_begin" \
@@ -133,7 +132,12 @@ class SstEvents:
         " end_sst_creation_jobid" \
         " end_sst_creation_reason" \
         " end_sst_temp_triggered_single_migr" \
-        " end_sst_migration_direction") + "\n")
+        " end_sst_migration_direction")
+    i = 0
+    with open(fn, "w") as fo:
+      if i % 40 == 0:
+        fo.write(header + "\n")
+      i += 1
       ts_prev = datetime.timedelta(0)
       ts_str_prev = "00:00:00.000"
       num_ssts_prev = 0
