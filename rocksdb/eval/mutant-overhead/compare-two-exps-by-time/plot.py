@@ -10,6 +10,7 @@ import Cons
 import Util
 
 import Conf
+import CpuAvg
 import DstatLog
 import ProcMemLog
 import YcsbLog
@@ -67,6 +68,7 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
   (fn_dstat, num_stgdevs)  = DstatLog.GetPlotFn1(dn_log_job, exp_dt)
   fn_rocksdb = RocksdbLog.GenDataFileForGnuplot(fn_ycsb_log)
 
+  fn_cpu_avg = CpuAvg.GetFnForPlot(fn_ycsb_log, exp_dt)
   fn_mem_usage = ProcMemLog.GetFnForPlot(dn_log, job_id, exp_dt)
 
   with Cons.MT("Plotting ..."):
@@ -77,6 +79,7 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
     env["IN_FN_DSTAT"] = fn_dstat
     env["IN_FN_YCSB"] = fn_ycsb
     env["IN_FN_ROCKSDB"] = fn_rocksdb
+    env["IN_FN_CPU_AVG"] = fn_cpu_avg
     env["IN_FN_MEM"] = fn_mem_usage
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/time-vs-all-metrics.gnuplot" % os.path.dirname(__file__), env=env)

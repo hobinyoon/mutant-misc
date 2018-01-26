@@ -6,6 +6,7 @@ TIME_MAX = system("echo $TIME_MAX")
 IN_FN_DSTAT = system("echo $IN_FN_DSTAT")
 IN_FN_YCSB = system("echo $IN_FN_YCSB")
 IN_FN_ROCKSDB = system("echo $IN_FN_ROCKSDB")
+IN_FN_CPU_AVG = system("echo $IN_FN_CPU_AVG")
 IN_FN_MEM = system("echo $IN_FN_MEM")
 OUT_FN = system("echo $OUT_FN")
 
@@ -179,6 +180,29 @@ if (1) {
   }
 
   plot IN_FN_DSTAT u (column(i_x)):(100 - column(i_y)) w p pt 7 ps 0.08 lc rgb "red" not
+}
+
+
+# CPU usage. 1-min average
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "CPU usage (%)"
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  set xrange ["00:00":TIME_MAX[1:5]]
+
+  plot IN_FN_CPU_AVG u 1:2 w p pt 7 ps 0.08 lc rgb "red" not
 }
 
 
