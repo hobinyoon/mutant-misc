@@ -114,7 +114,7 @@ if (1) {
 
   plot \
   IN_FN_ROCKSDB u 1:6:3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
-  IN_FN_ROCKSDB u 2:6:(0):($5-$4) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
+  IN_FN_ROCKSDB u 2:6:(0):($7-$6) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
 
   # vectors: x y xdelta ydelta
 }
