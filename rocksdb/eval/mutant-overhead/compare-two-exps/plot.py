@@ -26,7 +26,7 @@ import CompareMem
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
   PlotTimeVsAllMetrics()
-  PlotComparison()
+  PlotCompareTwo()
 
     
 def PlotTimeVsAllMetrics():
@@ -86,7 +86,7 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
-def PlotComparison():
+def PlotCompareTwo():
   (fns_rocksdb, fn_sst_creation_stat) = RocksdbLog.GenDataFilesForGnuplot()
   fn_cpu_stat_by_time = CompareCpu.GetHourlyFn()
   fn_cpu_1min_avg = CompareCpu.Get1minAvgFn()
@@ -104,7 +104,7 @@ def PlotComparison():
     env["ROCKSDB0"] = fns_rocksdb[0]
     env["ROCKSDB1"] = fns_rocksdb[1]
     env["OUT_FN"] = fn_out
-    Util.RunSubp("gnuplot %s/mutant-overhead-by-time.gnuplot" % os.path.dirname(__file__), env=env)
+    Util.RunSubp("gnuplot %s/compare-two-exps.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

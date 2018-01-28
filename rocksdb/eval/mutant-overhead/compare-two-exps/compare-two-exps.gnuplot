@@ -71,7 +71,30 @@ if (1) {
   # Blue and red
   c0(a) = (a == 0 ? 255 : 255 * 256 * 256)
 
-  plot FN_CPU_1MIN_AVG u 1:2:(c0($3)) w p pt 7 ps PS lc rgb variable not
+  if (1) {
+    # Plotting of the two symbols in the order of timestamp to prevent one type is always in front of the other type.
+    #   https://stackoverflow.com/questions/29622885/how-set-point-type-from-data-in-gnuplot
+    set encoding utf8
+    symbol(a) = "+x"[int(a+1):int(a+1)]
+
+    # Legends
+    if (1) {
+      x0 = 0.05
+      y0 = 0.86
+      #set label sprintf("%s Unmodified DB", symbol(0)) at graph x0, y0 tc rgb c0(0) font ",10" front
+      set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",10" front
+      x1 = x0 + 0.03
+      set label "Unmodified DB" at graph x1, y0 left tc rgb c0(0) font ",10" front
+      y1 = y0 - 0.12
+      #set label sprintf("%s With computation", symbol(1)) at graph x0, y1 tc rgb c0(1) font ",10" front
+      set label symbol(1) at graph x0, y1 center tc rgb c0(1) font ",10" front
+      set label "With computation" at graph x1, y1 left tc rgb c0(1) font ",10" front
+    }
+
+    plot FN_CPU_1MIN_AVG u 1:2:(symbol($3)):(c0($3)) w labels tc rgb variable font ",6" not
+  } else {
+    plot FN_CPU_1MIN_AVG u 1:2:(c0($3)) w p pt 7 ps PS lc rgb variable not
+  }
 }
 
 
