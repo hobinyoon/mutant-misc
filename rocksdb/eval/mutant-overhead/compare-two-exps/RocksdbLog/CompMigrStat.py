@@ -11,7 +11,14 @@ import Util
 import Conf
 
 def GetFnStat(fn0, fn1):
-  fn_out = "%s/sst-creation-stat" % Conf.GetOutDir()
+  exp_dts = []
+  for fn in [fn0, fn1]:
+    #Cons.P(fn)
+    # rocksdb-by-time-180126-193525.769
+    mo = re.match(r".+-(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)", fn0)
+    exp_dts.append(mo.group("exp_dt"))
+
+  fn_out = "%s/sst-creation-stat-%s" % (Conf.GetOutDir(), "-".join(exp_dts))
   if os.path.exists(fn_out):
     return fn_out
 

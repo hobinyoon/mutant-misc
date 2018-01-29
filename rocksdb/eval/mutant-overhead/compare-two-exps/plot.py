@@ -88,19 +88,26 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
 
 def PlotCompareTwo():
   (fns_rocksdb, fn_sst_creation_stat) = RocksdbLog.GenDataFilesForGnuplot()
-  fn_cpu_stat_by_time = CompareCpu.GetHourlyFn()
+  #fn_cpu_stat_by_time = CompareCpu.GetHourlyFn()
   fn_cpu_1min_avg = CompareCpu.Get1minAvgFn()
-  fn_mem_stat_by_time = CompareMem.GetFn()
+  fn_mem_stat_by_time = CompareMem.GetHourlyFn()
+  fn_mem_1min_avg = CompareMem.Get1minAvgFn()
   #time_max = "09:00:00"
   time_max = "08:00:00"
-  fn_out = "%s/mutant-overhead.pdf" % Conf.GetOutDir()
+
+  exp_dts = []
+  for i in range(2):
+    mo = re.match(r".+/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)-d", Conf.Get(i))
+    exp_dts.append(mo.group("exp_dt"))
+  fn_out = "%s/mutant-overhead-%s.pdf" % (Conf.GetOutDir(), "-".join(exp_dts))
 
   with Cons.MT("Plotting ..."):
     env = os.environ.copy()
     env["TIME_MAX"] = str(time_max)
-    env["CPU_STAT"] = fn_cpu_stat_by_time
+    #env["CPU_STAT"] = fn_cpu_stat_by_time
     env["FN_CPU_1MIN_AVG"] = fn_cpu_1min_avg
-    env["MEM_STAT"] = fn_mem_stat_by_time
+    #env["MEM_STAT"] = fn_mem_stat_by_time
+    env["FN_MEM_1MIN_AVG"] = fn_mem_1min_avg
     env["ROCKSDB0"] = fns_rocksdb[0]
     env["ROCKSDB1"] = fns_rocksdb[1]
     env["OUT_FN"] = fn_out

@@ -12,7 +12,13 @@ import DstatLog
 import Stat
 
 def Get1minAvgFn():
-  fn_out = "%s/cpu-1minavg" % Conf.GetOutDir()
+  exp_dts = []
+  for i in range(2):
+    #Cons.P(Conf.Get(i))
+    # computation/180126-142513/ycsb/180126-193525.769-d
+    mo = re.match(r".+/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)-d", Conf.Get(i))
+    exp_dts.append(mo.group("exp_dt"))
+  fn_out = "%s/cpu-1minavg-%s" % (Conf.GetOutDir(), "-".join(exp_dts))
   if os.path.exists(fn_out):
     return fn_out
 
@@ -41,7 +47,7 @@ def Get1minAvgFn():
 
 class _RecordCpuAvg:
   def __init__(self, hm, sec, cpu, exp_type):
-    self.ts = "%s:%s" % (hm, sec)
+    self.ts = "%s:%02d" % (hm, sec)
     self.cpu = cpu
     self.exp_type = exp_type
 

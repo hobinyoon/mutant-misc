@@ -1,3 +1,4 @@
+import operator
 import os
 import re
 import sys
@@ -11,8 +12,66 @@ import DstatLog
 import ProcMemLog
 import Stat
 
-def GetFn():
-  fn_out = "%s/memory-usage-by-time" % Conf.GetOutDir()
+def Get1minAvgFn():
+  exp_dts = []
+  for i in range(2):
+    #Cons.P(Conf.Get(i))
+    mo = re.match(r".+/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)-d", Conf.Get(i))
+    exp_dts.append(mo.group("exp_dt"))
+  fn_out = "%s/mem-1minavg-%s" % (Conf.GetOutDir(), "-".join(exp_dts))
+  if os.path.exists(fn_out):
+    return fn_out
+
+  with Cons.MT("Creating avg memory usage comparison file for plotting ..."):
+    records = []
+    dn_base = Conf.GetDir("dn_base")
+    for i in range(2):
+      fn_ycsb_log = "%s/%s" % (dn_base, Conf.Get(i))
+      hm_mem = _GetHmMem(fn_ycsb_log)
+      for hm, mem in hm_mem.iteritems():
+        records.append(_RecordMemAvg(hm, i * 30, mem, i))
+    records.sort(key=operator.attrgetter("ts"))
+
+  fmt = "%8s %6.3f %1d"
+  header = Util.BuildHeader(fmt, "timestamp mem_avg_in_gb exp_type")
+  with open(fn_out, "w") as fo:
+    i = 0
+    for r in records:
+      if i % 40 == 0:
+        fo.write(header + "\n")
+        i += 1
+      fo.write("%s\n" % r.ToStr(fmt))
+  Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+  return fn_out
+
+
+class _RecordMemAvg:
+  def __init__(self, hm, sec, mem, exp_type):
+    self.ts = "%s:%02d" % (hm, sec)
+    self.mem = mem
+    self.exp_type = exp_type
+
+  def ToStr(self, fmt):
+    return fmt % (self.ts, float(self.mem) / 1024 / 1024 / 1024, self.exp_type)
+
+
+def _GetHmMem(fn_ycsb_log):
+  mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb_log)
+  dn_log = mo.group("dn_log")
+  job_id = mo.group("job_id")
+  exp_dt = mo.group("exp_dt")
+
+  dn_log_job = "%s/%s" % (dn_log, job_id)
+  return ProcMemLog.Get1MinMemUsage(dn_log_job, exp_dt)
+
+
+def GetHourlyFn():
+  exp_dts = []
+  for i in range(2):
+    #Cons.P(Conf.Get(i))
+    mo = re.match(r".+/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)-d", Conf.Get(i))
+    exp_dts.append(mo.group("exp_dt"))
+  fn_out = "%s/memory-usage-by-time-%s" % (Conf.GetOutDir(), "-".join(exp_dts))
   if os.path.exists(fn_out):
     return fn_out
 
@@ -75,7 +134,7 @@ def _GetMemStatByHourFromDstat(fn_ycsb):
   #col_mem_cache = 14
 
   #Cons.P(fn_dstat)
-  # Bucketize CPU usage
+  # Bucketize memory usage
   #   {hour: [mem_usage]}
   hour_memusage = {}
   with open(fn_dstat) as fo:
