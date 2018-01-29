@@ -273,7 +273,7 @@ if (0) {
 
 
 # Legend for the tail latencies
-if (1) {
+if (0) {
   reset
 
   set notics

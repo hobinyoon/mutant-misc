@@ -1,8 +1,10 @@
 dn_base: ~/work/mutant/log/ycsb/mutant-overhead
 
 # Unmodified_db vs. computation_overhead
-0: computation/180126-142513/ycsb/180126-193525.769-d
-1: computation/180126-142544/ycsb/180126-193532.120-d
 
-#0: computation/180123-180457/ycsb/180123-231505.044-d
-#1: computation/180125-000327/ycsb/180125-055429.691-d
+# The computation one has strangely low overhead
+#0: computation/180126-142513/ycsb/180126-193525.769-d
+#1: computation/180126-142544/ycsb/180126-193532.120-d
+
+0: computation/180123-180457/ycsb/180123-231505.044-d
+1: computation/180125-000327/ycsb/180125-055429.691-d

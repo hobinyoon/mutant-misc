@@ -93,7 +93,8 @@ def PlotCompareTwo():
   fn_mem_stat_by_time = CompareMem.GetHourlyFn()
   fn_mem_1min_avg = CompareMem.Get1minAvgFn()
   #time_max = "09:00:00"
-  time_max = "08:00:00"
+  #time_max = "08:00:00"
+  time_max = "07:50:00"
 
   exp_dts = []
   for i in range(2):
