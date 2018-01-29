@@ -15,7 +15,7 @@ def GetFnStat(fn0, fn1):
   for fn in [fn0, fn1]:
     #Cons.P(fn)
     # rocksdb-by-time-180126-193525.769
-    mo = re.match(r".+-(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)", fn0)
+    mo = re.match(r".+-(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d)", fn)
     exp_dts.append(mo.group("exp_dt"))
 
   fn_out = "%s/sst-creation-stat-%s" % (Conf.GetOutDir(), "-".join(exp_dts))
