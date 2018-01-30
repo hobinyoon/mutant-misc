@@ -38,7 +38,7 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
   #Cons.P(pprint.pformat(cse_fn))
 
   params = []
-  for cost_slo_epsilon, fn_ycsb_log in cse_fn.iteritems():
+  for cost_slo_epsilon, fn_ycsb_log in sorted(cse_fn.iteritems()):
     #params.append((cost_slo_epsilon, fn_ycsb_log))
     params.append(fn_ycsb_log)
 
@@ -46,11 +46,37 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
   if parallel_processing:
     with terminating(Pool()) as pool:
       result = pool.map(GetFnTimeVsMetrics, params)
-      Cons.P(result)
   else:
+    result = []
     for p in params:
-      result = GetFnTimeVsMetrics(p)
-      Cons.P(result)
+      result.append(GetFnTimeVsMetrics(p))
+  #Cons.P(result)
+
+  cse_outfn = {}
+  i = 0
+  for cost_slo_epsilon, fn_ycsb_log in sorted(cse_fn.iteritems()):
+    cse_outfn[cost_slo_epsilon] = result[i]
+    i += 1
+
+  with open(fn_out, "w") as fo:
+    fmt = "%4.2f %4d"
+    header = Util.BuildHeader(fmt, "cost_slo_epsilon jobs_comp_temp_triggered_migr")
+    fo.write(header + "\n")
+
+    for cost_slo_epsilon, fn1 in sorted(cse_outfn.iteritems()):
+      JCT = None
+      with open(fn1) as fo1:
+        for line in fo1:
+          if line.startswith("#   num_jobs_comp_temp_triggered_migr="):
+            mo = re.match(r".+num_jobs_comp_temp_triggered_migr=(?P<v>\d+)", line)
+            JCT = int(mo.group("v"))
+            break
+
+      fo.write((fmt + "\n") % (
+        cost_slo_epsilon
+        , JCT
+        ))
+  Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
 def GetFnTimeVsMetrics(fn_ycsb):
