@@ -39,7 +39,6 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
 
   params = []
   for cost_slo_epsilon, fn_ycsb_log in sorted(cse_fn.iteritems()):
-    #params.append((cost_slo_epsilon, fn_ycsb_log))
     params.append(fn_ycsb_log)
 
   parallel_processing = True
@@ -64,17 +63,21 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
     fo.write("# JC:  jobs_compaction\n")
     fo.write("#   JCL: jobs_comp_leveled_organization_triggered\n")
     fo.write("#   SSCL: total_sst_size_comp_level_triggered_in_gb\n")
+    fo.write("#   SSCLCM: total_sst_size_comp_level_triggered_comp_migrs_in_gb\n")
     fo.write("# JCT: jobs_comp_temp_triggered_migr\n")
+    fo.write("#   SSCT: total_sst_size_comp_temp_triggered_migr\n")
     fo.write("\n")
 
-    fmt = "%4.2f %1d %2d %4d %4d %7.3f %4d"
+    fmt = "%4.2f %1d %2d %4d %4d %7.3f %7.3f %4d %7.3f"
     header = Util.BuildHeader(fmt, "cost_slo_epsilon" \
         " JR" \
         " JF" \
         " JC" \
           " JCL" \
           " SSCL" \
+          " SSCLCM" \
         " JCT" \
+          " SSCT" \
         )
     fo.write(header + "\n")
 
@@ -85,7 +88,9 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
           , ["num_jobs_comp_all", None]
             , ["num_jobs_comp_level_triggered", None]
             , ["total_sst_size_comp_level_triggered_in_gb", None]
+            , ["total_sst_size_comp_level_triggered_comp_migrs_in_gb", None]
           , ["num_jobs_comp_temp_triggered_migr", None]
+            , ["total_sst_size_comp_temp_triggered_migr", None]
           ]
 
       with open(fn1) as fo1:
@@ -109,6 +114,8 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
           , kvs[3][1]
           , kvs[4][1]
           , kvs[5][1]
+          , kvs[6][1]
+          , kvs[7][1]
           ))
       except TypeError as e:
         Cons.P(fn1)

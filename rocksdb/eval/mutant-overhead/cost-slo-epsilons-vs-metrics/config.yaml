@@ -11,8 +11,6 @@ by_cost_slo_epsilons:
   0.05: io/by-cost-slo-epsilons/180123-174528/ycsb/180123-225402.821-d
   0.06: io/by-cost-slo-epsilons/180123-174543/ycsb/180123-225516.517-d
   0.07: io/by-cost-slo-epsilons/180123-174558/ycsb/180123-225459.209-d
-  # This didn't finish. TODO: redoing the experiment
-  #0.08: io/by-cost-slo-epsilons/180123-174619/ycsb/180123-225511.917-d
   0.09: io/by-cost-slo-epsilons/180123-174639/ycsb/180123-225627.219-d
   0.1:  io/by-cost-slo-epsilons/180123-174653/ycsb/180123-225547.119-d
   0.2:  io/by-cost-slo-epsilons/180123-174713/ycsb/180123-225555.906-d
@@ -24,3 +22,6 @@ by_cost_slo_epsilons:
   0.8:  io/by-cost-slo-epsilons/180123-174904/ycsb/180123-225742.073-d
   0.9:  io/by-cost-slo-epsilons/180123-174922/ycsb/180123-225838.910-d
   1.0:  io/by-cost-slo-epsilons/180123-174939/ycsb/180123-225826.212-d
+
+  # This didn't finish. TODO: redoing the experiment
+  #0.08: io/by-cost-slo-epsilons/180123-174619/ycsb/180123-225511.917-d

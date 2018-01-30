@@ -230,6 +230,10 @@ def _OverallStat(cur, fo):
       " WHERE creation_reason='C' and temp_triggered_single_sst_migr=0 and migr_dirc IN ('S', 'F')")
   fo.write("#     num_outssts_comp_level_triggered_compaction_migration=%d\n" % cur.fetchone()["cnt"])
 
+  cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
+      " WHERE creation_reason='C' and temp_triggered_single_sst_migr=0 and migr_dirc IN ('S', 'F')")
+  fo.write("#     total_sst_size_comp_level_triggered_comp_migrs_in_gb=%.3f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+
   if True:
     # From the SSTables created from compaction-migrations
     #   There are more SSTables that get migrated to the slow storage than to the fast storage. Makes sense, since they get old in general.
@@ -258,6 +262,10 @@ def _OverallStat(cur, fo):
   cur.execute("SELECT count(distinct(job_id)) as cnt FROM sst_creation_info" \
       " WHERE creation_reason='C' and temp_triggered_single_sst_migr=1")
   fo.write("#   num_jobs_comp_temp_triggered_migr=%d\n" % cur.fetchone()["cnt"])
+
+  cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
+      " WHERE creation_reason='C' and temp_triggered_single_sst_migr=1")
+  fo.write("#     total_sst_size_comp_temp_triggered_migr=%.3f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
   if False:
     # With a temperature-triggered single-sstable migration, there is always a single input sstable, but there can be multiple output sstables.
