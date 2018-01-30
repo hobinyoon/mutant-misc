@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+from multiprocessing import Pool
 import os
 import pprint
 import re
@@ -14,6 +16,14 @@ from CompInfo import CompInfo
 import CompMigrStat
 
 
+@contextmanager
+def terminating(thing):
+  try:
+    yield thing
+  finally:
+    thing.terminate()
+
+
 def GetFnCostSloEpsilonVsNumCompMigrs():
   fn_out = "%s/cost-slo-epsilon-vs-metrics" % Conf.GetOutDir()
   if os.path.isfile(fn_out):
@@ -27,20 +37,20 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
     cse_fn[cost_slo_epsilon] = fn
   #Cons.P(pprint.pformat(cse_fn))
 
-  # Can be paraelized later
+  params = []
   for cost_slo_epsilon, fn_ycsb_log in cse_fn.iteritems():
-    lr = GetRocksdbLogReader(fn_ycsb_log)
-    Cons.P(lr)
-    sys.exit(0)
+    #params.append((cost_slo_epsilon, fn_ycsb_log))
+    params.append(fn_ycsb_log)
 
-
-def GetRocksdbLogReader(fn_ycsb):
-  mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb)
-  dn_log = mo.group("dn_log")
-  job_id = mo.group("job_id")
-  exp_dt = mo.group("exp_dt")
-  dn_log_job = "%s/%s" % (dn_log, job_id)
-  return RocksdbLogReader(dn_log_job, exp_dt)
+  parallel_processing = True
+  if parallel_processing:
+    with terminating(Pool()) as pool:
+      result = pool.map(GetFnTimeVsMetrics, params)
+      Cons.P(result)
+  else:
+    for p in params:
+      result = GetFnTimeVsMetrics(p)
+      Cons.P(result)
 
 
 def GetFnTimeVsMetrics(fn_ycsb):
@@ -52,8 +62,8 @@ def GetFnTimeVsMetrics(fn_ycsb):
   #Cons.P(job_id)
   #Cons.P(exp_dt)
   dn_log_job = "%s/%s" % (dn_log, job_id)
-  log_reader = RocksdbLogReader(dn_log_job, exp_dt)
-  return log_reader.FnMetricByTime()
+  lr = RocksdbLogReader(dn_log_job, exp_dt)
+  return lr.FnMetricByTime()
 
 
 def GenDataFilesForGnuplot():
