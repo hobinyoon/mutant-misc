@@ -211,10 +211,6 @@ class OutSstInfo:
     self.sst_id = j1["file_number"]
     self.path_id = j1["path_id"]
 
-    # TODO: ?
-    # Created from a pure compaction, compaction-migration, or migration.
-    #self.how_created = None
-
     # Migration direction
     self.migr_dirc = None
 

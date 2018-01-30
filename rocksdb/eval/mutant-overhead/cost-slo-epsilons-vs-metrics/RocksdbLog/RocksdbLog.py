@@ -153,6 +153,7 @@ class RocksdbLogReader:
 
       self.comp_info.CalcMigrDirections()
       self.sst_events.Write(self.fn_out)
+      CompMigrStat.AddStatToFile(self.fn_out)
 
   def FnMetricByTime(self):
     return self.fn_out

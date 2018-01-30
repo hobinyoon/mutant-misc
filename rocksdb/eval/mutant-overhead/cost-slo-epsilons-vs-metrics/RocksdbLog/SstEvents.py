@@ -24,7 +24,6 @@ class SstEvents:
     # Creation time to SSTable ID
     #   We assume no two timestamps are identical
     self.createts_sstid = {}
-    # Mutant option
 
 
   # 2017/10/13-20:41:54.872056 7f604a7e4700 EVENT_LOG_v1 {"time_micros": 1507927314871238, "cf_name": "usertable", "job": 3, "event":
@@ -95,36 +94,33 @@ class SstEvents:
 
 
   def Write(self, fn):
-    # TODO: overall stat
-
-
-
-    fmt = "%12s %12s %7.3f %4d %4d %7.3f %7.3f" \
-        " %4s %9s %4s %1s %1s %1s"
-    header = Util.BuildHeader(fmt, "rel_ts_HHMMSS_begin" \
-        " rel_ts_HHMMSS_end" \
-        " ts_dur" \
-        " num_sstables_begin" \
-        " num_sstables_end" \
-        " sstable_size_sum_in_gb_begin" \
-        " sstable_size_sum_in_gb_end" \
-        \
-        " end_sst_id" \
-        " end_sst_size" \
-        " end_sst_creation_jobid" \
-        " end_sst_creation_reason" \
-        " end_sst_temp_triggered_single_migr" \
-        " end_sst_migration_direction")
-    i = 0
     with open(fn, "w") as fo:
-      if i % 40 == 0:
-        fo.write(header + "\n")
-      i += 1
+      fmt = "%12s %12s %7.3f %4d %4d %7.3f %7.3f" \
+          " %4s %9s %4s %1s %1s %1s"
+      header = Util.BuildHeader(fmt, "rel_ts_HHMMSS_begin" \
+          " rel_ts_HHMMSS_end" \
+          " ts_dur" \
+          " num_sstables_begin" \
+          " num_sstables_end" \
+          " sstable_size_sum_in_gb_begin" \
+          " sstable_size_sum_in_gb_end" \
+          \
+          " end_sst_id" \
+          " end_sst_size" \
+          " end_sst_creation_jobid" \
+          " end_sst_creation_reason" \
+          " end_sst_temp_triggered_single_migr" \
+          " end_sst_migration_direction")
+
       ts_prev = datetime.timedelta(0)
       ts_str_prev = "00:00:00.000"
       num_ssts_prev = 0
       total_sst_size_prev = 0
+      i = 0
       for ts, num_ssts in sorted(self.ts_numssts.iteritems()):
+        if i % 40 == 0:
+          fo.write(header + "\n")
+        i += 1
         ts_str = _ToStr(ts)
         total_sst_size = self.ts_sstsize[ts]
         sst_id = "-"
