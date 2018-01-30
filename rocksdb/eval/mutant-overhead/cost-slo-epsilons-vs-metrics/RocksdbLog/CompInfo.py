@@ -7,10 +7,10 @@ sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~")
 import Cons
 import Util
 
-from HowCreated import HowCreated
 
 class CompInfo:
-  def __init__(self):
+  def __init__(self, rocks_log_reader):
+    self.rocks_log_reader = rocks_log_reader
     # {job_id: CiEntry()}
     self.jobid_cientry = {}
     # Input SSTable IDs that caused temperature-triggered single-sstable migration
@@ -25,7 +25,7 @@ class CompInfo:
     e.AddOutSstInfo(j1)
 
   def SetCompStarted(self, line):
-    e = CiEntry(line)
+    e = CiEntry(self.rocks_log_reader, line)
     if e.job_id in self.jobid_cientry:
       raise RuntimeError("Unexpected")
     self.jobid_cientry[e.job_id] = e
@@ -100,13 +100,25 @@ class CompInfo:
       return
     self.ttssm_in_sst_ids.add(in_sst_id)
 
+  def __repr__(self):
+    s = []
+    for k, v in sorted(vars(self).items()):
+      if k == "rocks_log_reader":
+        continue
+      if isinstance(v, dict) or isinstance(v, set):
+        s.append("len(%s)=%d" % (k, len(v)))
+      else:
+        s.append("%s=%s" % (k, v))
+    return "<%s>" % " ".join(s)
+
 
 class CiEntry:
   # 2017/10/13-20:41:54.872056 7f604a7e4700 EVENT_LOG_v1 {"time_micros": 1507927314871238, "cf_name": "usertable", "job": 3, "event":
   # "table_file_creation", "file_number": 706, "file_size": 258459599, "path_id": 0, "table_properties": {"data_size": 256772973, "index_size": 1685779,
   # "filter_size": 0, "raw_key_size": 6767934, "raw_average_key_size": 30, "raw_value_size": 249858360, "raw_average_value_size": 1140,
   # "num_data_blocks": 54794, "num_entries": 219174, "filter_policy_name": "", "reason": kFlush, "kDeletedKeys": "0", "kMergeOperands": "0"}}
-  def __init__(self, line):
+  def __init__(self, rocks_log_reader, line):
+    self.rocks_log_reader = rocks_log_reader
     # {out_sst_id: OutSstInfo()}
     self.out_ssts = {}
 
@@ -153,7 +165,15 @@ class CiEntry:
     self.job_id = int(j1["job"])
 
   def __repr__(self):
-    return " ".join("%s=%s" % item for item in sorted(vars(self).items()))
+    s = []
+    for k, v in sorted(vars(self).items()):
+      if k == "rocks_log_reader":
+        continue
+      if isinstance(v, dict) or isinstance(v, set):
+        s.append("len(%s)=%d" % (k, len(v)))
+      else:
+        s.append("%s=%s" % (k, v))
+    return "<%s>" % " ".join(s)
 
   def AddOutSstInfo(self, j1):
     osi = OutSstInfo(j1)
@@ -167,7 +187,7 @@ class CiEntry:
     # In storage 0 and 1: fast and slow
     total_in_sst_sizes = [0, 0]
     for in_sst_id in self.in_sst_ids:
-      hc = HowCreated.Get(in_sst_id)
+      hc = self.rocks_log_reader.how_created.Get(in_sst_id)
       total_in_sst_sizes[hc.PathId()] += hc.Size()
     in_sst0_size_ratio = float(total_in_sst_sizes[0]) / sum(total_in_sst_sizes)
     #Cons.P("total_in_sst_sizes=%s in_sst0_size_ratio=%d" % (total_in_sst_sizes, in_sst0_size_ratio))
@@ -191,8 +211,9 @@ class OutSstInfo:
     self.sst_id = j1["file_number"]
     self.path_id = j1["path_id"]
 
+    # TODO: ?
     # Created from a pure compaction, compaction-migration, or migration.
-    self.how_created = None
+    #self.how_created = None
 
     # Migration direction
     self.migr_dirc = None

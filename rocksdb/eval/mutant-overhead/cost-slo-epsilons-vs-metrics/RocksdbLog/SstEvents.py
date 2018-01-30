@@ -8,8 +8,6 @@ sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~")
 import Cons
 import Util
 
-from CompInfo import CompInfo
-from HowCreated import HowCreated
 
 class SstEvents:
   def __init__(self, rocks_log_reader, exp_begin_dt):
@@ -27,7 +25,6 @@ class SstEvents:
     #   We assume no two timestamps are identical
     self.createts_sstid = {}
     # Mutant option
-    self.migrate_sstables = None
 
 
   # 2017/10/13-20:41:54.872056 7f604a7e4700 EVENT_LOG_v1 {"time_micros": 1507927314871238, "cf_name": "usertable", "job": 3, "event":
@@ -61,8 +58,8 @@ class SstEvents:
 
     self.createts_sstid[ts1] = sst_id
 
-    hc = HowCreated.Add(sst_id, j1)
-    if self.migrate_sstables:
+    hc = self.rocks_log_reader.how_created.Add(sst_id, j1)
+    if self.rocks_log_reader.migrate_sstables:
       if hc.Reason()[0] == "C":
         self.rocks_log_reader.comp_info.AddOutSstInfo(j1)
 
@@ -140,12 +137,12 @@ class SstEvents:
         if ts in self.createts_sstid:
           sst_id = self.createts_sstid[ts]
           sst_size = self.sstid_size[sst_id]
-          hc = HowCreated.Get(sst_id)
+          hc = self.rocks_log_reader.how_created.Get(sst_id)
           job_id = hc.JobId()
           creation_reason = hc.Reason()
 
           temp_triggered_migr = "T" if self.rocks_log_reader.comp_info.TempTriggeredSingleSstMigr(job_id) else "-"
-          if self.migrate_sstables:
+          if self.rocks_log_reader.migrate_sstables:
             if creation_reason == "C":
               migr_dirc = self.rocks_log_reader.comp_info.MigrDirc(job_id, sst_id)
 
@@ -173,11 +170,13 @@ class SstEvents:
   def __repr__(self):
     s = []
     for k, v in sorted(vars(self).items()):
-      if k in ["rocks_log_reader", "createts_sstid", "sstid_size", "ts_numssts", "ts_sstsize"]:
+      if k == "rocks_log_reader":
         continue
-      s.append("%s=%s" % (k, v))
+      if isinstance(v, dict):
+        s.append("len(%s)=%d" % (k, len(v)))
+      else:
+        s.append("%s=%s" % (k, v))
     return "<%s>" % " ".join(s)
-    #return "<%s>" % " ".join("%s=%s" % item for item in sorted(vars(self).items()))
 
 
 def _ToStr(td):

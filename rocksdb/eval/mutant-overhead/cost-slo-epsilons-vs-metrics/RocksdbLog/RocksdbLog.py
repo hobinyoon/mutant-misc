@@ -76,10 +76,9 @@ class RocksdbLogReader:
     if os.path.isfile(self.fn_out):
       return
 
-    # TODO: Make these thread-safe. When time allows. almost.
     self.sst_events = SstEvents(self, exp_dt)
-    HowCreated.Init()
-    self.comp_info = CompInfo()
+    self.how_created = HowCreated()
+    self.comp_info = CompInfo(self)
 
     with Cons.MT("Generating rocksdb time-vs-metrics file for plot ..."):
       fn_log_rocksdb = "%s/rocksdb/%s" % (dn_log_job, exp_dt)
@@ -103,8 +102,6 @@ class RocksdbLogReader:
             if mo is None:
               raise RuntimeError("Unexpected: [%s]" % line)
             self.migrate_sstables = (mo.group("v") == "1")
-            self.sst_events.migrate_sstables = self.migrate_sstables
-            HowCreated.migrate_sstables = self.migrate_sstables
 
           # 2017/10/13-20:41:54.872056 7f604a7e4700 EVENT_LOG_v1 {"time_micros": 1507927314871238, "cf_name": "usertable", "job": 3, "event":
           # "table_file_creation", "file_number": 706, "file_size": 258459599, "path_id": 0, "table_properties": {"data_size": 256772973, "index_size": 1685779,

@@ -1,26 +1,27 @@
-import json
-import os
-import re
-import sys
-
-sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~"))
-import Cons
-import Util
-
-# How an SSTable was created
+# How SSTables were created
 class HowCreated:
-  sstid_howcreated = {}
+  def __init__(self):
+    self.sstid_howcreated = {}
 
-  @staticmethod
-  def Init():
-    HowCreated.sstid_howcreated = {}
+  def Add(self, sst_id, j1):
+    e = HcEntry(j1)
+    self.sstid_howcreated[sst_id] = e
+    return e
 
-  @staticmethod
-  def Add(sst_id, j1):
-    hc = HowCreated(j1)
-    HowCreated.sstid_howcreated[sst_id] = hc
-    return hc
+  def Get(self, sst_id):
+    return self.sstid_howcreated[sst_id]
 
+  def __repr__(self):
+    s = []
+    for k, v in sorted(vars(self).items()):
+      if k == "sstid_howcreated":
+        s.append("len(%s)=%d" % (k, len(v)))
+      else:
+        s.append("%s=%s" % (k, v))
+    return "<%s>" % " ".join(s)
+
+
+class HcEntry:
   def __init__(self, j1):
     self.sst_id = int(j1["file_number"])
     self.path_id = int(j1["path_id"])
@@ -41,11 +42,7 @@ class HowCreated:
     self.out_sst_created_from_temp_triggered_single_sst_migration = None
 
   def __repr__(self):
-    return " ".join("%s=%s" % item for item in sorted(vars(self).items()))
-
-  @staticmethod
-  def Get(sst_id):
-    return HowCreated.sstid_howcreated[sst_id]
+    return "<%s>" % " ".join("%s=%s" % item for item in sorted(vars(self).items()))
 
   def Size(self):
     return self.sst_size
