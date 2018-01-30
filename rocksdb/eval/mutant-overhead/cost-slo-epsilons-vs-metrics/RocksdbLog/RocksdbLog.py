@@ -59,23 +59,61 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
     i += 1
 
   with open(fn_out, "w") as fo:
-    fmt = "%4.2f %4d"
-    header = Util.BuildHeader(fmt, "cost_slo_epsilon jobs_comp_temp_triggered_migr")
+    fo.write("# JR:  jobs_recovery\n")
+    fo.write("# JF:  jobs_flush\n")
+    fo.write("# JC:  jobs_compaction\n")
+    fo.write("#   JCL: jobs_comp_leveled_organization_triggered\n")
+    fo.write("#   SSCL: total_sst_size_comp_level_triggered_in_gb\n")
+    fo.write("# JCT: jobs_comp_temp_triggered_migr\n")
+    fo.write("\n")
+
+    fmt = "%4.2f %1d %2d %4d %4d %7.3f %4d"
+    header = Util.BuildHeader(fmt, "cost_slo_epsilon" \
+        " JR" \
+        " JF" \
+        " JC" \
+          " JCL" \
+          " SSCL" \
+        " JCT" \
+        )
     fo.write(header + "\n")
 
     for cost_slo_epsilon, fn1 in sorted(cse_outfn.iteritems()):
-      JCT = None
+      kvs = [
+          ["num_jobs_recovery", None]
+          , ["num_jobs_flush", None]
+          , ["num_jobs_comp_all", None]
+            , ["num_jobs_comp_level_triggered", None]
+            , ["total_sst_size_comp_level_triggered_in_gb", None]
+          , ["num_jobs_comp_temp_triggered_migr", None]
+          ]
+
       with open(fn1) as fo1:
         for line in fo1:
-          if line.startswith("#   num_jobs_comp_temp_triggered_migr="):
-            mo = re.match(r".+num_jobs_comp_temp_triggered_migr=(?P<v>\d+)", line)
-            JCT = int(mo.group("v"))
-            break
+          if not line.startswith("#"):
+            continue
 
-      fo.write((fmt + "\n") % (
-        cost_slo_epsilon
-        , JCT
-        ))
+          for kv in kvs:
+            k = kv[0]
+            mo = re.match(r".+%s=(?P<v>(\d|\.)+)" % k, line)
+            if mo:
+              kv[1] = float(mo.group("v"))
+              continue
+
+      try:
+        fo.write((fmt + "\n") % (
+          cost_slo_epsilon
+          , kvs[0][1]
+          , kvs[1][1]
+          , kvs[2][1]
+          , kvs[3][1]
+          , kvs[4][1]
+          , kvs[5][1]
+          ))
+      except TypeError as e:
+        Cons.P(fn1)
+        raise e
+
   Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
