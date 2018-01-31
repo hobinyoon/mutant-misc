@@ -31,13 +31,24 @@ import CompareMem
 
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
-
-  RocksdbLog.GetFnCostSloEpsilonVsNumCompMigrs()
-  # TODO: plot
+  PlotCseVsAll()
 
   # TODO: clean up
   #PlotTimeVsAllMetrics()
   #PlotCompareTwo()
+
+
+def PlotCseVsAll():
+  # Cost SLO epsilon vs all metrics
+  fn_cse_vs_all = RocksdbLog.GetFnCostSloEpsilonVsMetrics()
+  fn_out = "%s/cost-slo-epsilon-vs-metrics.pdf" % Conf.GetOutDir()
+
+  with Cons.MT("Plotting cost SLO epsilon vs metrics ..."):
+    env = os.environ.copy()
+    env["FN_CSE_VS_ALL"] = fn_cse_vs_all
+    env["FN_OUT"] = fn_out
+    Util.RunSubp("gnuplot %s/cost-slo-epsilon-vs-metrics.gnuplot" % os.path.dirname(__file__), env=env)
+    Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
     
 def PlotTimeVsAllMetrics():

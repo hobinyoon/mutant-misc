@@ -1,38 +1,102 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
-PARAMS = system("echo $PARAMS")
-NUM_STGDEVS = system("echo $NUM_STGDEVS") + 0
-TIME_MAX = system("echo $TIME_MAX")
-IN_FN_DSTAT = system("echo $IN_FN_DSTAT")
-IN_FN_YCSB = system("echo $IN_FN_YCSB")
-IN_FN_ROCKSDB = system("echo $IN_FN_ROCKSDB")
-IN_FN_CPU_AVG = system("echo $IN_FN_CPU_AVG")
-IN_FN_MEM = system("echo $IN_FN_MEM")
-OUT_FN = system("echo $OUT_FN")
+FN_CSE_VS_ALL = system("echo $FN_CSE_VS_ALL")
+FN_OUT = system("echo $FN_OUT")
 
 set print "-"
 #print sprintf("NUM_STGDEVS=%d", NUM_STGDEVS)
-print sprintf("IN_FN_ROCKSDB=%s", IN_FN_ROCKSDB)
 
-set terminal pdfcairo enhanced size 6in, (2.3*0.85)in
-set output OUT_FN
+set terminal pdfcairo enhanced size 2.8in, (2.3*0.85)in
+set output FN_OUT
 
-# Experiment parameters
+LMARGIN=0.25
+RMARGIN=0.86
+#X_MIN = 0.01 / 1.5
+X_MIN = -0.01
+X_MAX = 0.21
+
+# Storage unit cost
 if (1) {
   reset
-  set noxtics
-  set noytics
-  set noborder
-  f(x) = x
-  #set label 1 at screen 0.025, screen 0.90 PARAMS font "courier,10" left front
-  # Looks better. Feels narrower.
-  set label 1 at screen 0.025, screen 0.90 PARAMS font "DejaVu Sans Mono,7" left front
-  plot f(x) lc rgb "white" not
+  set xlabel "Cost SLO {/Symbol e}"
+  set ylabel "Storage unit cost\n($/GB/month)" offset 0.4,0
+  set xtics nomirror tc rgb "black"
+  set nomxtics
+  set ytics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.02
+  set mytics 2
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # TODO: set manual mxtics
+  if (1) {
+  }
+
+  set xrange[X_MIN:X_MAX]
+  #set logscale x
+  set yrange[0.28:0.36]
+
+  # Align the stacked plots
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+
+  set arrow from X_MIN, 0.3 to X_MAX, 0.3 nohead lc rgb "blue" lw 5 lt 0 front
+  set label "Cost\nSLO" at X_MAX, 0.3 offset 1,0.5 tc rgb "blue" front
+
+  plot \
+  FN_CSE_VS_ALL u 1:2 w p pt 7 ps 0.3 lc rgb "red" not
 }
 
-LMARGIN = 10
-set sample 1000
+# Total SSTable size migrated
+if (1) {
+  reset
+  set xlabel "Cost SLO {/Symbol e}"
+  set ylabel "SSTables migrated (GB)"
+  set xtics nomirror tc rgb "black"
+  set nomxtics
+  set ytics nomirror tc rgb "black" #format "%0.2f" autofreq 0,0.02
+  set mytics 2
+  set grid xtics ytics front lc rgb "#808080"
+  set border back lc rgb "#808080" back
 
+  set xrange[X_MIN:X_MAX]
+  #set logscale x
+  set yrange[0:]
+
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+
+  plot \
+  FN_CSE_VS_ALL u 1:(0   + 2):(0):($14-2) w vectors nohead lc rgb "#8080FF" lw 10 not, \
+  FN_CSE_VS_ALL u 1:($14 + 2):(0):($15-2) w vectors nohead lc rgb "#FF8080" lw 10 not
+}
+
+# Total SSTable size compacted
+if (1) {
+  reset
+  set xlabel "Cost SLO {/Symbol e}"
+  set ylabel "SSTables compacted (GB)"
+  set xtics nomirror tc rgb "black"
+  set nomxtics
+  set ytics nomirror tc rgb "black" autofreq 0,50
+  set mytics 2
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  set xrange[X_MIN:X_MAX]
+  #set logscale x
+  set yrange[0:]
+
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+
+  # TODO: Breakdown of blue and red
+
+  plot \
+  FN_CSE_VS_ALL u 1:(0   + 2):(0):($11-2) w vectors nohead lc rgb "#FF80FF" lw 10 not, \
+  FN_CSE_VS_ALL u 1:($11 + 2):(0):($10-2) w vectors nohead lc rgb "#808080" lw 10 not
+}
+
+exit
 
 # DB IOPS
 if (1) {

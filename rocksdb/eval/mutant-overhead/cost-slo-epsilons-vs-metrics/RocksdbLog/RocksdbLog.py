@@ -25,7 +25,7 @@ def terminating(thing):
     thing.terminate()
 
 
-def GetFnCostSloEpsilonVsNumCompMigrs():
+def GetFnCostSloEpsilonVsMetrics():
   fn_out = "%s/cost-slo-epsilon-vs-metrics" % Conf.GetOutDir()
   if os.path.isfile(fn_out):
     return fn_out
@@ -67,10 +67,12 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
     fo.write("#   SSCL: total_sst_size_comp_level_triggered_in_gb\n")
     fo.write("#   SSCLCM: total_sst_size_comp_level_triggered_comp_migrs_in_gb\n")
     fo.write("# JCT: jobs_comp_temp_triggered_migr\n")
-    fo.write("#   SSCT: total_sst_size_comp_temp_triggered_migr\n")
+    fo.write("#   SSCT: total_sst_size_comp_temp_triggered_migr_in_gb\n")
+    fo.write("#     SSCTS: To slow storage\n")
+    fo.write("#     SSCTF: To fast storage\n")
     fo.write("\n")
 
-    fmt = "%4.2f %8.6f %8.6f %8.6f %8.6f %1d %2d %4d %4d %7.3f %7.3f %4d %7.3f"
+    fmt = "%4.2f %8.6f %8.6f %8.6f %8.6f %1d %2d %4d %4d %7.3f %7.3f %4d %7.3f %7.3f %7.3f"
     header = Util.BuildHeader(fmt, "CSE" \
         " stg_unit_cost_$_gb_month" \
         " stg_cost_$" \
@@ -84,6 +86,8 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
           " SSCLCM" \
         " JCT" \
           " SSCT" \
+            " SSCTS" \
+            " SSCTF" \
         )
     fo.write(header + "\n")
 
@@ -101,6 +105,8 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
             , ["total_sst_size_comp_level_triggered_comp_migrs_in_gb", None]
           , ["num_jobs_comp_temp_triggered_migr", None]
             , ["total_sst_size_comp_temp_triggered_migr", None]
+              , ["total_sst_size_comp_temp_triggered_migr_to_slow", None]
+              , ["total_sst_size_comp_temp_triggered_migr_to_fast", None]
           ]
 
       with open(fn1) as fo1:
@@ -130,12 +136,15 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
           , kvs[9][1]
           , kvs[10][1]
           , kvs[11][1]
+          , kvs[12][1]
+          , kvs[13][1]
           ))
       except TypeError as e:
         Cons.P(fn1)
         raise e
 
   Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+  return fn_out
 
 
 def GetFnTimeVsMetrics(fn_ycsb):
@@ -202,7 +211,9 @@ class RocksdbLogReader:
               raise RuntimeError("Unexpected: [%s]" % line)
             self.migrate_sstables = (mo.group("v") == "1")
 
-          # TODO: May have to deal with the single storage configuration for the baseline case.
+          # Storage pricing. Fast and slow.
+          #   We parse the 2 storage configuration for now.
+          #   You don't need this for the baseline, unmodified DB, since the unit cost is always the same.
           # 2018/01/23-22:53:48.875126 7f3300cd8700   stg_cost_list: 0.528000 0.045000
           elif "   stg_cost_list: " in line:
             mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .*   stg_cost_list: (?P<v0>(\d|\.)+) (?P<v1>(\d|\.)+)", line)

@@ -267,6 +267,14 @@ def _OverallStat(cur, fo):
       " WHERE creation_reason='C' and temp_triggered_single_sst_migr=1")
   fo.write("#     total_sst_size_comp_temp_triggered_migr=%.3f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
+  cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
+      " WHERE creation_reason='C' AND temp_triggered_single_sst_migr=1 AND migr_dirc='S'")
+  fo.write("#     total_sst_size_comp_temp_triggered_migr_to_slow=%.3f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+
+  cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
+      " WHERE creation_reason='C' AND temp_triggered_single_sst_migr=1 AND migr_dirc='F'")
+  fo.write("#     total_sst_size_comp_temp_triggered_migr_to_fast=%.3f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+
   if False:
     # With a temperature-triggered single-sstable migration, there is always a single input sstable, but there can be multiple output sstables.
     #   Interesting.
