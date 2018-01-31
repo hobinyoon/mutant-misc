@@ -187,7 +187,7 @@ class CiEntry:
     # In storage 0 and 1: fast and slow
     total_in_sst_sizes = [0, 0]
     for in_sst_id in self.in_sst_ids:
-      hc = self.rocks_log_reader.how_created.Get(in_sst_id)
+      hc = self.rocks_log_reader.sst_info.Get(in_sst_id)
       total_in_sst_sizes[hc.PathId()] += hc.Size()
     in_sst0_size_ratio = float(total_in_sst_sizes[0]) / sum(total_in_sst_sizes)
     #Cons.P("total_in_sst_sizes=%s in_sst0_size_ratio=%d" % (total_in_sst_sizes, in_sst0_size_ratio))

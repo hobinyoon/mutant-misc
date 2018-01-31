@@ -11,9 +11,10 @@ import Util
 
 import Conf
 from SstEvents import SstEvents
-from HowCreated import HowCreated
+from SstInfo import SstInfo
 from CompInfo import CompInfo
 import CompMigrStat
+import StgCost
 
 
 @contextmanager
@@ -58,9 +59,10 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
     i += 1
 
   with open(fn_out, "w") as fo:
-    fo.write("# JR:  jobs_recovery\n")
-    fo.write("# JF:  jobs_flush\n")
-    fo.write("# JC:  jobs_compaction\n")
+    fo.write("# CSE: Storge cost SLO epsilon\n")
+    fo.write("# JR: jobs_recovery\n")
+    fo.write("# JF: jobs_flush\n")
+    fo.write("# JC: jobs_compaction\n")
     fo.write("#   JCL: jobs_comp_leveled_organization_triggered\n")
     fo.write("#   SSCL: total_sst_size_comp_level_triggered_in_gb\n")
     fo.write("#   SSCLCM: total_sst_size_comp_level_triggered_comp_migrs_in_gb\n")
@@ -68,8 +70,12 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
     fo.write("#   SSCT: total_sst_size_comp_temp_triggered_migr\n")
     fo.write("\n")
 
-    fmt = "%4.2f %1d %2d %4d %4d %7.3f %7.3f %4d %7.3f"
-    header = Util.BuildHeader(fmt, "cost_slo_epsilon" \
+    fmt = "%4.2f %8.6f %8.6f %8.6f %8.6f %1d %2d %4d %4d %7.3f %7.3f %4d %7.3f"
+    header = Util.BuildHeader(fmt, "CSE" \
+        " stg_unit_cost_$_gb_month" \
+        " stg_cost_$" \
+        " fast_stg_cost_$" \
+        " slow_stg_cost_$" \
         " JR" \
         " JF" \
         " JC" \
@@ -83,7 +89,11 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
 
     for cost_slo_epsilon, fn1 in sorted(cse_outfn.iteritems()):
       kvs = [
-          ["num_jobs_recovery", None]
+          ["total_stg_unit_cost", None]
+          , ["total_stg_cost", None]
+          , ["fast_stg_cost", None]
+          , ["slow_stg_cost", None]
+          , ["num_jobs_recovery", None]
           , ["num_jobs_flush", None]
           , ["num_jobs_comp_all", None]
             , ["num_jobs_comp_level_triggered", None]
@@ -116,6 +126,10 @@ def GetFnCostSloEpsilonVsNumCompMigrs():
           , kvs[5][1]
           , kvs[6][1]
           , kvs[7][1]
+          , kvs[8][1]
+          , kvs[9][1]
+          , kvs[10][1]
+          , kvs[11][1]
           ))
       except TypeError as e:
         Cons.P(fn1)
@@ -158,7 +172,7 @@ class RocksdbLogReader:
       return
 
     self.sst_events = SstEvents(self, exp_dt)
-    self.how_created = HowCreated()
+    self.sst_info = SstInfo()
     self.comp_info = CompInfo(self)
 
     with Cons.MT("Generating rocksdb time-vs-metrics file for plot ..."):
@@ -173,6 +187,10 @@ class RocksdbLogReader:
         raise RuntimeError("Unexpected")
       Cons.P(fn_log_rocksdb)
 
+      self.stg_pricing = None
+      self.stg_cost_slo = None
+      self.stg_cost_slo_epsilon = None
+
       with open(fn_log_rocksdb) as fo:
         for line in fo:
           #Cons.P(line)
@@ -183,6 +201,28 @@ class RocksdbLogReader:
             if mo is None:
               raise RuntimeError("Unexpected: [%s]" % line)
             self.migrate_sstables = (mo.group("v") == "1")
+
+          # TODO: May have to deal with the single storage configuration for the baseline case.
+          # 2018/01/23-22:53:48.875126 7f3300cd8700   stg_cost_list: 0.528000 0.045000
+          elif "   stg_cost_list: " in line:
+            mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .*   stg_cost_list: (?P<v0>(\d|\.)+) (?P<v1>(\d|\.)+)", line)
+            if mo is None:
+              raise RuntimeError("Unexpected: [%s]" % line)
+            self.stg_pricing = [float(mo.group("v0")), float(mo.group("v1"))]
+
+          # 2018/01/23-22:53:48.875128 7f3300cd8700   stg_cost_slo: 0.300000
+          elif "   stg_cost_slo: " in line:
+            mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .*   stg_cost_slo: (?P<v>(\d|\.)+)", line)
+            if mo is None:
+              raise RuntimeError("Unexpected: [%s]" % line)
+            self.stg_cost_slo = float(mo.group("v"))
+
+          # 2018/01/23-22:53:48.875130 7f3300cd8700   stg_cost_slo_epsilon: 0.020000
+          elif "   stg_cost_slo_epsilon: " in line:
+            mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .*   stg_cost_slo_epsilon: (?P<v>(\d|\.)+)", line)
+            if mo is None:
+              raise RuntimeError("Unexpected: [%s]" % line)
+            self.stg_cost_slo_epsilon = float(mo.group("v"))
 
           # 2017/10/13-20:41:54.872056 7f604a7e4700 EVENT_LOG_v1 {"time_micros": 1507927314871238, "cf_name": "usertable", "job": 3, "event":
           # "table_file_creation", "file_number": 706, "file_size": 258459599, "path_id": 0, "table_properties": {"data_size": 256772973, "index_size": 1685779,
@@ -225,13 +265,11 @@ class RocksdbLogReader:
       self.comp_info.CalcMigrDirections()
       self.sst_events.Write(self.fn_out)
       CompMigrStat.AddStatToFile(self.fn_out)
+      self.stg_cost = StgCost.StgCost(self)
+      self.stg_cost.AddStatToFile(self.fn_out)
 
   def FnMetricByTime(self):
     return self.fn_out
 
   def __repr__(self):
     return "<%s>" % " ".join("%s=%s" % item for item in sorted(vars(self).items()))
-
-  # TODO
-  # Get the number of compactions and migrations
-  #def GetNumCompMigrs(self):

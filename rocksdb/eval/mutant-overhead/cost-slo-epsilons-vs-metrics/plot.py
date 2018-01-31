@@ -32,15 +32,8 @@ import CompareMem
 def main(argv):
   Util.MkDirs(Conf.GetOutDir())
 
-  # TODO: Cost SLO epsilon vs. the number of the total amount of SSTables migrated.
-  exps = []
-  # TODO:
-  #Conf.Get("unmodified_db")
-
   RocksdbLog.GetFnCostSloEpsilonVsNumCompMigrs()
-
-
-
+  # TODO: plot
 
   # TODO: clean up
   #PlotTimeVsAllMetrics()

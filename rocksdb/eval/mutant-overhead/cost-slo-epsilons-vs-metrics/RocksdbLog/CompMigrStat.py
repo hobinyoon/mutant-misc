@@ -94,20 +94,20 @@ def _GenDB(fn_in, fn_db):
         t = re.split(r" +", line)
         hour = int(t[1].split(":")[0])
 
-        sst_id = t[7]
+        sst_id = t[11]
         # Ignore when end sst_id is -, which means an sstable was deleted.
         if sst_id == "-":
           continue
         sst_id = int(sst_id)
 
-        sst_size = int(t[8])
+        sst_size = int(t[12])
 
-        job_id = int(t[9])
+        job_id = int(t[14])
 
         # Creation reason: R, F, C, -
-        cr = t[10]
-        temp_triggered_single_sst_migr = (t[11] == "T")
-        migr_dirc = t[12]
+        cr = t[15]
+        temp_triggered_single_sst_migr = (t[16] == "T")
+        migr_dirc = t[17]
 
         cur.execute(q, (hour, sst_id, sst_size, job_id, cr, temp_triggered_single_sst_migr, migr_dirc))
     conn.commit()

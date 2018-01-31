@@ -13,12 +13,10 @@ class SstEvents:
   def __init__(self, rocks_log_reader, exp_begin_dt):
     self.rocks_log_reader = rocks_log_reader
     self.exp_begin_dt = datetime.datetime.strptime(exp_begin_dt, "%y%m%d-%H%M%S.%f")
-    # {sst_id: file_size}
-    self.sstid_size = {}
-    self.cur_sstsize = 0
-    self.cur_numssts = 0
-    # {timestamp: total_size}
-    # {timestamp: num_ssts}
+    self.cur_sstsize = [0, 0]
+    self.cur_numssts = [0, 0]
+    # {timestamp: [total_fast_storage_size, total_slow_storage_size]}
+    # {timestamp: [num_ssts_in_fast_storage, num_ssts_in_slow_storage]}
     self.ts_sstsize = {}
     self.ts_numssts = {}
     # Creation time to SSTable ID
@@ -45,19 +43,19 @@ class SstEvents:
 
     sst_size = int(j1["file_size"])
     sst_id = int(j1["file_number"])
+    path_id = int(j1["path_id"])
 
     ts1 = self._GetRelTs(mo.group("ts"))
 
-    self.sstid_size[sst_id] = sst_size
-    self.cur_sstsize += sst_size
-    self.cur_numssts += 1
+    self.cur_sstsize[path_id] += sst_size
+    self.cur_numssts[path_id] += 1
 
-    self.ts_sstsize[ts1] = self.cur_sstsize
-    self.ts_numssts[ts1] = self.cur_numssts
+    self.ts_sstsize[ts1] = list(self.cur_sstsize)
+    self.ts_numssts[ts1] = list(self.cur_numssts)
 
     self.createts_sstid[ts1] = sst_id
 
-    hc = self.rocks_log_reader.how_created.Add(sst_id, j1)
+    hc = self.rocks_log_reader.sst_info.Add(sst_id, j1)
     if self.rocks_log_reader.migrate_sstables:
       if hc.Reason()[0] == "C":
         self.rocks_log_reader.comp_info.AddOutSstInfo(j1)
@@ -78,13 +76,15 @@ class SstEvents:
     sst_id = int(j1["file_number"])
 
     ts1 = self._GetRelTs(ts0)
-    if sst_id not in self.sstid_size:
+    si = self.rocks_log_reader.sst_info.Get(sst_id)
+    if si is None:
       Cons.P("Interesting: Sst (id %d) deleted without a creation. Ignore." % sst_id)
       return
-    self.cur_sstsize -= self.sstid_size[sst_id]
-    self.cur_numssts -= 1
-    self.ts_sstsize[ts1] = self.cur_sstsize
-    self.ts_numssts[ts1] = self.cur_numssts
+    path_id = si.PathId()
+    self.cur_sstsize[path_id] -= si.Size()
+    self.cur_numssts[path_id] -= 1
+    self.ts_sstsize[ts1] = list(self.cur_sstsize)
+    self.ts_numssts[ts1] = list(self.cur_numssts)
 
 
   def _GetRelTs(self, ts0):
@@ -93,20 +93,69 @@ class SstEvents:
     return ts_rel
 
 
+  def GetStgTimeSize(self, time_max):
+    #fmt = "%15s %5.3f %11.9f %5.3f %11.9f"
+    #Cons.P(Util.BuildHeader(fmt, "time_end" \
+    #    " total_fast_sst_size_end fast_sst_time_size_gb_month" \
+    #    " total_slow_sst_size_end slow_sst_time_size_gb_month" \
+    #    ))
+
+    ts_prev = datetime.timedelta()
+    # Fast and slow storage
+    total_sst_size_prev = [0, 0]
+    time_size = [0.0, 0.0]
+    time_size_gb_month = [0.0, 0.0]
+
+    done = False
+    for ts, total_sst_size in sorted(self.ts_sstsize.iteritems()):
+      if done:
+        break
+
+      if time_max and (time_max <= ts):
+        ts = time_max
+        done = True
+
+      time_dur = ts.total_seconds() - ts_prev.total_seconds()
+      time_size[0] += (time_dur * total_sst_size_prev[0])
+      time_size[1] += (time_dur * total_sst_size_prev[1])
+
+      time_size_gb_month = [
+          float(time_size[0]) / 1024 / 1024 / 1024 / (3600 * 24 * 365.25 / 12)
+          , float(time_size[1]) / 1024 / 1024 / 1024 / (3600 * 24 * 365.25 / 12)
+          ]
+      #Cons.P(fmt % (ts
+      #  , float(total_sst_size[0]) / 1024 / 1024 / 1024, time_size_gb_month[0]
+      #  , float(total_sst_size[1]) / 1024 / 1024 / 1024, time_size_gb_month[1]
+      #  ))
+      ts_prev = ts
+      total_sst_size_prev = list(total_sst_size)
+
+    return time_size_gb_month
+
+
   def Write(self, fn):
     with open(fn, "w") as fo:
-      fmt = "%12s %12s %7.3f %4d %4d %7.3f %7.3f" \
-          " %4s %9s %4s %1s %1s %1s"
+      # TODO: Storage cost
+
+
+
+      fmt = "%12s %12s %7.3f %4d %4d %4d %4d %7.3f %7.3f %7.3f %7.3f" \
+          " %4s %9s %1s %4s %1s %1s %1s"
       header = Util.BuildHeader(fmt, "rel_ts_HHMMSS_begin" \
           " rel_ts_HHMMSS_end" \
           " ts_dur" \
-          " num_sstables_begin" \
-          " num_sstables_end" \
-          " sstable_size_sum_in_gb_begin" \
-          " sstable_size_sum_in_gb_end" \
+          " num_fast_sstables_begin" \
+          " num_slow_sstables_begin" \
+          " num_fast_sstables_end" \
+          " num_slow_sstables_end" \
+          " fast_sstable_size_sum_in_gb_begin" \
+          " slow_sstable_size_sum_in_gb_begin" \
+          " fast_sstable_size_sum_in_gb_end" \
+          " slow_sstable_size_sum_in_gb_end" \
           \
           " end_sst_id" \
           " end_sst_size" \
+          " end_sst_path_id" \
           " end_sst_creation_jobid" \
           " end_sst_creation_reason" \
           " end_sst_temp_triggered_single_migr" \
@@ -114,8 +163,8 @@ class SstEvents:
 
       ts_prev = datetime.timedelta(0)
       ts_str_prev = "00:00:00.000"
-      num_ssts_prev = 0
-      total_sst_size_prev = 0
+      num_ssts_prev = [0, 0]
+      total_sst_size_prev = [0, 0]
       i = 0
       for ts, num_ssts in sorted(self.ts_numssts.iteritems()):
         if i % 40 == 0:
@@ -125,6 +174,7 @@ class SstEvents:
         total_sst_size = self.ts_sstsize[ts]
         sst_id = "-"
         sst_size = "-"
+        path_id = "-"
         job_id = "-"
         creation_reason = "-"
         # Temperature-triggered single-sstable migration
@@ -132,10 +182,11 @@ class SstEvents:
         migr_dirc = "-"
         if ts in self.createts_sstid:
           sst_id = self.createts_sstid[ts]
-          sst_size = self.sstid_size[sst_id]
-          hc = self.rocks_log_reader.how_created.Get(sst_id)
-          job_id = hc.JobId()
-          creation_reason = hc.Reason()
+          si = self.rocks_log_reader.sst_info.Get(sst_id)
+          sst_size = si.Size()
+          path_id = si.PathId()
+          job_id = si.JobId()
+          creation_reason = si.Reason()
 
           temp_triggered_migr = "T" if self.rocks_log_reader.comp_info.TempTriggeredSingleSstMigr(job_id) else "-"
           if self.rocks_log_reader.migrate_sstables:
@@ -145,13 +196,18 @@ class SstEvents:
         fo.write((fmt + "\n") % (ts_str_prev
           , ts_str
           , (ts.total_seconds() - ts_prev.total_seconds())
-          , num_ssts_prev
-          , num_ssts
-          , (float(total_sst_size_prev) / 1024 / 1024 / 1024)
-          , (float(total_sst_size) / 1024 / 1024 / 1024)
+          , num_ssts_prev[0]
+          , num_ssts_prev[1]
+          , num_ssts[0]
+          , num_ssts[1]
+          , (float(total_sst_size_prev[0]) / 1024 / 1024 / 1024)
+          , (float(total_sst_size_prev[1]) / 1024 / 1024 / 1024)
+          , (float(total_sst_size[0]) / 1024 / 1024 / 1024)
+          , (float(total_sst_size[1]) / 1024 / 1024 / 1024)
 
           , sst_id
           , sst_size
+          , path_id
           , job_id
           , creation_reason
           , temp_triggered_migr
@@ -159,8 +215,8 @@ class SstEvents:
           ))
         ts_str_prev = ts_str
         ts_prev = ts
-        num_ssts_prev = num_ssts
-        total_sst_size_prev = total_sst_size
+        num_ssts_prev = list(num_ssts)
+        total_sst_size_prev = list(total_sst_size)
     Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
 
   def __repr__(self):
