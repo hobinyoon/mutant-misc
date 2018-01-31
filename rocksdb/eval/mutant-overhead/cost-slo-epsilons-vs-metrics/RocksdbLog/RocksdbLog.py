@@ -66,13 +66,17 @@ def GetFnCostSloEpsilonVsMetrics():
     fo.write("#   JCL: jobs_comp_leveled_organization_triggered\n")
     fo.write("#   SSCL: total_sst_size_comp_level_triggered_in_gb\n")
     fo.write("#   SSCLCM: total_sst_size_comp_level_triggered_comp_migrs_in_gb\n")
+    fo.write("#     SSCLCMS: total_sst_size_comp_level_triggered_comp_migrs_to_slow_in_gb\n")
+    fo.write("#     SSCLCMF: total_sst_size_comp_level_triggered_comp_migrs_to_fast_in_gb\n")
     fo.write("# JCT: jobs_comp_temp_triggered_migr\n")
     fo.write("#   SSCT: total_sst_size_comp_temp_triggered_migr_in_gb\n")
     fo.write("#     SSCTS: To slow storage\n")
     fo.write("#     SSCTF: To fast storage\n")
     fo.write("\n")
 
-    fmt = "%4.2f %8.6f %8.6f %8.6f %8.6f %1d %2d %4d %4d %7.3f %7.3f %4d %7.3f %7.3f %7.3f"
+    fmt = "%4.2f %8.6f %8.6f %8.6f %8.6f %1d %2d %4d" \
+        " %4d %7.3f %7.3f %7.3f %7.3f" \
+        " %4d %7.3f %7.3f %7.3f"
     header = Util.BuildHeader(fmt, "CSE" \
         " stg_unit_cost_$_gb_month" \
         " stg_cost_$" \
@@ -84,6 +88,8 @@ def GetFnCostSloEpsilonVsMetrics():
           " JCL" \
           " SSCL" \
           " SSCLCM" \
+            " SSCLCMS" \
+            " SSCLCMF" \
         " JCT" \
           " SSCT" \
             " SSCTS" \
@@ -103,6 +109,8 @@ def GetFnCostSloEpsilonVsMetrics():
             , ["num_jobs_comp_level_triggered", None]
             , ["total_sst_size_comp_level_triggered_in_gb", None]
             , ["total_sst_size_comp_level_triggered_comp_migrs_in_gb", None]
+              , ["total_sst_size_comp_level_triggered_comp_migrs_to_slow_in_gb", None]
+              , ["total_sst_size_comp_level_triggered_comp_migrs_to_fast_in_gb", None]
           , ["num_jobs_comp_temp_triggered_migr", None]
             , ["total_sst_size_comp_temp_triggered_migr", None]
               , ["total_sst_size_comp_temp_triggered_migr_to_slow", None]
@@ -138,6 +146,8 @@ def GetFnCostSloEpsilonVsMetrics():
           , kvs[11][1]
           , kvs[12][1]
           , kvs[13][1]
+          , kvs[14][1]
+          , kvs[15][1]
           ))
       except TypeError as e:
         Cons.P(fn1)

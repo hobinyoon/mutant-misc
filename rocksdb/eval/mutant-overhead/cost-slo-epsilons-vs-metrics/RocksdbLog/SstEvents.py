@@ -135,10 +135,6 @@ class SstEvents:
 
   def Write(self, fn):
     with open(fn, "w") as fo:
-      # TODO: Storage cost
-
-
-
       fmt = "%12s %12s %7.3f %4d %4d %4d %4d %7.3f %7.3f %7.3f %7.3f" \
           " %4s %9s %1s %4s %1s %1s %1s"
       header = Util.BuildHeader(fmt, "rel_ts_HHMMSS_begin" \

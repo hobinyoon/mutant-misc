@@ -66,8 +66,8 @@ if (1) {
   set rmargin screen RMARGIN
 
   plot \
-  FN_CSE_VS_ALL u 1:(0   + 2):(0):($14-2) w vectors nohead lc rgb "#8080FF" lw 10 not, \
-  FN_CSE_VS_ALL u 1:($14 + 2):(0):($15-2) w vectors nohead lc rgb "#FF8080" lw 10 not
+  FN_CSE_VS_ALL u 1:(0   + 2):(0):($16-2) w vectors nohead lc rgb "#8080FF" lw 10 not, \
+  FN_CSE_VS_ALL u 1:($16 + 2):(0):($17-2) w vectors nohead lc rgb "#FF8080" lw 10 not
 }
 
 # Total SSTable size compacted
@@ -92,8 +92,9 @@ if (1) {
   # TODO: Breakdown of blue and red
 
   plot \
-  FN_CSE_VS_ALL u 1:(0   + 2):(0):($11-2) w vectors nohead lc rgb "#FF80FF" lw 10 not, \
-  FN_CSE_VS_ALL u 1:($11 + 2):(0):($10-2) w vectors nohead lc rgb "#808080" lw 10 not
+  FN_CSE_VS_ALL u 1:(0   + 2):(0):($12-2) w vectors nohead lc rgb "#8080FF" lw 10 not, \
+  FN_CSE_VS_ALL u 1:($12 + 2):(0):($13-2) w vectors nohead lc rgb "#FF8080" lw 10 not, \
+  FN_CSE_VS_ALL u 1:($12 + $13 + 2):(0):($10 - $11 -2) w vectors nohead lc rgb "#808080" lw 10 not
 }
 
 exit
