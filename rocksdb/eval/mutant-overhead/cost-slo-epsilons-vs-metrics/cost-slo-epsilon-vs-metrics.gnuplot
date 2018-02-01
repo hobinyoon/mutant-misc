@@ -18,29 +18,44 @@ X_MAX = 0.21
 # Storage unit cost
 if (1) {
   reset
-  set xlabel "Cost SLO {/Symbol e}"
-  set ylabel "Storage unit cost\n($/GB/month)" offset 0.4,0
-  set xtics nomirror tc rgb "black"
+
+  y_zoomin = 0
+
+  set xlabel "Cost SLO {/Symbol e} (%)"
+  set ylabel "Storage cost\n($/GB/month)" offset 0.4,0
+  set xtics nomirror tc rgb "black" (\
+    "0" 0, \
+    "5" 0.05, \
+    "10" 0.10, \
+    "15" 0.15, \
+    "20" 0.20 \
+    )
   set nomxtics
-  set ytics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.02
+
+  if (y_zoomin) {
+    set ytics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.01
+  } else {
+    set ytics nomirror tc rgb "black" format "%0.2f"
+  }
+
   set mytics 2
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
-  # TODO: set manual mxtics
-  if (1) {
-  }
+  set xrange[0:X_MAX]
 
-  set xrange[X_MIN:X_MAX]
-  #set logscale x
-  set yrange[0.28:0.36]
+  if (y_zoomin) {
+    set yrange[0.29:0.33]
+  } else {
+    set yrange[0:0.36]
+  }
 
   # Align the stacked plots
   set lmargin screen LMARGIN
   set rmargin screen RMARGIN
 
-  set arrow from X_MIN, 0.3 to X_MAX, 0.3 nohead lc rgb "blue" lw 5 lt 0 front
-  set label "Cost\nSLO" at X_MAX, 0.3 offset 1,0.5 tc rgb "blue" front
+  set arrow from 0, 0.3 to X_MAX, 0.3 nohead lc rgb "blue" lw 6 lt 0 front
+  set label "Cost\nSLO" at X_MAX, 0.3 center offset 2.5,0.5 tc rgb "blue" front
 
   plot \
   FN_CSE_VS_ALL u 1:2 w p pt 7 ps 0.3 lc rgb "red" not
@@ -49,9 +64,15 @@ if (1) {
 # Total SSTable size migrated
 if (1) {
   reset
-  set xlabel "Cost SLO {/Symbol e}"
+  set xlabel "Cost SLO {/Symbol e} (%)"
   set ylabel "SSTables migrated (GB)"
-  set xtics nomirror tc rgb "black"
+  set xtics nomirror tc rgb "black" (\
+    "0" 0, \
+    "5" 0.05, \
+    "10" 0.10, \
+    "15" 0.15, \
+    "20" 0.20 \
+    )
   set nomxtics
   set ytics nomirror tc rgb "black" #format "%0.2f" autofreq 0,0.02
   set mytics 2
@@ -98,9 +119,15 @@ if (1) {
 # Total SSTable size compacted
 if (1) {
   reset
-  set xlabel "Cost SLO {/Symbol e}"
+  set xlabel "Cost SLO {/Symbol e} (%)"
   set ylabel "SSTables compacted (GB)"
-  set xtics nomirror tc rgb "black"
+  set xtics nomirror tc rgb "black" (\
+    "0" 0, \
+    "5" 0.05, \
+    "10" 0.10, \
+    "15" 0.15, \
+    "20" 0.20 \
+    )
   set nomxtics
   set ytics nomirror tc rgb "black" autofreq 0,50
   set mytics 2
