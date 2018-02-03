@@ -29,7 +29,7 @@ def terminating(thing):
 def GetFnCostSloEpsilonVsMetrics():
   fn_out = "%s/cost-slo-epsilon-vs-metrics" % Conf.GetOutDir()
   if os.path.isfile(fn_out):
-    return fn_out
+    return (fn_out, _GetLinearRegParams(fn_out))
 
   dn_base = Conf.GetDir("dn_base")
   # {cost_slo_epsilon: fn}
@@ -60,7 +60,7 @@ def GetFnCostSloEpsilonVsMetrics():
     i += 1
 
   with open(fn_out, "w") as fo:
-    fo.write("# Linear regression coefficient of CSE vs storage cost = %f\n" % _CalcUpperBound(cse_outfn))
+    fo.write("# Linear regression coefficients of CSE vs storage cost = %s\n" % _CalcUpperBound(cse_outfn))
     fo.write("\n")
     fo.write("# CSE: Storge cost SLO epsilon\n")
     fo.write("# JR: jobs_recovery\n")
@@ -157,7 +157,15 @@ def GetFnCostSloEpsilonVsMetrics():
         raise e
 
   Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-  return fn_out
+  return (fn_out, _GetLinearRegParams(fn_out))
+
+
+def _GetLinearRegParams(fn):
+  with open(fn) as fo:
+    for line in fo:
+      mo = re.match(r"# Linear regression coefficients of CSE vs storage cost = \[(?P<v>(\d|\.| )+)]", line)
+      if mo:
+        return mo.group("v")
 
 
 def _CalcUpperBound(cse_fn):
@@ -175,10 +183,10 @@ def _CalcUpperBound(cse_fn):
           x.append(cost_slo_epsilon)
           y.append(float(mo.group("v")))
           break
-  Cons.P(x)
-  Cons.P(y)
-  r = numpy.polyfit(x, y, deg = 1)
-  Cons.P(r)
+  #Cons.P(x)
+  #Cons.P(y)
+  return numpy.polyfit(x, y, deg = 1)
+  # TODO: Fist draw a line with the linear regression
 
   # TODO: Find a line with the same slope coefficient that meets the highest point in the input points.
   #   That will give you a sense of what the error bound is like.

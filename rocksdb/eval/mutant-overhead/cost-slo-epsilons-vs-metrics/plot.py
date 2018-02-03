@@ -42,7 +42,11 @@ def main(argv):
 
 def PlotCseVsAll():
   # Cost SLO epsilon vs all metrics
-  fn_cse_vs_all = RocksdbLog.GetFnCostSloEpsilonVsMetrics()
+  (fn_cse_vs_all, linear_reg_params) = RocksdbLog.GetFnCostSloEpsilonVsMetrics()
+  Cons.P(linear_reg_params)
+  sys.exit(0)
+  # TODO: continue!
+
   fn_out = "%s/cost-slo-epsilon-vs-metrics.pdf" % Conf.GetOutDir()
 
   with Cons.MT("Plotting cost SLO epsilon vs metrics ..."):
