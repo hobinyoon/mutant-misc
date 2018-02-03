@@ -201,11 +201,12 @@ def _OverallStat(cur, fo):
       " WHERE creation_reason='C' and temp_triggered_single_sst_migr=0")
   num_outssts_comp_level_triggered = cur.fetchone()["cnt"]
   fo.write("#     num_outssts_comp_level_triggered=%d\n" % num_outssts_comp_level_triggered)
-  fo.write("#     num_outssts_comp_level_triggered_per_job=%f\n" % (float(num_outssts_comp_level_triggered) / num_jobs_comp_level_triggered))
+  fo.write("#     num_outssts_comp_level_triggered_per_job=%f\n" %
+      (0 if num_jobs_comp_level_triggered == 0 else float(num_outssts_comp_level_triggered) / num_jobs_comp_level_triggered))
 
   cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
       " WHERE creation_reason='C' and temp_triggered_single_sst_migr=0")
-  fo.write("#     total_sst_size_comp_level_triggered_in_gb=%f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+  fo.write("#     total_sst_size_comp_level_triggered_in_gb=%f\n" % (_Float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
   # Distribution of the number of output SSTables per job
   cur.execute("SELECT job_id, count(distinct(sst_id)) as num_ssts FROM sst_creation_info" \
@@ -231,15 +232,15 @@ def _OverallStat(cur, fo):
 
   cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
       " WHERE creation_reason='C' and temp_triggered_single_sst_migr=0 and migr_dirc IN ('S', 'F')")
-  fo.write("#     total_sst_size_comp_level_triggered_comp_migrs_in_gb=%f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+  fo.write("#     total_sst_size_comp_level_triggered_comp_migrs_in_gb=%f\n" % (_Float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
   cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
       " WHERE creation_reason='C' and temp_triggered_single_sst_migr=0 and migr_dirc='S'")
-  fo.write("#     total_sst_size_comp_level_triggered_comp_migrs_to_slow_in_gb=%f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+  fo.write("#     total_sst_size_comp_level_triggered_comp_migrs_to_slow_in_gb=%f\n" % (_Float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
   cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
       " WHERE creation_reason='C' and temp_triggered_single_sst_migr=0 and migr_dirc='F'")
-  fo.write("#     total_sst_size_comp_level_triggered_comp_migrs_to_fast_in_gb=%f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+  fo.write("#     total_sst_size_comp_level_triggered_comp_migrs_to_fast_in_gb=%f\n" % (_Float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
   if True:
     # From the SSTables created from compaction-migrations
@@ -272,15 +273,15 @@ def _OverallStat(cur, fo):
 
   cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
       " WHERE creation_reason='C' and temp_triggered_single_sst_migr=1")
-  fo.write("#     total_sst_size_comp_temp_triggered_migr=%f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+  fo.write("#     total_sst_size_comp_temp_triggered_migr=%f\n" % (_Float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
   cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
       " WHERE creation_reason='C' AND temp_triggered_single_sst_migr=1 AND migr_dirc='S'")
-  fo.write("#     total_sst_size_comp_temp_triggered_migr_to_slow=%f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+  fo.write("#     total_sst_size_comp_temp_triggered_migr_to_slow=%f\n" % (_Float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
   cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
       " WHERE creation_reason='C' AND temp_triggered_single_sst_migr=1 AND migr_dirc='F'")
-  fo.write("#     total_sst_size_comp_temp_triggered_migr_to_fast=%f\n" % (float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
+  fo.write("#     total_sst_size_comp_temp_triggered_migr_to_fast=%f\n" % (_Float(cur.fetchone()["v"]) / 1024 / 1024 / 1024))
 
   if False:
     # With a temperature-triggered single-sstable migration, there is always a single input sstable, but there can be multiple output sstables.
@@ -299,6 +300,13 @@ def _OverallStat(cur, fo):
     for r in cur.fetchall():
       if 1 < r["num_ssts"]:
         fo.write("#       job_id=%d num_ssts=%d\n" % (r["job_id"], r["num_ssts"]))
+
+
+def _Float(v):
+  if v is None:
+    return 0
+  else:
+    return float(v)
 
 
 def _OverallStat2(cur, fn0, fn1, fo):
@@ -333,7 +341,8 @@ def _OverallStat2(cur, fn0, fn1, fo):
         % db_type)
     num_outssts_comp_level_triggered = cur.fetchone()["cnt"]
     fo.write("#     num_outssts_comp_level_triggered=%d\n" % num_outssts_comp_level_triggered)
-    fo.write("#     num_outssts_comp_level_triggered_per_job=%f\n" % (float(num_outssts_comp_level_triggered) / num_jobs_comp_level_triggered))
+    fo.write("#     num_outssts_comp_level_triggered_per_job=%f\n" %
+        0 if num_jobs_comp_level_triggered == 0 else (float(num_outssts_comp_level_triggered) / num_jobs_comp_level_triggered))
 
     cur.execute("SELECT sum(sst_size) as v FROM sst_creation_info" \
         " WHERE db_type='%s' and creation_reason='C' and temp_triggered_single_sst_migr=0"

@@ -1,29 +1,26 @@
-dn_base: ~/work/mutant/log/ycsb/mutant-overhead
+# Not sure we need this
+#unmodified_db: ~/work/mutant/log/ycsb/mutant-overhead/computation/180123-180457/ycsb/180123-231505.044-d
 
-unmodified_db: computation/180123-180457/ycsb/180123-231505.044-d
-
+dn_base: ~/work/mutant/log/ycsb/mutant-overhead/io/by-cost-slo-epsilons
 by_cost_slo_epsilons:
-  0.0:  io/by-cost-slo-epsilons/180123-174400/ycsb/180123-225315.920-d
-  0.01: io/by-cost-slo-epsilons/180123-174414/ycsb/180123-225335.839-d
-  0.02: io/by-cost-slo-epsilons/180123-174432/ycsb/180123-225342.322-d
-  0.03: io/by-cost-slo-epsilons/180123-174452/ycsb/180123-225353.787-d
-  0.04: io/by-cost-slo-epsilons/180123-174509/ycsb/180123-225434.973-d
-  0.05: io/by-cost-slo-epsilons/180123-174528/ycsb/180123-225402.821-d
-  0.06: io/by-cost-slo-epsilons/180123-174543/ycsb/180123-225516.517-d
-  0.07: io/by-cost-slo-epsilons/180123-174558/ycsb/180123-225459.209-d
-  0.09: io/by-cost-slo-epsilons/180123-174639/ycsb/180123-225627.219-d
-  0.1:  io/by-cost-slo-epsilons/180123-174653/ycsb/180123-225547.119-d
-  0.2:  io/by-cost-slo-epsilons/180123-174713/ycsb/180123-225555.906-d
-
-# You don't need these.
-#  0.3:  io/by-cost-slo-epsilons/180123-174731/ycsb/180123-225627.706-d
-#  0.4:  io/by-cost-slo-epsilons/180123-174752/ycsb/180123-225626.495-d
-#  0.5:  io/by-cost-slo-epsilons/180123-174812/ycsb/180123-225703.131-d
-#  0.6:  io/by-cost-slo-epsilons/180123-174830/ycsb/180123-225707.901-d
-#  0.7:  io/by-cost-slo-epsilons/180123-174849/ycsb/180123-225737.913-d
-#  0.8:  io/by-cost-slo-epsilons/180123-174904/ycsb/180123-225742.073-d
-#  0.9:  io/by-cost-slo-epsilons/180123-174922/ycsb/180123-225838.910-d
-#  1.0:  io/by-cost-slo-epsilons/180123-174939/ycsb/180123-225826.212-d
-
-  # This didn't finish. TODO: redoing the experiment
-  #0.08: io/by-cost-slo-epsilons/180123-174619/ycsb/180123-225511.917-d
+  0.0:  180123-174400/ycsb/180123-225315.920-d
+  0.01: 180123-174414/ycsb/180123-225335.839-d
+  0.02: 180123-174432/ycsb/180123-225342.322-d
+  0.03: 180123-174452/ycsb/180123-225353.787-d
+  #0.04: missing
+  0.05: 180123-174528/ycsb/180123-225402.821-d
+  0.06: 180123-174543/ycsb/180123-225516.517-d
+  0.07: 180123-174558/ycsb/180123-225459.209-d
+  0.08: 180131-184612/ycsb/180131-235705.117-d
+  0.09: 180123-174639/ycsb/180123-225627.219-d
+  0.1:  180123-174653/ycsb/180123-225547.119-d
+  0.11: 180131-184655/ycsb/180131-235619.986-d
+  0.12: 180131-184716/ycsb/180131-235637.366-d
+  0.13: 180131-184733/ycsb/180131-235713.170-d
+  0.14: 180131-184756/ycsb/180131-235717.366-d
+  0.15: 180131-184813/ycsb/180131-235705.599-d
+  0.16: 180131-184830/ycsb/180131-235739.512-d
+  #0.17: missing
+  0.18: 180131-221732/ycsb/180201-032748.263-d
+  0.19: 180131-221753/ycsb/180201-032730.841-d
+  0.2:  180123-174713/ycsb/180123-225555.906-d

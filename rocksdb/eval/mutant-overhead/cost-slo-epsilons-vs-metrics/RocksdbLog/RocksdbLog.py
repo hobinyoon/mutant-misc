@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from multiprocessing import Pool
+import numpy
 import os
 import pprint
 import re
@@ -59,6 +60,8 @@ def GetFnCostSloEpsilonVsMetrics():
     i += 1
 
   with open(fn_out, "w") as fo:
+    fo.write("# Linear regression coefficient of CSE vs storage cost = %f\n" % _CalcUpperBound(cse_outfn))
+    fo.write("\n")
     fo.write("# CSE: Storge cost SLO epsilon\n")
     fo.write("# JR: jobs_recovery\n")
     fo.write("# JF: jobs_flush\n")
@@ -157,6 +160,31 @@ def GetFnCostSloEpsilonVsMetrics():
   return fn_out
 
 
+def _CalcUpperBound(cse_fn):
+  # x: list of cost_slo_epsilon
+  # y: list of cost
+  x = []
+  y = []
+  for cost_slo_epsilon, fn in sorted(cse_fn.iteritems()):
+    with open(fn) as fo:
+      for line in fo:
+        if not line.startswith("#"):
+          continue
+        mo = re.match(r".+total_stg_unit_cost=(?P<v>(\d|\.)+)", line)
+        if mo:
+          x.append(cost_slo_epsilon)
+          y.append(float(mo.group("v")))
+          break
+  Cons.P(x)
+  Cons.P(y)
+  r = numpy.polyfit(x, y, deg = 1)
+  Cons.P(r)
+
+  # TODO: Find a line with the same slope coefficient that meets the highest point in the input points.
+  #   That will give you a sense of what the error bound is like.
+
+
+
 def GetFnTimeVsMetrics(fn_ycsb):
   mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb)
   dn_log = mo.group("dn_log")
@@ -170,7 +198,7 @@ def GetFnTimeVsMetrics(fn_ycsb):
   return lr.FnMetricByTime()
 
 
-def GenDataFilesForGnuplot():
+def GetFnCompareTwo():
   dn_base = Conf.GetDir("dn_base")
 
   # Analyze the number of compactions and migrations with
@@ -180,6 +208,7 @@ def GenDataFilesForGnuplot():
   for i in range(2):
     fn_ycsb = "%s/%s" % (dn_base, Conf.Get(i))
     fn_metrics_by_time.append(GetFnTimeVsMetrics(fn_ycsb))
+
   fn_rdb_compmigr = CompMigrStat.GetFnStat(fn_metrics_by_time[0], fn_metrics_by_time[1])
   return (fn_metrics_by_time, fn_rdb_compmigr)
 

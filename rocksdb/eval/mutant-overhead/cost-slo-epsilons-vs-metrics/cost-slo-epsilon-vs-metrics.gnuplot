@@ -21,7 +21,8 @@ if (1) {
 
   y_zoomin = 0
 
-  set xlabel "Cost SLO {/Symbol e} (%)"
+  #set xlabel "Cost SLO {/Symbol e} (%)"
+  set xlabel "SSTable no-organization\nrange length (%)"
   set ylabel "Storage cost\n($/GB/month)" offset 0.4,0
   set xtics nomirror tc rgb "black" (\
     "0" 0, \
@@ -47,7 +48,7 @@ if (1) {
   if (y_zoomin) {
     set yrange[0.29:0.33]
   } else {
-    set yrange[0:0.36]
+    set yrange[0:0.40]
   }
 
   # Align the stacked plots

@@ -22,11 +22,13 @@ sys.path.insert(0, "%s/CompareTwo" % os.path.dirname(__file__))
 import CompareCpu
 import CompareMem
 
+
 # (# of the total size) of SSTables that are
 #   compacted
 #     compaction-migrated (show the efficacy of the integration)
 #   migrated
 #
+# Actual storage cost paid
 #   How well does Mutant meet the target cost SLOs
 
 def main(argv):
