@@ -43,15 +43,14 @@ def main(argv):
 def PlotCseVsAll():
   # Cost SLO epsilon vs all metrics
   (fn_cse_vs_all, linear_reg_params) = RocksdbLog.GetFnCostSloEpsilonVsMetrics()
-  Cons.P(linear_reg_params)
-  sys.exit(0)
-  # TODO: continue!
+  #Cons.P(linear_reg_params)
 
   fn_out = "%s/cost-slo-epsilon-vs-metrics.pdf" % Conf.GetOutDir()
 
   with Cons.MT("Plotting cost SLO epsilon vs metrics ..."):
     env = os.environ.copy()
     env["FN_CSE_VS_ALL"] = fn_cse_vs_all
+    env["LINEAR_REG_PARAMS"] = linear_reg_params
     env["FN_OUT"] = fn_out
     Util.RunSubp("gnuplot %s/cost-slo-epsilon-vs-metrics.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
