@@ -29,15 +29,15 @@ if (1) {
   #set y2label "$/GB/month" offset -0.5,0
   #set y2label "Storage cost\n($/GB/month)" offset -0.5,0
   set y2label "($/GB/month)" offset -0.5,0
-  #set xtics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.05
-  set xtics nomirror tc rgb "white" (\
-    "0" 0, \
-    "5" 0.05, \
-    "10" 0.10, \
-    "15" 0.15, \
-    "20" 0.20 \
-    )
-  set nomxtics
+  set xtics nomirror tc rgb "white" format "%0.2f" autofreq 0,0.05
+  #set xtics nomirror tc rgb "white" (\
+  #  "0" 0, \
+  #  "5" 0.05, \
+  #  "10" 0.10, \
+  #  "15" 0.15, \
+  #  "20" 0.20 \
+  #  )
+  set mxtics 5
 
   set ytics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.05
   set mytics 5
@@ -226,6 +226,7 @@ if (1) {
   reset
   set xlabel "SSTable no-organization range length (%)"
   set ylabel "SSTables\ncompacted (GB)" offset 0.8,0
+  #set xtics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.05
   set xtics nomirror tc rgb "black" (\
     "0" 0, \
     "5" 0.05, \
@@ -233,7 +234,7 @@ if (1) {
     "15" 0.15, \
     "20" 0.20 \
     )
-  set nomxtics
+  set mxtics 5
   set ytics nomirror tc rgb "black" autofreq 0,50,140
   set mytics 2
   set grid xtics ytics mytics back lc rgb "#808080"
@@ -272,5 +273,5 @@ if (1) {
   plot \
   FN_CSE_VS_ALL u 1:(0)      :($1-w_2):($1+w_2):(0)      :12        w boxxyerrorbars lc rgb "#8080FF" fs solid not, \
   FN_CSE_VS_ALL u 1:12       :($1-w_2):($1+w_2):12       :($12+$13) w boxxyerrorbars lc rgb "#FF8080" fs solid not, \
-  FN_CSE_VS_ALL u 1:($12+$13):($1-w_2):($1+w_2):($12+$13):10        w boxxyerrorbars lc rgb "#808080" fs solid not
+  FN_CSE_VS_ALL u 1:($12+$13):($1-w_2):($1+w_2):($12+$13):10        w boxxyerrorbars lc rgb "#A0A0A0" fs solid not
 }
