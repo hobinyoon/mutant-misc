@@ -10,7 +10,7 @@ set print "-"
 #print sprintf("TIME_MAX=%s", TIME_MAX)
 #print sprintf("FN_MEM_1MIN_AVG=%s", FN_MEM_1MIN_AVG)
 
-set terminal pdfcairo enhanced size 3.0in, (2.3*0.65)in
+set terminal pdfcairo enhanced size 3.6in, (3.5*0.35)in
 set output OUT_FN
 
 LMARGIN = 8.5
@@ -23,7 +23,7 @@ if (1) {
   set format x "%1H"
 
   set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "# of SSTables" offset 0.5, 0
+  set ylabel "# of SSTables" offset 1, 0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black" autofreq 0,100
   set mytics 2
@@ -53,7 +53,8 @@ if (1) {
   set format x "%1H"
 
   set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "Total SSTable size\n(GB)" offset 0.5, 0
+  #set ylabel "Total SSTable size\n(GB)" offset 0.5, 0
+  set ylabel "SSTable size (GB)" #offset 0.2, 0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black" autofreq 0,5
   set grid xtics ytics back lc rgb "#808080"
@@ -82,9 +83,9 @@ if (1) {
   set timefmt "%H:%M:%S"
   set format x "%1H"
 
-  set xlabel "Time (hour)" offset 0,0.2
+  #set xlabel "Time (hour)" offset 0,0.2
   set ylabel "CPU (%)" offset 1,0
-  set xtics nomirror tc rgb "black" #autofreq 0,2*3600
+  set xtics nomirror tc rgb "white"
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
@@ -109,14 +110,12 @@ if (1) {
     if (1) {
       x0 = 0.05
       y0 = 0.86
-      #set label sprintf("%s Unmodified DB", symbol(0)) at graph x0, y0 tc rgb c0(0) font ",10" front
-      set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",10" front
+      set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",12" front
       x1 = x0 + 0.03
-      set label "Unmodified DB" at graph x1, y0 left tc rgb c0(0) font ",10" front
-      y1 = y0 - 0.12
-      #set label sprintf("%s With computation", symbol(1)) at graph x0, y1 tc rgb c0(1) font ",10" front
-      set label symbol(1) at graph x0, y1 center tc rgb c0(1) font ",10" front
-      set label "With computation" at graph x1, y1 left tc rgb c0(1) font ",10" front
+      set label "Unmodified DB" at graph x1, y0 left tc rgb c0(0) font ",12" front
+      y1 = y0 - 0.15
+      set label symbol(1) at graph x0, y1 center tc rgb c0(1) font ",12" front
+      set label "With computation" at graph x1, y1 left tc rgb c0(1) font ",12" front
     }
 
     plot FN_CPU_1MIN_AVG u 1:2:(symbol($3)):(c0($3)) w labels tc rgb variable font ",6" not
@@ -133,9 +132,9 @@ if (1) {
   set timefmt "%H:%M:%S"
   set format x "%1H"
 
-  set xlabel "Time (hour)" offset 0,0.2
+  #set xlabel "Time (hour)" offset 0,0.2
   set ylabel "Memory (GB)" #offset 0.5,0
-  set xtics nomirror tc rgb "black" #autofreq 0,2*3600
+  set xtics nomirror tc rgb "white"
   set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
@@ -161,15 +160,13 @@ if (1) {
       #x0 = 0.05
       #y0 = 0.86
       x0 = 0.52
-      y0 = 0.30
-      #set label sprintf("%s Unmodified DB", symbol(0)) at graph x0, y0 tc rgb c0(0) font ",10" front
-      set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",10" front
+      y0 = 0.32
+      set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",12" front
       x1 = x0 + 0.03
-      set label "Unmodified DB" at graph x1, y0 left tc rgb c0(0) font ",10" front
-      y1 = y0 - 0.12
-      #set label sprintf("%s With computation", symbol(1)) at graph x0, y1 tc rgb c0(1) font ",10" front
-      set label symbol(1) at graph x0, y1 center tc rgb c0(1) font ",10" front
-      set label "With computation" at graph x1, y1 left tc rgb c0(1) font ",10" front
+      set label "Unmodified DB" at graph x1, y0 left tc rgb c0(0) font ",12" front
+      y1 = y0 - 0.15
+      set label symbol(1) at graph x0, y1 center tc rgb c0(1) font ",12" front
+      set label "With computation" at graph x1, y1 left tc rgb c0(1) font ",12" front
     }
 
     plot FN_MEM_1MIN_AVG u 1:2:(symbol($3)):(c0($3)) w labels tc rgb variable font ",6" not
