@@ -53,7 +53,7 @@ if (1) {
   set format x "%1H"
 
   set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "Total SSTable size (GB)" offset 0.5, 0
+  set ylabel "Total SSTable size\n(GB)" offset 0.5, 0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black" autofreq 0,5
   set grid xtics ytics back lc rgb "#808080"
@@ -83,7 +83,7 @@ if (1) {
   set format x "%1H"
 
   set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "CPU usage (%)" offset 0.5,0
+  set ylabel "CPU (%)" offset 1,0
   set xtics nomirror tc rgb "black" #autofreq 0,2*3600
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
@@ -134,7 +134,7 @@ if (1) {
   set format x "%1H"
 
   set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "Memory usage (GB)" offset 0.5,0
+  set ylabel "Memory (GB)" #offset 0.5,0
   set xtics nomirror tc rgb "black" #autofreq 0,2*3600
   set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5
   set grid xtics ytics back lc rgb "#808080"
