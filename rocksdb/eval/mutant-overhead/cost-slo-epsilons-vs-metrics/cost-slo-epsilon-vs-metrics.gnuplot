@@ -7,12 +7,17 @@ FN_OUT = system("echo $FN_OUT")
 set print "-"
 #print sprintf("LINEAR_REG_PARAMS=%s", LINEAR_REG_PARAMS)
 
-set terminal pdfcairo enhanced size 2.6in, (2.3*0.85)in
+set terminal pdfcairo enhanced size 3.6in, (3.5*0.4)in
 set output FN_OUT
 
 #X_MIN = 0.01 / 1.5
 X_MIN = -0.01
 X_MAX = 0.21
+
+LMARGIN = 0.19
+RMARGIN = 0.82
+BMARGIN = 0.3
+TMARGIN = 0.96
 
 # Storage unit cost
 if (1) {
@@ -20,12 +25,13 @@ if (1) {
 
   cost_slo = 0.3
 
-  set xlabel "SSTable no-organization\nrange length (%)"
-  set ylabel "Storage cost / Cost SLO"
+  #set xlabel "SSTable no-organization range length (%)"
+  set ylabel "Storage cost\n/ Cost SLO" offset 0.5,0
   #set y2label "$/GB/month" offset -0.5,0
-  set y2label "Storage cost ($/GB/mo)" offset -0.5,0
+  #set y2label "Storage cost\n($/GB/month)" offset -0.5,0
+  set y2label "($/GB/month)" offset -0.5,0
   #set xtics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.05
-  set xtics nomirror tc rgb "black" (\
+  set xtics nomirror tc rgb "white" (\
     "0" 0, \
     "5" 0.05, \
     "10" 0.10, \
@@ -34,8 +40,8 @@ if (1) {
     )
   set nomxtics
 
-  set ytics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.02
-  set mytics 2
+  set ytics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.05
+  set mytics 5
 
   set y2tics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.01
 
@@ -49,7 +55,10 @@ if (1) {
   y2_max = y_max * cost_slo
   set y2range[y2_min:y2_max]
 
-  set rmargin screen 0.79
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set bmargin screen BMARGIN
+  set tmargin screen TMARGIN
 
   slope = word(LINEAR_REG_PARAMS, 1) / cost_slo
   y0_lr = word(LINEAR_REG_PARAMS, 2) / cost_slo
@@ -104,10 +113,9 @@ w_2 = 0.005 / 2
 # Total SSTable size migrated
 if (1) {
   reset
-  #set xlabel "Cost SLO {/Symbol e} (%)"
-  set xlabel "SSTable no-organization\nrange length (%)"
-  set ylabel "SSTables migrated (GB)"
-  set xtics nomirror tc rgb "black" (\
+  #set xlabel "SSTable no-organization\nrange length (%)"
+  set ylabel "SSTables\nmigrated (GB)" offset 0.8,0
+  set xtics nomirror tc rgb "white" (\
     "0" 0, \
     "5" 0.05, \
     "10" 0.10, \
@@ -115,13 +123,18 @@ if (1) {
     "20" 0.20 \
     )
   set nomxtics
-  set ytics nomirror tc rgb "black" #format "%0.2f" autofreq 0,0.02
+  set ytics nomirror tc rgb "black" autofreq 0,50,200
   set mytics 2
   set grid xtics ytics front lc rgb "#808080"
   set border back lc rgb "#808080" back
 
   set xrange[X_MIN:X_MAX]
   set yrange[0:]
+
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set bmargin screen BMARGIN
+  set tmargin screen TMARGIN
 
   # Legend
   if (1) {
@@ -173,9 +186,8 @@ if (1) {
 # Total SSTable size compacted
 if (1) {
   reset
-  #set xlabel "Cost SLO {/Symbol e} (%)"
   set xlabel "SSTable no-organization\nrange length (%)"
-  set ylabel "SSTables compacted (GB)" offset 1,0
+  set ylabel "SSTables\ncompacted (GB)" offset 0.8,0
   set xtics nomirror tc rgb "black" (\
     "0" 0, \
     "5" 0.05, \
@@ -184,15 +196,18 @@ if (1) {
     "20" 0.20 \
     )
   set nomxtics
-  set ytics nomirror tc rgb "black" autofreq 0,50
+  set ytics nomirror tc rgb "black" autofreq 0,50,140
   set mytics 2
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics mytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
   set xrange[X_MIN:X_MAX]
-  set yrange[0:]
+  set yrange[0:150]
 
-  set rmargin screen 0.79
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set bmargin screen BMARGIN
+  set tmargin screen TMARGIN
 
   # Legend
   if (1) {
