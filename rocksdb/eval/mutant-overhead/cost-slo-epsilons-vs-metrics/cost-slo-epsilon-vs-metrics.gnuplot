@@ -110,7 +110,7 @@ if (1) {
   if (1) {
     x0 = 0.07
     y0 = 0.9
-    set obj circle at graph x0,y0 size graph 0.008 fs solid fc rgb "red"
+    set obj circle at graph x0,y0 size graph 0.009 fs solid fc rgb "red"
     x1 = x0 + 0.06
     set label "Cost" at graph x1,y0 left
 
@@ -134,8 +134,8 @@ if (1) {
   }
 
   plot \
-  FN_CSE_VS_ALL u 1:2 axes x1y2 w p pt 7 ps 0.0001 lc rgb "white" not, \
-  FN_CSE_VS_ALL u 1:($2/cost_slo) w p pt 7 ps 0.3 lc rgb "red" not
+  FN_CSE_VS_ALL u 1:2 axes x1y2 w p pt 7 ps 0.00001 lc rgb "white" not, \
+  FN_CSE_VS_ALL u 1:($2/cost_slo) w p pt 7 ps 0.35 lc rgb "red" not
 }
 
 w_2 = 0.005 / 2
@@ -168,6 +168,14 @@ if (1) {
 
   # Legend
   if (1) {
+    x0 = 1.02
+    y0 = 0.30
+    set label "To fast storage" at graph x0,y0
+
+    y0 = 0.10
+    set label "To slow storage" at graph x0,y0
+  }
+  if (0) {
     x0 = 0.65
     y0 = 0.83
     x1 = x0 + 0.1
@@ -176,13 +184,13 @@ if (1) {
     set obj rect from graph x0,y0 to graph x1,y1 fc rgb "#8080FF" fs solid noborder front
     x2 = x1 + 0.03
     y2 = (y0+y1)/2
-    set label "To slow" at graph x2, y2
+    set label "To slow storage" at graph x2, y2
 
     y0 = y0 - 0.16
     y1 = y0 + y_height
     set obj rect from graph x0,y0 to graph x1,y1 fc rgb "#FF8080" fs solid noborder front
     y2 = (y0+y1)/2
-    set label "To fast" at graph x2, y2
+    set label "To fast storage" at graph x2, y2
   }
 
   if (1) {
