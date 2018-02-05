@@ -99,6 +99,8 @@ if (1) {
   FN_CSE_VS_ALL u 1:($2/cost_slo) w p pt 7 ps 0.3 lc rgb "red" not
 }
 
+w_2 = 0.005 / 2
+
 # Total SSTable size migrated
 if (1) {
   reset
@@ -119,7 +121,6 @@ if (1) {
   set border back lc rgb "#808080" back
 
   set xrange[X_MIN:X_MAX]
-  #set logscale x
   set yrange[0:]
 
   # Legend
@@ -127,17 +128,19 @@ if (1) {
     x0 = 0.61
     y0 = 0.87
     x1 = x0 + 0.1
-    y1 = y0 + 0.05
+    y_height = 0.06
+    y1 = y0 + y_height
     set obj rect from graph x0,y0 to graph x1,y1 fc rgb "#8080FF" fs solid noborder front
     x2 = x1 + 0.04
     y2 = (y0+y1)/2
     set label "To slow" at graph x2, y2
 
-    # TODO
-    set obj rect from graph 0.75,0.75 to graph 0.85,0.8 fc rgb "#FF8080" fs solid noborder front
+    y0 = y0 - 0.12
+    y1 = y0 + y_height
+    set obj rect from graph x0,y0 to graph x1,y1 fc rgb "#FF8080" fs solid noborder front
+    y2 = (y0+y1)/2
+    set label "To fast" at graph x2, y2
   }
-
-  w_2 = 0.005 / 2
 
   if (1) {
     plot \
@@ -172,7 +175,7 @@ if (1) {
   reset
   #set xlabel "Cost SLO {/Symbol e} (%)"
   set xlabel "SSTable no-organization\nrange length (%)"
-  set ylabel "SSTables compacted (GB)"
+  set ylabel "SSTables compacted (GB)" offset 1,0
   set xtics nomirror tc rgb "black" (\
     "0" 0, \
     "5" 0.05, \
@@ -187,13 +190,34 @@ if (1) {
   set border back lc rgb "#808080" back
 
   set xrange[X_MIN:X_MAX]
-  #set logscale x
   set yrange[0:]
 
-  # TODO: Legend
+  set rmargin screen 0.79
+
+  # Legend
+  if (1) {
+    x0 = 1.03
+    y0 = 0.7
+    y1 = 0.19
+    x_w2 = 0.01
+    set arrow from graph x0, y0 to graph x0, y1 nohead
+    set arrow from graph x0-x_w2, y0 to graph x0+x_w2, y0 nohead
+    set arrow from graph x0-x_w2, y1 to graph x0+x_w2, y1 nohead
+    y_m = (y0 + y1) / 2
+    x1 = x0 + 0.03
+    set label "Regular\ncomp." at graph x1, y_m offset 0,0.5
+
+    y0 = y1
+    y1 = 0
+    set arrow from graph x0, y0 to graph x0, y1 nohead
+    set arrow from graph x0-x_w2, y0 to graph x0+x_w2, y0 nohead
+    set arrow from graph x0-x_w2, y1 to graph x0+x_w2, y1 nohead
+    y_m = (y0 + y1) / 2
+    set label "Comp.-\nmigr." at graph x1, y_m offset 0,0.5
+  }
 
   plot \
-  FN_CSE_VS_ALL u 1:(0   + 2):(0):($12-2) w vectors nohead lc rgb "#8080FF" lw 10 not, \
-  FN_CSE_VS_ALL u 1:($12 + 2):(0):($13-2) w vectors nohead lc rgb "#FF8080" lw 10 not, \
-  FN_CSE_VS_ALL u 1:($12 + $13 + 2):(0):($10 - $11 -2) w vectors nohead lc rgb "#808080" lw 10 not
+  FN_CSE_VS_ALL u 1:(0)      :($1-w_2):($1+w_2):(0)      :12        w boxxyerrorbars lc rgb "#8080FF" fs solid not, \
+  FN_CSE_VS_ALL u 1:12       :($1-w_2):($1+w_2):12       :($12+$13) w boxxyerrorbars lc rgb "#FF8080" fs solid not, \
+  FN_CSE_VS_ALL u 1:($12+$13):($1-w_2):($1+w_2):($12+$13):10        w boxxyerrorbars lc rgb "#808080" fs solid not
 }
