@@ -158,8 +158,10 @@ if (1) {
 
     # Legends
     if (1) {
-      x0 = 0.05
-      y0 = 0.86
+      #x0 = 0.05
+      #y0 = 0.86
+      x0 = 0.52
+      y0 = 0.30
       #set label sprintf("%s Unmodified DB", symbol(0)) at graph x0, y0 tc rgb c0(0) font ",10" front
       set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",10" front
       x1 = x0 + 0.03
