@@ -13,68 +13,9 @@ set print "-"
 set terminal pdfcairo enhanced size 3.6in, (3.5*0.35)in
 set output OUT_FN
 
-LMARGIN = 8.5
-
-# Time vs. total number of SSTables
-if (1) {
-  reset
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%1H"
-
-  set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "# of SSTables" offset 1, 0
-  set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black" autofreq 0,100
-  set mytics 2
-  set grid xtics ytics back lc rgb "#808080"
-  set border back lc rgb "#808080" back
-
-  # Align the stacked plots
-  set lmargin LMARGIN
-
-  set xrange ["00:00:00.000":TIME_MAX]
-
-  C_NUM_SSTS = "red"
-  LW_NUM_SSTS = 2
-
-  plot \
-  FN_ROCKSDB u 1:($4+$5):3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
-  FN_ROCKSDB u 2:($4+$5):(0):($6+$7-$4-$5) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
-
-  # vectors: x y xdelta ydelta
-}
-
-# Time vs. total SSTable size
-if (1) {
-  reset
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%1H"
-
-  set xlabel "Time (hour)" offset 0,0.2
-  #set ylabel "Total SSTable size\n(GB)" offset 0.5, 0
-  set ylabel "SSTable size (GB)" #offset 0.2, 0
-  set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black" autofreq 0,5
-  set grid xtics ytics back lc rgb "#808080"
-  set border back lc rgb "#808080" back
-
-  # Align the stacked plots
-  set lmargin LMARGIN
-
-  set xrange ["00:00:00.000":TIME_MAX]
-
-  C_NUM_SSTS = "red"
-  LW_NUM_SSTS = 2
-
-  plot \
-  FN_ROCKSDB u 1:($8+$9):3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
-  FN_ROCKSDB u 2:($8+$9):(0):($10+$11-$8-$9) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
-
-  # vectors: x y xdelta ydelta
-}
-
+LMARGIN = 0.14
+RMARGIN = 0.99
+TMARGIN = 0.95
 
 # Time vs. 1-min CPU average
 if (1) {
@@ -90,7 +31,9 @@ if (1) {
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
-  set lmargin LMARGIN
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set tmargin screen TMARGIN
 
   set xrange ["00:00:00":TIME_MAX]
   set yrange [0:100]
@@ -135,14 +78,16 @@ if (1) {
   #set xlabel "Time (hour)" offset 0,0.2
   set ylabel "Memory (GB)" #offset 0.5,0
   set xtics nomirror tc rgb "white"
-  set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5
+  set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5,2.4
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
-  set lmargin LMARGIN
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set tmargin screen TMARGIN
 
   set xrange ["00:00:00":TIME_MAX]
-  set yrange [0:]
+  set yrange [0:2.5]
 
   PS = 0.1
 
@@ -173,4 +118,69 @@ if (1) {
   } else {
     plot FN_MEM_1MIN_AVG u 1:2:(c0($3)) w p pt 7 ps PS lc rgb variable not
   }
+}
+
+
+# Time vs. total number of SSTables
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%1H"
+
+  set xlabel "Time (hour)" offset 0,0.2
+  set ylabel "# of SSTables" offset 1, 0
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black" autofreq 0,100,390
+  set mytics 2
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set tmargin screen TMARGIN
+
+  set xrange ["00:00:00.000":TIME_MAX]
+  set yrange [0:400]
+
+  C_NUM_SSTS = "red"
+  LW_NUM_SSTS = 2
+
+  plot \
+  FN_ROCKSDB u 1:($4+$5):3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
+  FN_ROCKSDB u 2:($4+$5):(0):($6+$7-$4-$5) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
+
+  # vectors: x y xdelta ydelta
+}
+
+# Time vs. total SSTable size
+if (0) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%1H"
+
+  set xlabel "Time (hour)" offset 0,0.2
+  #set ylabel "Total SSTable size\n(GB)" offset 0.5, 0
+  set ylabel "SSTable size (GB)" #offset 0.2, 0
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black" autofreq 0,5
+  set grid xtics ytics back lc rgb "#808080"
+  set border back lc rgb "#808080" back
+
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set tmargin screen TMARGIN
+
+  set xrange ["00:00:00.000":TIME_MAX]
+
+  C_NUM_SSTS = "red"
+  LW_NUM_SSTS = 2
+
+  plot \
+  FN_ROCKSDB u 1:($8+$9):3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
+  FN_ROCKSDB u 2:($8+$9):(0):($10+$11-$8-$9) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
+
+  # vectors: x y xdelta ydelta
 }
