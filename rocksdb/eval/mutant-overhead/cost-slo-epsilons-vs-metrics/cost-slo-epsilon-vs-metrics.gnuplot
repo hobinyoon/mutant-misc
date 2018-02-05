@@ -7,17 +7,16 @@ FN_OUT = system("echo $FN_OUT")
 set print "-"
 #print sprintf("LINEAR_REG_PARAMS=%s", LINEAR_REG_PARAMS)
 
-set terminal pdfcairo enhanced size 3.6in, (3.5*0.4)in
+set terminal pdfcairo enhanced size 3.8in, (3.8*0.4)in
 set output FN_OUT
 
-#X_MIN = 0.01 / 1.5
-X_MIN = -0.01
-X_MAX = 0.21
+X_MIN = -0.005
+X_MAX = 0.205
 
-LMARGIN = 0.19
-RMARGIN = 0.82
+LMARGIN = 0.18
+RMARGIN = 0.76
 BMARGIN = 0.3
-TMARGIN = 0.96
+TMARGIN = 0.99
 
 # Storage unit cost
 if (1) {
@@ -26,7 +25,7 @@ if (1) {
   cost_slo = 0.3
 
   #set xlabel "SSTable no-organization range length (%)"
-  set ylabel "Storage cost\n/ Cost SLO" offset 0.5,0
+  set ylabel "Storage cost\n(relative to SLO)" offset 0.5,0
   #set y2label "$/GB/month" offset -0.5,0
   #set y2label "Storage cost\n($/GB/month)" offset -0.5,0
   set y2label "($/GB/month)" offset -0.5,0
@@ -44,11 +43,12 @@ if (1) {
   set mytics 5
 
   set y2tics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.01
+  set my2tics 2
 
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
 
-  y_min = 0.98
+  y_min = 0.99
   y_max = 1.09
   set yrange[y_min:y_max]
   y2_min = y_min * cost_slo
@@ -67,13 +67,16 @@ if (1) {
   x0 = 0
   x1 = 0.20
 
-  set xrange[x0:x1]
+  #set xrange[x0:x1]
+  set xrange[X_MIN:X_MAX]
+
+  LW = 6
 
   # Linear regression line
   if (1) {
     y0 = y0_lr
     y1 = (slope * x1) + y0
-    set arrow from x0, y0 to x1, y1 nohead lc rgb "blue" lw 6 lt 0 back
+    set arrow from x0, y0 to x1, y1 nohead lc rgb "blue" lw LW lt 0 back
 
     x2 = x1 * 1.03
     y2 = (slope * x2) + y0
@@ -87,12 +90,12 @@ if (1) {
     y1 = (slope * x1) + y0
     #set arrow from x0, y0 to x1, y1 nohead lc rgb "#808080" lw 1
 
-    set object 1 polygon from \
-      x0, y0 \
-      to x1, y1 \
-      to x1, 1 \
-      to x0, 1 \
-      to x0, y0 \
+    set obj polygon from \
+       x0, y0 \
+      to  x1, y1 \
+      to  x1, 1 \
+      to  x0, 1 \
+      to  x0, y0 \
       fs transparent solid 0.1 noborder fc rgb "blue" back
   }
 
@@ -102,6 +105,33 @@ if (1) {
 #
 #  set arrow from 0, 0.3 to X_MAX, 0.3 nohead lc rgb "black" lw 6 lt 0
 #  set label "Cost\nSLO" at X_MAX, 0.3 center offset 2.5,0.5 tc rgb "black" front
+
+  # Legend
+  if (1) {
+    x0 = 0.07
+    y0 = 0.9
+    set obj circle at graph x0,y0 size graph 0.008 fs solid fc rgb "red"
+    x1 = x0 + 0.06
+    set label "Cost" at graph x1,y0 left
+
+    x_l = x0 - 0.03
+    x_r = x0 + 0.03
+    y1 = y0 - 0.14
+    set arrow from graph x_l, y1 to graph x_r, y1 nohead lc rgb "blue" lw LW lt 0
+    set label "Linear regression of costs" at graph x1,y1 left
+
+    y2 = y1 - 0.14
+    y2_t = y2 + 0.05
+    y2_b = y2 - 0.05
+    set obj polygon from \
+      graph x_l, y2 \
+      to graph x_r, y2_t \
+      to graph x_r, y2_b \
+      to graph x_l, y2_b \
+      to graph x_l, y2 \
+      fs transparent solid 0.3 noborder fc rgb "blue" back
+    set label "Error range" at graph x1,y2 left
+  }
 
   plot \
   FN_CSE_VS_ALL u 1:2 axes x1y2 w p pt 7 ps 0.0001 lc rgb "white" not, \
@@ -123,13 +153,13 @@ if (1) {
     "20" 0.20 \
     )
   set nomxtics
-  set ytics nomirror tc rgb "black" autofreq 0,50,200
+  set ytics nomirror tc rgb "black" autofreq 0,50,240
   set mytics 2
   set grid xtics ytics front lc rgb "#808080"
   set border back lc rgb "#808080" back
 
   set xrange[X_MIN:X_MAX]
-  set yrange[0:]
+  set yrange[0:250]
 
   set lmargin screen LMARGIN
   set rmargin screen RMARGIN
@@ -138,17 +168,17 @@ if (1) {
 
   # Legend
   if (1) {
-    x0 = 0.61
-    y0 = 0.87
+    x0 = 0.65
+    y0 = 0.83
     x1 = x0 + 0.1
-    y_height = 0.06
+    y_height = 0.07
     y1 = y0 + y_height
     set obj rect from graph x0,y0 to graph x1,y1 fc rgb "#8080FF" fs solid noborder front
-    x2 = x1 + 0.04
+    x2 = x1 + 0.03
     y2 = (y0+y1)/2
     set label "To slow" at graph x2, y2
 
-    y0 = y0 - 0.12
+    y0 = y0 - 0.16
     y1 = y0 + y_height
     set obj rect from graph x0,y0 to graph x1,y1 fc rgb "#FF8080" fs solid noborder front
     y2 = (y0+y1)/2
@@ -186,7 +216,7 @@ if (1) {
 # Total SSTable size compacted
 if (1) {
   reset
-  set xlabel "SSTable no-organization\nrange length (%)"
+  set xlabel "SSTable no-organization range length (%)"
   set ylabel "SSTables\ncompacted (GB)" offset 0.8,0
   set xtics nomirror tc rgb "black" (\
     "0" 0, \
@@ -212,15 +242,15 @@ if (1) {
   # Legend
   if (1) {
     x0 = 1.03
-    y0 = 0.7
-    y1 = 0.19
+    y0 = 0.85
+    y1 = 0.23
     x_w2 = 0.01
     set arrow from graph x0, y0 to graph x0, y1 nohead
     set arrow from graph x0-x_w2, y0 to graph x0+x_w2, y0 nohead
     set arrow from graph x0-x_w2, y1 to graph x0+x_w2, y1 nohead
     y_m = (y0 + y1) / 2
     x1 = x0 + 0.03
-    set label "Regular\ncomp." at graph x1, y_m offset 0,0.5
+    set label "Regular\ncompactions" at graph x1, y_m offset 0,0.5
 
     y0 = y1
     y1 = 0
@@ -228,7 +258,7 @@ if (1) {
     set arrow from graph x0-x_w2, y0 to graph x0+x_w2, y0 nohead
     set arrow from graph x0-x_w2, y1 to graph x0+x_w2, y1 nohead
     y_m = (y0 + y1) / 2
-    set label "Comp.-\nmigr." at graph x1, y_m offset 0,0.5
+    set label "Compation-\nmigrations" at graph x1, y_m offset 0,0.5
   }
 
   plot \
