@@ -47,7 +47,8 @@ if (1) {
     # Plotting of the two symbols in the order of timestamp to prevent one type is always in front of the other type.
     #   https://stackoverflow.com/questions/29622885/how-set-point-type-from-data-in-gnuplot
     set encoding utf8
-    symbol(a) = "+x"[int(a+1):int(a+1)]
+    #symbol(a) = "+x"[int(a+1):int(a+1)]
+    symbol(a) = "x+"[int(a+1):int(a+1)]
 
     # Legends
     if (1) {
@@ -61,7 +62,7 @@ if (1) {
       set label "With computation" at graph x1, y1 left tc rgb "black" font ",12" front
     }
 
-    plot FN_CPU_1MIN_AVG u 1:2:(symbol($3)):(c0($3)) w labels tc rgb variable font ",6" not
+    plot FN_CPU_1MIN_AVG u 1:2:(symbol($3)):(c0($3)) w labels tc rgb variable font ",7" not
   } else {
     plot FN_CPU_1MIN_AVG u 1:2:(c0($3)) w p pt 7 ps PS lc rgb variable not
   }
@@ -98,7 +99,8 @@ if (1) {
     # Plotting of the two symbols in the order of timestamp to prevent one type is always in front of the other type.
     #   https://stackoverflow.com/questions/29622885/how-set-point-type-from-data-in-gnuplot
     set encoding utf8
-    symbol(a) = "+x"[int(a+1):int(a+1)]
+    #symbol(a) = "+x"[int(a+1):int(a+1)]
+    symbol(a) = "x+"[int(a+1):int(a+1)]
 
     # Legends
     if (1) {
@@ -112,7 +114,7 @@ if (1) {
       set label "With computation" at graph x1, y1 left tc rgb "black" font ",12" front
     }
 
-    plot FN_MEM_1MIN_AVG u 1:2:(symbol($3)):(c0($3)) w labels tc rgb variable font ",6" not
+    plot FN_MEM_1MIN_AVG u 1:2:(symbol($3)):(c0($3)) w labels tc rgb variable font ",7" not
   } else {
     plot FN_MEM_1MIN_AVG u 1:2:(c0($3)) w p pt 7 ps PS lc rgb variable not
   }
