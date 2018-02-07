@@ -28,7 +28,7 @@ if (1) {
   set ylabel "CPU (%)" offset 1,0
   set xtics nomirror tc rgb "white"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   set lmargin screen LMARGIN
@@ -69,7 +69,7 @@ if (1) {
 }
 
 
-# Time vs. 1-min memory usage average
+# Time vs. total number of SSTables
 if (1) {
   reset
   set xdata time
@@ -77,10 +77,44 @@ if (1) {
   set format x "%1H"
 
   #set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "Memory (GB)" #offset 0.5,0
+  set ylabel "# of SSTables" offset 1, 0
   set xtics nomirror tc rgb "white"
+  set ytics nomirror tc rgb "black" autofreq 0,100,390
+  set mytics 2
+  set grid xtics ytics back lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set tmargin screen TMARGIN
+
+  set xrange ["00:00:00.000":TIME_MAX]
+  set yrange [0:400]
+
+  C_NUM_SSTS = "red"
+  LW_NUM_SSTS = 2
+
+  plot \
+  FN_ROCKSDB u 1:($4+$5):3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
+  FN_ROCKSDB u 2:($4+$5):(0):($6+$7-$4-$5) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
+
+  # vectors: x y xdelta ydelta
+}
+
+
+# Time vs. 1-min memory usage average
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%1H"
+
+  set xlabel "Time (hour)" #offset 0,0.2
+  set ylabel "Memory (GB)" #offset 0.5,0
+  set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5,2.4
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   set lmargin screen LMARGIN
@@ -121,39 +155,6 @@ if (1) {
 }
 
 
-# Time vs. total number of SSTables
-if (1) {
-  reset
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%1H"
-
-  set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "# of SSTables" offset 1, 0
-  set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black" autofreq 0,100,390
-  set mytics 2
-  set grid xtics ytics back lc rgb "#808080"
-  set border back lc rgb "#808080" back
-
-  # Align the stacked plots
-  set lmargin screen LMARGIN
-  set rmargin screen RMARGIN
-  set tmargin screen TMARGIN
-
-  set xrange ["00:00:00.000":TIME_MAX]
-  set yrange [0:400]
-
-  C_NUM_SSTS = "red"
-  LW_NUM_SSTS = 2
-
-  plot \
-  FN_ROCKSDB u 1:($4+$5):3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
-  FN_ROCKSDB u 2:($4+$5):(0):($6+$7-$4-$5) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
-
-  # vectors: x y xdelta ydelta
-}
-
 # Time vs. total SSTable size
 if (0) {
   reset
@@ -166,7 +167,7 @@ if (0) {
   set ylabel "SSTable size (GB)" #offset 0.2, 0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black" autofreq 0,5
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   set lmargin screen LMARGIN

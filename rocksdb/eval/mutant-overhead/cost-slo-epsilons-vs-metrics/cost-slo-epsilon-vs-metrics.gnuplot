@@ -23,13 +23,13 @@ w_2 = 0.5 / 2
 # Total SSTable size migrated
 if (1) {
   reset
-  #set xlabel "SSTable no-organization\nrange length (%)"
+  #set xlabel "SSTable no-migration\nrange length (%)"
   set ylabel "SSTables\nmigrated (GB)" offset 0.8,0
   set xtics nomirror tc rgb "white"
   set mxtics 5
   set ytics nomirror tc rgb "black" autofreq 0,50,240
   set mytics 2
-  set grid xtics ytics front lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   set xrange[X_MIN:X_MAX]
@@ -91,13 +91,13 @@ if (1) {
 # Total SSTable size compacted
 if (1) {
   reset
-  #set xlabel "SSTable no-organization region length (%)"
+  #set xlabel "SSTable no-migration region length (%)"
   set ylabel "SSTables\ncompacted (GB)" offset 0.8,0
   set xtics nomirror tc rgb "white" autofreq 0,5
   set mxtics 5
   set ytics nomirror tc rgb "black" autofreq 0,50,140
   set mytics 2
-  set grid xtics ytics mytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   set xrange[X_MIN:X_MAX]
@@ -142,7 +142,7 @@ if (1) {
 
   cost_slo = 0.3
 
-  set xlabel "SSTable no-organization region length (%)"
+  set xlabel "SSTable no-migration region length (%)"
   set ylabel "Storage cost\n(relative to SLO)" offset 0.5,0
   #set y2label "$/GB/month" offset -0.5,0
   #set y2label "Storage cost\n($/GB/month)" offset -0.5,0
@@ -163,7 +163,7 @@ if (1) {
   set y2tics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.01
   set my2tics 2
 
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   y_min = 0.99

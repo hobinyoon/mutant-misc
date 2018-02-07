@@ -45,7 +45,7 @@ if (1) {
   set ylabel "DB IOPS"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -72,7 +72,7 @@ if (1) {
   set ylabel "# of SSTables" offset 0.5, 0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -102,7 +102,7 @@ if (1) {
   set ylabel "Total SSTable size (GB)" offset 0.5, 0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -163,7 +163,7 @@ if (1) {
   set ylabel "CPU usage (%)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -194,7 +194,7 @@ if (1) {
   set ylabel "CPU usage (%)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -217,7 +217,7 @@ if (1) {
   set ylabel "Memory usage (GB)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -240,7 +240,7 @@ if (1) {
   set ylabel "Read latency (ms)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -273,7 +273,7 @@ if (1) {
   set ylabel "Write latency (ms)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -304,7 +304,7 @@ if (1) {
   set ylabel "LS Read, Write (MiB/sec)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -345,7 +345,7 @@ if (1) {
   set ylabel "LS Read, Write (IOPS)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "#808080"
+  set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
