@@ -5,7 +5,7 @@ LINEAR_REG_PARAMS = system("echo $LINEAR_REG_PARAMS")
 FN_OUT = system("echo $FN_OUT")
 
 set print "-"
-#print sprintf("LINEAR_REG_PARAMS=%s", LINEAR_REG_PARAMS)
+print sprintf("LINEAR_REG_PARAMS=%s", LINEAR_REG_PARAMS)
 
 set terminal pdfcairo enhanced size 3.8in, (3.8*0.4)in
 set output FN_OUT
@@ -23,7 +23,6 @@ w_2 = 0.5 / 2
 # Total SSTable size migrated
 if (1) {
   reset
-  #set xlabel "SSTable no-migration\nrange length (%)"
   set ylabel "SSTables\nmigrated (GB)" offset 0.8,0
   set xtics nomirror tc rgb "white"
   set mxtics 5
@@ -76,7 +75,6 @@ if (1) {
 # Total SSTable size compacted
 if (1) {
   reset
-  #set xlabel "SSTable no-migration region length (%)"
   set ylabel "SSTables\ncompacted (GB)" offset 0.8,0
   set xtics nomirror tc rgb "white" autofreq 0,5
   set mxtics 5
@@ -143,7 +141,7 @@ if (1) {
 
   cost_slo = 0.3
 
-  set xlabel "SSTable no-migration region length (%)"
+  set xlabel "SSTable retention rate (%)"
   set ylabel "Storage cost\n(relative to SLO)" offset 0.5,0
   #set y2label "$/GB/month" offset -0.5,0
   #set y2label "Storage cost\n($/GB/month)" offset -0.5,0
