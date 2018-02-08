@@ -16,7 +16,7 @@ X_MAX = 20.5
 LMARGIN = 0.18
 RMARGIN = 0.76
 BMARGIN = 0.3
-TMARGIN = 0.99
+TMARGIN = 1.0
 
 w_2 = 0.5 / 2
 
@@ -49,28 +49,11 @@ if (1) {
     y0 = 0.10
     set label "To slow storage" at graph x0,y0
   }
-  if (0) {
-    x0 = 0.65
-    y0 = 0.83
-    x1 = x0 + 0.1
-    y_height = 0.07
-    y1 = y0 + y_height
-    set obj rect from graph x0,y0 to graph x1,y1 fc rgb "#8080FF" fs solid noborder front
-    x2 = x1 + 0.03
-    y2 = (y0+y1)/2
-    set label "To slow storage" at graph x2, y2
-
-    y0 = y0 - 0.16
-    y1 = y0 + y_height
-    set obj rect from graph x0,y0 to graph x1,y1 fc rgb "#FF8080" fs solid noborder front
-    y2 = (y0+y1)/2
-    set label "To fast storage" at graph x2, y2
-  }
 
   if (1) {
     plot \
-    FN_CSE_VS_ALL u ($1*100):(0):($1*100-w_2):($1*100+w_2):(0):16        w boxxyerrorbars lc rgb "#8080FF" fs solid not, \
-    FN_CSE_VS_ALL u ($1*100):16 :($1*100-w_2):($1*100+w_2):16 :($16+$17) w boxxyerrorbars lc rgb "#FF8080" fs solid not
+    FN_CSE_VS_ALL u ($1*100):(0):($1*100-w_2):($1*100+w_2):(0):16        w boxxyerrorbars fs transparent solid 0.5  border fc rgb "blue" not, \
+    FN_CSE_VS_ALL u ($1*100):16 :($1*100-w_2):($1*100+w_2):16 :($16+$17) w boxxyerrorbars fs transparent solid 0.15 border fc rgb "red"  not
     # boxxyerrorbars: x y xlow xhigh ylow yhigh
   }
 
@@ -80,9 +63,11 @@ if (1) {
     # Box plot
     #   The plot is too dense.
     if (0) {
+      C_C = "#6060FF"
+      C_H = "#FFA0A0"
       plot \
-      FN_CSE_VS_ALL u 1:(0):($1-0.003):($1-0.001):(0):16 w boxxyerrorbars lc rgb "#8080FF" fs solid not, \
-      FN_CSE_VS_ALL u 1:(0):($1+0.001):($1+0.003):(0):17 w boxxyerrorbars lc rgb "#FF8080" fs solid not
+      FN_CSE_VS_ALL u 1:(0):($1-0.003):($1-0.001):(0):16 w boxxyerrorbars lc rgb C_C fs solid not, \
+      FN_CSE_VS_ALL u 1:(0):($1+0.001):($1+0.003):(0):17 w boxxyerrorbars lc rgb C_H fs solid not
       # boxxyerrorbars: x y xlow xhigh ylow yhigh
     }
   }
@@ -130,10 +115,26 @@ if (1) {
     set label "Compation-\nmigrations" at graph x1, y_m offset 0,0.5
   }
 
+  # Migration reduction from compaction-migrations.
+  if (1) {
+    x0 = 0.5
+    y0 = 0.08
+    l0 = "20.37% of migrations"
+    do for [i = -10:10] {
+      set label l0 at graph x0, y0 offset  0.2,0.01*i tc rgb "white" center front
+      set label l0 at graph x0, y0 offset -0.2,0.01*i tc rgb "white" center front
+    }
+    do for [i = -10:10] {
+      set label l0 at graph x0, y0 offset 0.02*i, 0.1 tc rgb "white" center front
+      set label l0 at graph x0, y0 offset 0.02*i,-0.1 tc rgb "white" center front
+    }
+    set label l0 at graph x0, y0 center front
+  }
+
   plot \
-  FN_CSE_VS_ALL u ($1*100):(0)      :($1*100-w_2):($1*100+w_2):(0)      :12        w boxxyerrorbars lc rgb "#8080FF" fs solid not, \
-  FN_CSE_VS_ALL u ($1*100):12       :($1*100-w_2):($1*100+w_2):12       :($12+$13) w boxxyerrorbars lc rgb "#FF8080" fs solid not, \
-  FN_CSE_VS_ALL u ($1*100):($12+$13):($1*100-w_2):($1*100+w_2):($12+$13):10        w boxxyerrorbars lc rgb "#A0A0A0" fs solid not
+  FN_CSE_VS_ALL u ($1*100):(0)      :($1*100-w_2):($1*100+w_2):(0)      :12        w boxxyerrorbars fs transparent solid 0.5  border fc rgb "blue"  not, \
+  FN_CSE_VS_ALL u ($1*100):12       :($1*100-w_2):($1*100+w_2):12       :($12+$13) w boxxyerrorbars fs transparent solid 0.15 border fc rgb "red"   not, \
+  FN_CSE_VS_ALL u ($1*100):($12+$13):($1*100-w_2):($1*100+w_2):($12+$13):10        w boxxyerrorbars fs transparent solid 0.1  border fc rgb "black" not
 }
 
 # Storage unit cost

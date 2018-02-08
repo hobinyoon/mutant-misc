@@ -4,6 +4,7 @@ TIME_MAX = system("echo $TIME_MAX")
 FN_ROCKSDB = system("echo $FN_ROCKSDB")
 FN_CPU_1MIN_AVG = system("echo $FN_CPU_1MIN_AVG")
 FN_MEM_1MIN_AVG = system("echo $FN_MEM_1MIN_AVG")
+PLOT_CUSTOM_LABELS = system("echo $PLOT_CUSTOM_LABELS") + 0
 OUT_FN = system("echo $OUT_FN")
 
 set print "-"
@@ -60,6 +61,10 @@ if (1) {
       y1 = y0 - 0.15
       set label symbol(1) at graph x0, y1 center tc rgb c0(1) font ",12" front
       set label "With computation" at graph x1, y1 left tc rgb "black" font ",12" front
+    }
+
+    if (PLOT_CUSTOM_LABELS == 1) {
+      set label "1.66% more\nCPU" at graph 0.85,0.27 center tc rgb "red" front
     }
 
     plot FN_CPU_1MIN_AVG u 1:2:(symbol($3)):(c0($3)) w labels tc rgb variable font ",7" not
@@ -124,6 +129,10 @@ if (1) {
   set xrange ["00:00:00":TIME_MAX]
   set yrange [0:2.5]
 
+  if (PLOT_CUSTOM_LABELS == 1) {
+    set label "1.61% more\nmemory" at graph 0.85,0.45 center tc rgb "red" front
+  }
+
   PS = 0.1
 
   # Blue and red
@@ -138,7 +147,7 @@ if (1) {
 
     # Legends
     if (1) {
-      x0 = 0.62
+      x0 = 0.27
       y0 = 0.34
       set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",12" front
       x1 = x0 + 0.03

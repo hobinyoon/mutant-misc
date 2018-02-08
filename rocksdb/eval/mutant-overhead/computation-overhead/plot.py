@@ -221,6 +221,8 @@ def _PlotCompareTwo(params):
     #Cons.P("%s %d already exists" % (fn_out, os.path.getsize(fn_out)))
     return
 
+  plot_custom_labels = ("-".join(exp_dts) == "180201-033312.464-180201-033259.439")
+
   fn_rocksdb = RocksdbLog.GetFnTimeVsMetrics(exp_rocksdb)
 
   time_max = "07:50:00"
@@ -233,6 +235,7 @@ def _PlotCompareTwo(params):
     env["FN_ROCKSDB"] = fn_rocksdb
     env["FN_CPU_1MIN_AVG"] = fn_cpu_1min_avg
     env["FN_MEM_1MIN_AVG"] = fn_mem_1min_avg
+    env["PLOT_CUSTOM_LABELS"] = "1" if plot_custom_labels else "0"
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/compare-two-exps.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
