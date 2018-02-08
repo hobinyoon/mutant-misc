@@ -63,41 +63,40 @@ n(x)=1.0*(x-X_MIN)/(X_MAX-X_MIN)
 
 # Labels with outline
 if (1) {
-	# Outline x and y
-	OX0=0.003
-	OY0=0.035
-	OX1=0.003
-	OY1=0.028
-
 	# (sst_gen and level)-based filtering
 	n0(sst_gen, l, x)=(sst_gen<=20 || l==0) ? n(x) : 1/0
 	n1(sst_gen, l, x)=(sst_gen> 20 && l!=0) ? n(x) : 1/0
 
-	plot \
-	FN_IN_BOXES u (n($7)):9:(n($7)):(n($8)):9:10:5 w boxxyerrorbars fs solid noborder lc rgb variable not, \
+  F0 = ",10"
+  o0x=0.20
+  o0y=0.18
+  o0x_=o0x*0.1
+  o0y_=o0y*0.1
+
+  F1 = ",10"
+  o1x=0.15
+  o1y=0.13
+  o1x_=o1x*0.1
+  o1y_=o1y*0.1
+
+  plot \
+  FN_IN_BOXES u (n($7)):9:(n($7)):(n($8)):9:10:5 w boxxyerrorbars fs solid noborder lc rgb variable not, \
 	FN_IN_BOXES u (n($7)):9:(n($7)):(n($8)):9:10 w boxxyerrorbars lc rgb "#D0D0D0" lw 3 not, \
 	FN_IN_LEVEL_INFO u (-0.15):2:(1.2):(0) w vectors nohead lt 0 lw 4 lc rgb "black" not, \
 	FN_IN_LEVEL_INFO u (-0.15):1:(sprintf("L%d", $0)) w labels left tc rgb "black" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0) + OX0):(($9+$10)/2.0 + OY0):1 w labels center tc rgb "while" font "Arial-Bold" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0) + OX0):(($9+$10)/2.0      ):1 w labels center tc rgb "while" font "Arial-Bold" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0) + OX0):(($9+$10)/2.0 - OY0):1 w labels center tc rgb "while" font "Arial-Bold" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0)      ):(($9+$10)/2.0 + OY0):1 w labels center tc rgb "while" font "Arial-Bold" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0)      ):(($9+$10)/2.0      ):1 w labels center tc rgb "while" font "Arial-Bold" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0)      ):(($9+$10)/2.0 - OY0):1 w labels center tc rgb "while" font "Arial-Bold" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0) - OX0):(($9+$10)/2.0 + OY0):1 w labels center tc rgb "while" font "Arial-Bold" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0) - OX0):(($9+$10)/2.0      ):1 w labels center tc rgb "while" font "Arial-Bold" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0) - OX0):(($9+$10)/2.0 - OY0):1 w labels center tc rgb "while" font "Arial-Bold" not, \
-	FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0)      ):(($9+$10)/2.0      ):1 w labels center                font "Arial" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0) + OX1):(($9+$10)/2.0 + OY1):1 w labels center tc rgb "while" rotate by 90 font "Arial-Bold" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0) + OX1):(($9+$10)/2.0      ):1 w labels center tc rgb "while" rotate by 90 font "Arial-Bold" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0) + OX1):(($9+$10)/2.0 - OY1):1 w labels center tc rgb "while" rotate by 90 font "Arial-Bold" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0)      ):(($9+$10)/2.0 + OY1):1 w labels center tc rgb "while" rotate by 90 font "Arial-Bold" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0)      ):(($9+$10)/2.0      ):1 w labels center tc rgb "while" rotate by 90 font "Arial-Bold" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0)      ):(($9+$10)/2.0 - OY1):1 w labels center tc rgb "while" rotate by 90 font "Arial-Bold" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0) - OX1):(($9+$10)/2.0 + OY1):1 w labels center tc rgb "while" rotate by 90 font "Arial-Bold" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0) - OX1):(($9+$10)/2.0      ):1 w labels center tc rgb "while" rotate by 90 font "Arial-Bold" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0) - OX1):(($9+$10)/2.0 - OY1):1 w labels center tc rgb "while" rotate by 90 font "Arial-Bold" not, \
-	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0)      ):(($9+$10)/2.0      ):1 w labels center                rotate by 90 font "Arial" not
+  \
+  for [i=-10:10] FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center offset o0x_*i, o0y tc rgb "while" font F0 not, \
+  for [i=-10:10] FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center offset o0x_*i,-o0y tc rgb "while" font F0 not, \
+  for [i=-10:10] FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center offset  o0x,o0y_*i tc rgb "while" font F0 not, \
+  for [i=-10:10] FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center offset -o0x,o0y_*i tc rgb "while" font F0 not, \
+  FN_IN_BOXES u (n0($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center font F0 not, \
+  \
+	for [i=-10:10] FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center offset o1x_*i, o1y rotate by 90 tc rgb "while" font F1 not, \
+	for [i=-10:10] FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center offset o1x_*i,-o1y rotate by 90 tc rgb "while" font F1 not, \
+	for [i=-10:10] FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center offset  o1x,o1y_*i rotate by 90 tc rgb "while" font F1 not, \
+	for [i=-10:10] FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center offset -o1x,o1y_*i rotate by 90 tc rgb "while" font F1 not, \
+	FN_IN_BOXES u (n1($1, $2, $7 + ($8 - $7)/2.0)):(($9+$10)/2.0):1 w labels center rotate by 90 font F1 not
+
 }
 
 # With SST gen labels for illustration
