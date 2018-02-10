@@ -16,8 +16,12 @@ if (1) {
 	Y_MAX=GPVAL_DATA_Y_MAX
 }
 
-set terminal pdfcairo enhanced size 2.2in, (2.2*0.89)in
+set terminal pdfcairo enhanced size 2.2in, (2.2*0.855)in
 set output OUT_FN
+
+set tmargin screen 0.96
+set lmargin screen 0.23
+set rmargin screen 0.95
 
 set border front lc rgb "#808080" back
 set grid xtics mxtics ytics back lc rgb "#808080"
