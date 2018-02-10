@@ -22,7 +22,7 @@ poster=0
 if (poster == 1) {
 	set terminal pdfcairo enhanced size 3.4in, (2.3*0.60)in
 } else {
-	set terminal pdfcairo enhanced size 2.8in, 1.8in
+	set terminal pdfcairo enhanced size 3.1in, (3.1 * 0.64286)in
 }
 set output FN_OUT
 
@@ -93,7 +93,7 @@ if (1) {
 		temp = word(temps, i) * 1.0
 		y2=y_b + (y_t - y_b) * heat_curve(temp)
 		set arrow from screen x1, screen y2 to screen x1+0.01, screen y2 nohead lc rgb "black" front
-		set label word(temp_labels, i) at screen x1, screen y2 left offset 1,0 tc rgb "black" font ",10" front
+		set label word(temp_labels, i) at screen x1, screen y2 left offset 1,0 tc rgb "black"
 	}
 
 	y2=y_b - 0.1
