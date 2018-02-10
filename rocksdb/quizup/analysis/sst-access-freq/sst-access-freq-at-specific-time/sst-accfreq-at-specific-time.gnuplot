@@ -16,7 +16,7 @@ if (1) {
 	Y_MAX=GPVAL_DATA_Y_MAX
 }
 
-set terminal pdfcairo enhanced size 2.1in, (2.1*0.85)in
+set terminal pdfcairo enhanced size 2.2in, (2.2*0.89)in
 set output OUT_FN
 
 set border front lc rgb "#808080" back
@@ -44,7 +44,8 @@ set xlabel "Access frequency rank"
 #set xlabel "SSTable rank (ordered by their access frequencies)"
 plot '< sort -rnk 4 ' . IN_FN u 0:($4/Y_MAX) w p pt 7 pointsize 0.3 not
 
-set terminal pdfcairo enhanced size 2.0in, (2.0*0.85)in
+#set terminal pdfcairo enhanced size 2.0in, (2.0*0.85)in
+set terminal pdfcairo enhanced size 2.2in, (2.2*0.84)in
 set output OUT_FN2
 
 set tmargin screen 0.96
