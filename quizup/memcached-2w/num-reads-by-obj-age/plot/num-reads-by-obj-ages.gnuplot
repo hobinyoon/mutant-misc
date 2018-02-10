@@ -94,7 +94,7 @@ if (PER_OBJ) {
 set nomytics
 set tics front
 
-set terminal pdfcairo enhanced size 2.3in, (2.3*0.80)in
+set terminal pdfcairo enhanced size 2.2in, (2.2*0.90)in
 set output FN_OUT
 
 set xrange[1:16*24*60]

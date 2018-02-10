@@ -35,13 +35,13 @@ def Plot():
 			Util.RunSubp("gnuplot %s/num-reads-by-obj-ages.gnuplot" % os.path.dirname(__file__), env=env)
 			Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
-		env["PER_OBJ"] = str(1)
-		fn_out = "%s/quizup-num-reads-by-obj-age-per-obj.pdf" % _dn_out
-		env["FN_OUT"] = fn_out
+		#env["PER_OBJ"] = str(1)
+		#fn_out = "%s/quizup-num-reads-by-obj-age-per-obj.pdf" % _dn_out
+		#env["FN_OUT"] = fn_out
 
-		with Cons.MT("Plotting ..."):
-			Util.RunSubp("gnuplot %s/num-reads-by-obj-ages.gnuplot" % os.path.dirname(__file__), env=env)
-			Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+		#with Cons.MT("Plotting ..."):
+		#	Util.RunSubp("gnuplot %s/num-reads-by-obj-ages.gnuplot" % os.path.dirname(__file__), env=env)
+		#	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
 def GetRunningAvg():
