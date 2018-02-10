@@ -33,7 +33,7 @@ def ParseArgs():
 
 	parser.add_argument("--rocksdb_log_dir"
 			, type=str
-			, default="~/work/mutant/misc/rocksdb/log"
+			, default="~/work/mutant/log/quizup/thrp-vs-lat"
 			, help="Mutant RocksDB simulation log directory")
 
 	#parser.add_argument("--plot_sst_by_time_by_level_with_heat"

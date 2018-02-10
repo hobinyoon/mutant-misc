@@ -83,7 +83,7 @@ def GetSstLives():
 		#_memt_lives = {}
 		_sst_lives = {}
 
-		dn = "%s/work/mutant/misc/rocksdb/log/rocksdb" % os.path.expanduser("~")
+		dn = "%s/rocksdb" % Conf.GetDir("rocksdb_log_dir")
 		fn = "%s/%s" % (dn, Conf.Get("simulation_time_begin"))
 		if not os.path.isfile(fn):
 			fn_7z = "%s.7z" % fn
