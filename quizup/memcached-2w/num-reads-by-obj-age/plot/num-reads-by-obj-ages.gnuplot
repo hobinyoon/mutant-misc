@@ -28,7 +28,7 @@ if (PER_OBJ) {
 	set ylabel "Reads / min / object" offset 0,0
 } else {
 	#set ylabel "Reads / min" offset 0,0
-	set ylabel "Read freq (relative)" offset 0,0
+	set ylabel "Read freq. (relative)" offset 0,0
 }
 
 set tmargin screen 0.97
@@ -94,7 +94,7 @@ if (PER_OBJ) {
 set nomytics
 set tics front
 
-set terminal pdfcairo enhanced size 2.2in, (2.2*0.90)in
+set terminal pdfcairo enhanced size 2.2in, (2.2*0.85)in
 set output FN_OUT
 
 set xrange[1:16*24*60]
