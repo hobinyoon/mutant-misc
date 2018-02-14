@@ -18,7 +18,7 @@ RMARGIN = 0.76
 BMARGIN = 0.3
 TMARGIN = 1.0
 
-w_2 = 0.5 / 2
+w_2 = 0.7 / 2
 
 # Total SSTable size migrated
 if (1) {
