@@ -117,6 +117,16 @@ if (1) {
   if (1) {
     x0 = 0.5
     y0 = 0.08
+
+    x_w = 0.29
+    y_w = 0.06
+    x1 = x0 - x_w
+    x2 = x0 + x_w
+    y1 = y0 - y_w
+    y2 = y0 + y_w
+
+    set obj rect from graph x1,y1 to graph x2,y2 fs transparent solid 0.9 noborder front
+
     l0 = "20.37% of migrations"
     do for [i = -10:10] {
       set label l0 at graph x0, y0 offset  0.2,0.01*i tc rgb "white" center front
@@ -141,7 +151,8 @@ if (1) {
 
   cost_slo = 0.3
 
-  set xlabel "SSTable retention rate (%)"
+  #set xlabel "SSTable retention rate (%)"
+  set xlabel "SSTable migration resistance (%)"
   set ylabel "Storage cost\n(relative to SLO)" offset 0.5,0
   #set y2label "$/GB/month" offset -0.5,0
   #set y2label "Storage cost\n($/GB/month)" offset -0.5,0
