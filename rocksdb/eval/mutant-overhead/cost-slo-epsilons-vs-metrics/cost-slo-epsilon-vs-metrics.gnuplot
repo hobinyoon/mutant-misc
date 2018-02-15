@@ -118,7 +118,7 @@ if (1) {
     x0 = 0.5
     y0 = 0.08
 
-    x_w = 0.29
+    x_w = 0.37
     y_w = 0.06
     x1 = x0 - x_w
     x2 = x0 + x_w
@@ -127,7 +127,7 @@ if (1) {
 
     set obj rect from graph x1,y1 to graph x2,y2 fs transparent solid 0.9 noborder front
 
-    l0 = "20.37% of migrations"
+    l0 = "20.37% of migrations saved"
     do for [i = -10:10] {
       set label l0 at graph x0, y0 offset  0.2,0.01*i tc rgb "white" center front
       set label l0 at graph x0, y0 offset -0.2,0.01*i tc rgb "white" center front
