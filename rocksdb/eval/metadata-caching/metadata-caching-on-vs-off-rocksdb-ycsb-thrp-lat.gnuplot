@@ -48,7 +48,7 @@ if (1) {
     set arrow from x1,y_t to x1,y_b nohead lw LW lc rgb LC front
 
     x_c=(x0+x1)/2
-    set label "EBS Mag" at x_c,y_t center offset 0,0.5 front
+    set label "Slow DB\nwith EBS Mag" at x_c,y_t center offset 0,1.5 front
   }
 
   if (1) {
@@ -62,7 +62,7 @@ if (1) {
     set arrow from x1,y_t to x1,y_b nohead lw LW lc rgb LC front
 
     x_c=(x0+x1)/2
-    set label "Local SSD" at x_c,y_t center offset 0,0.5 front
+    set label "Fast DB\nwith Local SSD" at x_c,y_t center offset 0,1.5 front
   }
 
   f(x)=x
@@ -130,8 +130,9 @@ if (1) {
     x02 = x01 + 0.01
     #l0 = "Comp. org. off"
     #l1 = "Comp. org. on"
-    l0 = "Mutant"
-    l1 = "Mutant-opt"
+    l0 = "Unmodified DB"
+    #l1 = "SSTable component organization"
+    l1 = "Comp. org."
     set label l0 at graph x02,y0 left tc rgb "black" front
     set label l1 at graph x02,y1 left tc rgb "black" front
 
@@ -187,8 +188,6 @@ if (1) {
   #               3     7+1         7+0          7+3      7+2
 }
 
-
-TP=0.3
 
 # Latency increase or reduction
 if (1) {
@@ -252,10 +251,11 @@ if (1) {
   x_w2=0.22
 
   plot IN_W_O_WO_LAT u (x($0)-x_w2):($3*100 - 100):(x($0)-x_w2):(x($0)+x_w2):(0):($3*100 - 100) w boxxyerrorbars \
-    fs transparent solid 0.1 fc rgb "black" not
+    fs transparent solid 0.3 fc rgb "black" not
 
   # Blue for decreases, red for increases
   if (0) {
+    TP=0.3
     plot IN_W_O_WO_LAT u (x($0)-x_w2):($3 < 1.0 ? $3*100 - 100 : 1/0):(x($0)-x_w2):(x($0)+x_w2):(0):($3*100 - 100) w boxxyerrorbars \
       lc rgb "blue" fillstyle transparent solid TP not, \
     IN_W_O_WO_LAT u (x($0)-x_w2):(1.0 <= $3 ? $3*100 - 100 : 1/0):(x($0)-x_w2):(x($0)+x_w2):(0):($3*100 - 100) w boxxyerrorbars \

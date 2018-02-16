@@ -72,99 +72,15 @@ if (1) {
   }
 }
 
-# Total SSTable size compacted
-if (1) {
-  reset
-  set ylabel "SSTables\ncompacted (GB)" offset 0.8,0
-  set xtics nomirror tc rgb "white" autofreq 0,5
-  set mxtics 5
-  set ytics nomirror tc rgb "black" autofreq 0,50,140
-  set mytics 2
-  set grid xtics ytics back lc rgb "black"
-  set border back lc rgb "#808080" back
-
-  set xrange[X_MIN:X_MAX]
-  set yrange[0:150]
-
-  set lmargin screen LMARGIN
-  set rmargin screen RMARGIN
-  set bmargin screen BMARGIN
-  set tmargin screen TMARGIN
-
-  # Legend
-  if (1) {
-    x0 = 1.03
-    y0 = 0.85
-    y1 = 0.23
-    x_w2 = 0.01
-    set arrow from graph x0, y0 to graph x0, y1 nohead
-    set arrow from graph x0-x_w2, y0 to graph x0+x_w2, y0 nohead
-    set arrow from graph x0-x_w2, y1 to graph x0+x_w2, y1 nohead
-    y_m = (y0 + y1) / 2
-    x1 = x0 + 0.03
-    set label "Regular\ncompactions" at graph x1, y_m offset 0,0.5
-
-    y0 = y1
-    y1 = 0
-    set arrow from graph x0, y0 to graph x0, y1 nohead
-    set arrow from graph x0-x_w2, y0 to graph x0+x_w2, y0 nohead
-    set arrow from graph x0-x_w2, y1 to graph x0+x_w2, y1 nohead
-    y_m = (y0 + y1) / 2
-    set label "Compation-\nmigrations" at graph x1, y_m offset 0,0.5
-  }
-
-  # Migration reduction from compaction-migrations.
-  if (1) {
-    x0 = 0.5
-    y0 = 0.08
-
-    x_w = 0.37
-    y_w = 0.06
-    x1 = x0 - x_w
-    x2 = x0 + x_w
-    y1 = y0 - y_w
-    y2 = y0 + y_w
-
-    set obj rect from graph x1,y1 to graph x2,y2 fs transparent solid 0.9 noborder front
-
-    l0 = "20.37% of migrations saved"
-    do for [i = -10:10] {
-      set label l0 at graph x0, y0 offset  0.2,0.01*i tc rgb "white" center front
-      set label l0 at graph x0, y0 offset -0.2,0.01*i tc rgb "white" center front
-    }
-    do for [i = -10:10] {
-      set label l0 at graph x0, y0 offset 0.02*i, 0.1 tc rgb "white" center front
-      set label l0 at graph x0, y0 offset 0.02*i,-0.1 tc rgb "white" center front
-    }
-    set label l0 at graph x0, y0 center front
-  }
-
-  plot \
-  FN_CSE_VS_ALL u ($1*100):(0)      :($1*100-w_2):($1*100+w_2):(0)      :12        w boxxyerrorbars fs transparent solid 0.5  border fc rgb "blue"  not, \
-  FN_CSE_VS_ALL u ($1*100):12       :($1*100-w_2):($1*100+w_2):12       :($12+$13) w boxxyerrorbars fs transparent solid 0.15 border fc rgb "red"   not, \
-  FN_CSE_VS_ALL u ($1*100):($12+$13):($1*100-w_2):($1*100+w_2):($12+$13):10        w boxxyerrorbars fs transparent solid 0.1  border fc rgb "black" not
-}
 
 # Storage unit cost
 if (1) {
   reset
-
   cost_slo = 0.3
 
-  #set xlabel "SSTable retention rate (%)"
-  set xlabel "SSTable migration resistance (%)"
   set ylabel "Storage cost\n(relative to SLO)" offset 0.5,0
-  #set y2label "$/GB/month" offset -0.5,0
-  #set y2label "Storage cost\n($/GB/month)" offset -0.5,0
   set y2label "($/GB/month)" offset -0.5,0
-  set xtics nomirror tc rgb "black" autofreq 0,5
-  #set xtics nomirror tc rgb "white" (\
-  #  "0" 0, \
-  #  "5" 0.05, \
-  #  "10" 0.10, \
-  #  "15" 0.15, \
-  #  "20" 0.20 \
-  #  )
+  set xtics nomirror tc rgb "white" autofreq 0,5
   set mxtics 5
 
   set ytics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.05
@@ -269,4 +185,79 @@ if (1) {
   #plot \
   #FN_CSE_VS_ALL u 1:2 axes x1y2 w p pt 7 ps 0.00001 lc rgb "white" not, \
   #FN_CSE_VS_ALL u 1:($2/cost_slo) w p pt 7 ps 0.35 lc rgb "red" not
+}
+
+
+# Total SSTable size compacted
+if (1) {
+  reset
+  set xlabel "SSTable migration resistance (%)"
+  set ylabel "SSTables\ncompacted (GB)" offset 0.8,0
+  set xtics nomirror tc rgb "black" autofreq 0,5
+  set mxtics 5
+  set ytics nomirror tc rgb "black" autofreq 0,50,140
+  set mytics 2
+  set grid xtics ytics back lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  set xrange[X_MIN:X_MAX]
+  set yrange[0:150]
+
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set bmargin screen BMARGIN
+  set tmargin screen TMARGIN
+
+  # Legend
+  if (1) {
+    x0 = 1.03
+    y0 = 0.85
+    y1 = 0.23
+    x_w2 = 0.01
+    set arrow from graph x0, y0 to graph x0, y1 nohead
+    set arrow from graph x0-x_w2, y0 to graph x0+x_w2, y0 nohead
+    set arrow from graph x0-x_w2, y1 to graph x0+x_w2, y1 nohead
+    y_m = (y0 + y1) / 2
+    x1 = x0 + 0.03
+    set label "Regular\ncompactions" at graph x1, y_m offset 0,0.5
+
+    y0 = y1
+    y1 = 0
+    set arrow from graph x0, y0 to graph x0, y1 nohead
+    set arrow from graph x0-x_w2, y0 to graph x0+x_w2, y0 nohead
+    set arrow from graph x0-x_w2, y1 to graph x0+x_w2, y1 nohead
+    y_m = (y0 + y1) / 2
+    set label "Compation-\nmigrations" at graph x1, y_m offset 0,0.5
+  }
+
+  # Migration reduction from compaction-migrations.
+  if (1) {
+    x0 = 0.5
+    y0 = 0.08
+
+    x_w = 0.37
+    y_w = 0.06
+    x1 = x0 - x_w
+    x2 = x0 + x_w
+    y1 = y0 - y_w
+    y2 = y0 + y_w
+
+    set obj rect from graph x1,y1 to graph x2,y2 fs transparent solid 0.9 noborder front
+
+    l0 = "20.37% of migrations saved"
+    do for [i = -10:10] {
+      set label l0 at graph x0, y0 offset  0.2,0.01*i tc rgb "white" center front
+      set label l0 at graph x0, y0 offset -0.2,0.01*i tc rgb "white" center front
+    }
+    do for [i = -10:10] {
+      set label l0 at graph x0, y0 offset 0.02*i, 0.1 tc rgb "white" center front
+      set label l0 at graph x0, y0 offset 0.02*i,-0.1 tc rgb "white" center front
+    }
+    set label l0 at graph x0, y0 center front
+  }
+
+  plot \
+  FN_CSE_VS_ALL u ($1*100):(0)      :($1*100-w_2):($1*100+w_2):(0)      :12        w boxxyerrorbars fs transparent solid 0.5  border fc rgb "blue"  not, \
+  FN_CSE_VS_ALL u ($1*100):12       :($1*100-w_2):($1*100+w_2):12       :($12+$13) w boxxyerrorbars fs transparent solid 0.15 border fc rgb "red"   not, \
+  FN_CSE_VS_ALL u ($1*100):($12+$13):($1*100-w_2):($1*100+w_2):($12+$13):10        w boxxyerrorbars fs transparent solid 0.1  border fc rgb "black" not
 }
