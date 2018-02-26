@@ -55,10 +55,17 @@ if (1) {
     if (1) {
       x0 = 0.04
       y0 = 0.86
-      set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",12" front
       x1 = x0 + 0.03
-      set label "Unmodified DB" at graph x1, y0 left tc rgb "black" font ",12" front
       y1 = y0 - 0.15
+
+      x01 = x0 - 0.02
+      y01 = y0 + 0.08
+      x11 = x1 + 0.33
+      y11 = y1 - 0.08
+      set obj rect from graph x01,y01 to graph x11,y11 fs noborder fc rgb "white" front
+
+      set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",12" front
+      set label "Unmodified DB" at graph x1, y0 left tc rgb "black" font ",12" front
       set label symbol(1) at graph x0, y1 center tc rgb c0(1) font ",12" front
       set label "With computation" at graph x1, y1 left tc rgb "black" font ",12" front
     }
@@ -71,40 +78,6 @@ if (1) {
   } else {
     plot FN_CPU_1MIN_AVG u 1:2:(c0($3)) w p pt 7 ps PS lc rgb variable not
   }
-}
-
-
-# Time vs. total number of SSTables
-if (1) {
-  reset
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%1H"
-
-  #set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "# of SSTables" offset 1, 0
-  set xtics nomirror tc rgb "white"
-  set ytics nomirror tc rgb "black" autofreq 0,100,390
-  set mytics 2
-  set grid xtics ytics back lc rgb "black"
-  set border back lc rgb "#808080" back
-
-  # Align the stacked plots
-  set lmargin screen LMARGIN
-  set rmargin screen RMARGIN
-  set tmargin screen TMARGIN
-
-  set xrange ["00:00:00.000":TIME_MAX]
-  set yrange [0:400]
-
-  C_NUM_SSTS = "red"
-  LW_NUM_SSTS = 2
-
-  plot \
-  FN_ROCKSDB u 1:($4+$5):3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
-  FN_ROCKSDB u 2:($4+$5):(0):($6+$7-$4-$5) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
-
-  # vectors: x y xdelta ydelta
 }
 
 
@@ -149,10 +122,17 @@ if (1) {
     if (1) {
       x0 = 0.27
       y0 = 0.34
-      set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",12" front
       x1 = x0 + 0.03
-      set label "Unmodified DB" at graph x1, y0 left tc rgb "black" font ",12" front
       y1 = y0 - 0.15
+
+      x01 = x0 - 0.02
+      y01 = y0 + 0.08
+      x11 = x1 + 0.33
+      y11 = y1 - 0.08
+      set obj rect from graph x01,y01 to graph x11,y11 fs noborder fc rgb "white" front
+
+      set label symbol(0) at graph x0, y0 center tc rgb c0(0) font ",12" front
+      set label "Unmodified DB" at graph x1, y0 left tc rgb "black" font ",12" front
       set label symbol(1) at graph x0, y1 center tc rgb c0(1) font ",12" front
       set label "With computation" at graph x1, y1 left tc rgb "black" font ",12" front
     }
@@ -161,6 +141,40 @@ if (1) {
   } else {
     plot FN_MEM_1MIN_AVG u 1:2:(c0($3)) w p pt 7 ps PS lc rgb variable not
   }
+}
+
+
+# Time vs. total number of SSTables
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%1H"
+
+  set xlabel "Time (hour)" offset 0,0.2
+  set ylabel "# of SSTables" offset 1, 0
+  set xtics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black" autofreq 0,100,390
+  set mytics 2
+  set grid xtics ytics back lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+  set tmargin screen TMARGIN
+
+  set xrange ["00:00:00.000":TIME_MAX]
+  set yrange [0:400]
+
+  C_NUM_SSTS = "red"
+  LW_NUM_SSTS = 2
+
+  plot \
+  FN_ROCKSDB u 1:($4+$5):3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
+  FN_ROCKSDB u 2:($4+$5):(0):($6+$7-$4-$5) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
+
+  # vectors: x y xdelta ydelta
 }
 
 
