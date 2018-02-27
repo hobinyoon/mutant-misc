@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from multiprocessing import Pool
+
 import os
 import pprint
 import re
@@ -179,6 +180,7 @@ class RocksdbLogReader:
     self.sst_events = SstEvents(self, exp_dt)
     self.sst_info = SstInfo()
     self.comp_info = CompInfo(self)
+    self.stg_cost = StgCost.StgCost(exp_dt)
 
     with Cons.MT("Generating rocksdb time-vs-metrics file for plot ..."):
       fn_log_rocksdb = "%s/rocksdb/%s" % (dn_log_job, exp_dt)
@@ -191,10 +193,6 @@ class RocksdbLogReader:
       if not os.path.exists(fn_log_rocksdb):
         raise RuntimeError("Unexpected")
       Cons.P(fn_log_rocksdb)
-
-      self.stg_pricing = None
-      self.stg_cost_slo = None
-      self.stg_cost_slo_epsilon = None
 
       with open(fn_log_rocksdb) as fo:
         for line in fo:
@@ -212,24 +210,19 @@ class RocksdbLogReader:
           #   You don't need this for the baseline, unmodified DB, since the unit cost is always the same.
           # 2018/01/23-22:53:48.875126 7f3300cd8700   stg_cost_list: 0.528000 0.045000
           elif "   stg_cost_list: " in line:
-            mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .*   stg_cost_list: (?P<v0>(\d|\.)+) (?P<v1>(\d|\.)+)", line)
-            if mo is None:
-              raise RuntimeError("Unexpected: [%s]" % line)
-            self.stg_pricing = [float(mo.group("v0")), float(mo.group("v1"))]
+            self.stg_cost.SetStgPricing(line)
 
           # 2018/01/23-22:53:48.875128 7f3300cd8700   stg_cost_slo: 0.300000
           elif "   stg_cost_slo: " in line:
-            mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .*   stg_cost_slo: (?P<v>(\d|\.)+)", line)
-            if mo is None:
-              raise RuntimeError("Unexpected: [%s]" % line)
-            self.stg_cost_slo = float(mo.group("v"))
+            self.stg_cost.SetTargetCost(line)
 
           # 2018/01/23-22:53:48.875130 7f3300cd8700   stg_cost_slo_epsilon: 0.020000
           elif "   stg_cost_slo_epsilon: " in line:
-            mo = re.match(r"(?P<ts>(\d|\/|-|:|\.)+) .*   stg_cost_slo_epsilon: (?P<v>(\d|\.)+)", line)
-            if mo is None:
-              raise RuntimeError("Unexpected: [%s]" % line)
-            self.stg_cost_slo_epsilon = float(mo.group("v"))
+            self.stg_cost.SetMigrationResistance(line)
+
+          # 2018/02/27-17:27:33.745680 7fcbc1536700 EVENT_LOG_v1 {"time_micros": 1519752453745660, "Set target_cost to ": 0.2}
+          elif "Set target_cost to" in line:
+            self.stg_cost.SetCostChange(line)
 
           # 2018/02/27-16:49:17.959334 7ff0ed2b2700 EVENT_LOG_v1 {"time_micros": 1519750157959324, "mutant_sst_opened": {"file_number": 2274, "file_size":
           # 10950641, "path_id": 0, "level": 1}}
@@ -276,7 +269,6 @@ class RocksdbLogReader:
 
       self.comp_info.CalcMigrDirections()
       self.sst_events.Write(self.fn_out)
-      self.stg_cost = StgCost.StgCost(self)
       self.stg_cost.AddStatToFile(self.fn_out)
 
   def FnMetricByTime(self):
