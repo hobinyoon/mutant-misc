@@ -62,7 +62,7 @@ if (1) {
 
 
 # Total number of SSTables
-if (1) {
+if (0) {
   reset
   set xdata time
   set timefmt "%H:%M:%S"
@@ -110,12 +110,17 @@ if (1) {
 
   set xrange ["00:00:00.000":TIME_MAX]
 
-  C_NUM_SSTS = "red"
+  # Colors of fast and slow storage device
+  C0 = "red"
+  C1 = "blue"
+
   LW_NUM_SSTS = 2
 
   plot \
-  IN_FN_ROCKSDB u 1:6:3:(0)       w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not, \
-  IN_FN_ROCKSDB u 2:6:(0):($7-$6) w vectors nohead lc rgb C_NUM_SSTS lw LW_NUM_SSTS not
+  IN_FN_ROCKSDB u 1:8:3:(0)        w vectors nohead lc rgb C0 lw LW_NUM_SSTS not, \
+  IN_FN_ROCKSDB u 2:8:(0):($10-$8) w vectors nohead lc rgb C0 lw LW_NUM_SSTS not, \
+  IN_FN_ROCKSDB u 1:9:3:(0)        w vectors nohead lc rgb C1 lw LW_NUM_SSTS not, \
+  IN_FN_ROCKSDB u 2:9:(0):($11-$9) w vectors nohead lc rgb C1 lw LW_NUM_SSTS not
 
   # vectors: x y xdelta ydelta
 }

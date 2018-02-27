@@ -43,7 +43,6 @@ def PlotTimeVsMetrics():
     else:
       for p in params:
         _PlotTimeVsAllMetrics(p)
-        sys.exit(0)
 
 
 def _PlotTimeVsAllMetrics(fn_ycsb_log):
@@ -93,6 +92,7 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/time-vs-all-metrics.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+  sys.exit(0)
 
 
 class ExpTuple:
