@@ -19,21 +19,173 @@ print sprintf("IN_FN_ROCKSDB=%s", IN_FN_ROCKSDB)
 set terminal pdfcairo enhanced size 6in, (2.3*0.85)in
 set output OUT_FN
 
-# Experiment parameters
-if (1) {
-  reset
-  set noxtics
-  set noytics
-  set noborder
-  f(x) = x
-  #set label 1 at screen 0.025, screen 0.90 PARAMS font "courier,10" left front
-  # Looks better. Feels narrower.
-  set label 1 at screen 0.025, screen 0.90 PARAMS font "DejaVu Sans Mono,7" left front
-  plot f(x) lc rgb "white" not
-}
-
 LMARGIN = 10
 set sample 1000
+
+TIME_MIN = "00:00:12"
+
+# Storage cost
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  #set xlabel "Time (hour)" offset 0,0.2
+  set ylabel "Storage cost\n($/GB/month)" offset 0.5, 0
+  set xtics nomirror tc rgb "black"
+  set xtics add ("00:00" TIME_MIN)
+  set ytics nomirror tc rgb "black"
+  set grid ytics front lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  Y_MAX=0.6
+  set xrange [TIME_MIN:TIME_MAX]
+  set yrange [0:Y_MAX]
+
+  LW = 2
+
+  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
+    x0 = word(TARGET_COST_CHANGES_TIME, i)
+    set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" front
+  }
+
+  plot \
+  IN_FN_ROCKSDB u 1:6 w l lw LW not
+}
+
+
+# SSTables in fast and slow storage
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  #set xlabel "Time (hour)" offset 0,0.2
+  set ylabel "Total SSTable size (GB)" offset 0.5, 0
+  set xtics nomirror tc rgb "black"
+  set xtics add ("00:00" TIME_MIN)
+  set ytics nomirror tc rgb "black"
+  set grid ytics front lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  Y_MAX=16
+  set xrange [TIME_MIN:TIME_MAX]
+  set yrange [0:Y_MAX]
+
+  # Colors of fast and slow storage device
+  C0 = "red"
+  C1 = "blue"
+  C00 = "#FFE8E8"
+  C10 = "#E8E8FF"
+
+  LW_NUM_SSTS = 2
+
+  set label "Total SSTable size in fast storage" at graph 0.55, 0.2  front #fc rgb C0
+  set label "Total SSTable size in slow storage" at graph 0.55, 0.55 front #fc rgb C0
+  #set label "SSTables in slow storage" at graph 0.6, 0.55 front #fc rgb C0
+
+  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
+    x0 = word(TARGET_COST_CHANGES_TIME, i)
+    set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" front
+  }
+
+  plot \
+  IN_FN_ROCKSDB u 1:($4+$5) w filledcurves y1=0 fs noborder solid lc rgb C10 not, \
+  IN_FN_ROCKSDB u 1:4       w filledcurves y1=0 fs noborder solid lc rgb C00 not, \
+  IN_FN_ROCKSDB u 1:($4+$5) w l lc rgb C1 lw LW_NUM_SSTS not, \
+  IN_FN_ROCKSDB u 1:4       w l lc rgb C0 lw LW_NUM_SSTS not
+}
+
+
+# Read latency
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  #set xlabel "Time (HH:MM)"
+  set ylabel "Read latency (ms)" offset 1,0
+  set xtics nomirror tc rgb "black"
+  set xtics add ("00:00" TIME_MIN)
+  set ytics nomirror tc rgb "black"
+  set grid ytics back lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  Y_MIN=0.1
+  Y_MAX=200
+  set xrange [TIME_MIN:TIME_MAX]
+  set yrange [Y_MIN:Y_MAX]
+
+  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
+    x0 = word(TARGET_COST_CHANGES_TIME, i)
+    set arrow from x0, Y_MIN to x0, Y_MAX nohead lc rgb "black" front
+  }
+
+  set logscale y
+
+  bi=3
+  plot \
+  IN_FN_YCSB u 1:(column(bi+7)/1000.0) w l smooth bezier lw 3 lc rgb "#FF0000" t "99.99th", \
+  IN_FN_YCSB u 1:(column(bi+6)/1000.0) w l smooth bezier lw 3 lc rgb "#BF003F" t "99.9th", \
+  IN_FN_YCSB u 1:(column(bi+5)/1000.0) w l smooth bezier lw 3 lc rgb "#7F007F" t "99th", \
+  IN_FN_YCSB u 1:(column(bi+4)/1000.0) w l smooth bezier lw 3 lc rgb "#3F00BF" t "90th", \
+  IN_FN_YCSB u 1:(column(bi+1)/1000.0) w l smooth bezier lw 3 lc rgb "#0000FF" t "avg"
+
+  # This doesn't help
+  #print sprintf("GPVAL_DATA_Y_MAX=%f", GPVAL_DATA_Y_MAX)
+}
+
+
+# Write latency
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "Write latency (ms)" offset 1,0
+  set xtics nomirror tc rgb "black"
+  set xtics add ("00:00" TIME_MIN)
+  set ytics nomirror tc rgb "black"
+  set grid ytics back lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  Y_MIN=0.01
+  Y_MAX=10
+  set xrange [TIME_MIN:TIME_MAX]
+  set yrange [Y_MIN:Y_MAX]
+
+  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
+    x0 = word(TARGET_COST_CHANGES_TIME, i)
+    set arrow from x0, Y_MIN to x0, Y_MAX nohead lc rgb "black" front
+  }
+
+  set logscale y
+
+  bi = 11
+  plot \
+  IN_FN_YCSB u 1:(column(bi+7)/1000.0) w l smooth bezier lw 3 lc rgb "#FF0000" t "99.99th", \
+  IN_FN_YCSB u 1:(column(bi+6)/1000.0) w l smooth bezier lw 3 lc rgb "#BF003F" t "99.9th", \
+  IN_FN_YCSB u 1:(column(bi+5)/1000.0) w l smooth bezier lw 3 lc rgb "#7F007F" t "99th", \
+  IN_FN_YCSB u 1:(column(bi+4)/1000.0) w l smooth bezier lw 3 lc rgb "#3F00BF" t "90th", \
+  IN_FN_YCSB u 1:(column(bi+1)/1000.0) w l smooth bezier lw 3 lc rgb "#0000FF" t "avg"
+}
 
 
 # DB IOPS
@@ -46,6 +198,7 @@ if (1) {
   set xlabel "Time (HH:MM)"
   set ylabel "DB IOPS"
   set xtics nomirror tc rgb "black"
+  set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
@@ -53,7 +206,7 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":TIME_MAX]
+  set xrange [TIME_MIN:TIME_MAX]
 
   #set logscale y
 
@@ -73,6 +226,7 @@ if (0) {
   set xlabel "Time (hour)" offset 0,0.2
   set ylabel "# of SSTables" offset 0.5, 0
   set xtics nomirror tc rgb "black"
+  set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
@@ -80,7 +234,7 @@ if (0) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00.000":TIME_MAX]
+  set xrange [TIME_MIN:TIME_MAX]
 
   C_NUM_SSTS = "red"
   LW_NUM_SSTS = 2
@@ -93,50 +247,6 @@ if (0) {
 }
 
 
-# Total SSTable size
-if (1) {
-  reset
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%H:%M"
-
-  set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "Total SSTable size (GB)" offset 0.5, 0
-  set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black"
-  set grid ytics front lc rgb "black"
-  set border back lc rgb "#808080" back
-
-  # Align the stacked plots
-  set lmargin LMARGIN
-
-  Y_MAX=16
-  set xrange ["00:00:00.000":TIME_MAX]
-  set yrange [0:Y_MAX]
-
-  # Colors of fast and slow storage device
-  C0 = "red"
-  C1 = "blue"
-  C00 = "#FFE8E8"
-  C10 = "#E8E8FF"
-  TP = 0.1
-
-  LW_NUM_SSTS = 2
-
-  set label "SSTables in fast storage" at graph 0.6, 0.2  front #fc rgb C0
-  set label "SSTables in slow storage" at graph 0.6, 0.55 front #fc rgb C0
-
-  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
-    x0 = word(TARGET_COST_CHANGES_TIME, i)
-    set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" front
-  }
-
-  plot \
-  IN_FN_ROCKSDB u 1:($4+$5) w filledcurves y1=0 fs noborder solid lc rgb C10 not, \
-  IN_FN_ROCKSDB u 1:4       w filledcurves y1=0 fs noborder solid lc rgb C00 not, \
-  IN_FN_ROCKSDB u 1:($4+$5) w l lc rgb C1 lw LW_NUM_SSTS not, \
-  IN_FN_ROCKSDB u 1:4       w l lc rgb C0 lw LW_NUM_SSTS not
-}
 
 
 # Memory:cache usage
@@ -149,6 +259,7 @@ if (1) {
   set xlabel "Time (HH:MM)"
   set ylabel "File system cache size (GB)"
   set xtics nomirror tc rgb "black"
+  set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
   set border back lc rgb "#808080" back
@@ -156,7 +267,7 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":TIME_MAX]
+  set xrange [TIME_MIN:TIME_MAX]
 
   if (NUM_STGDEVS == 3) {
     i_x=21
@@ -180,6 +291,7 @@ if (1) {
   set xlabel "Time (HH:MM)"
   set ylabel "CPU usage (%)"
   set xtics nomirror tc rgb "black"
+  set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
@@ -187,7 +299,7 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":TIME_MAX]
+  set xrange [TIME_MIN:TIME_MAX]
 
   if (NUM_STGDEVS == 3) {
     i_x=21
@@ -234,6 +346,7 @@ if (1) {
   set xlabel "Time (HH:MM)"
   set ylabel "Memory usage (GB)"
   set xtics nomirror tc rgb "black"
+  set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "black"
   set border back lc rgb "#808080" back
@@ -241,73 +354,9 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":TIME_MAX]
+  set xrange [TIME_MIN:TIME_MAX]
 
   plot IN_FN_MEM u 1:2 w p pt 7 ps 0.08 lc rgb "red" not
-}
-
-
-# Read latency
-if (1) {
-  reset
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%H:%M"
-
-  set xlabel "Time (HH:MM)"
-  set ylabel "Read latency (ms)"
-  set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "black"
-  set border back lc rgb "#808080" back
-
-  # Align the stacked plots
-  set lmargin LMARGIN
-
-  set xrange ["00:00:00":TIME_MAX]
-
-  set logscale y
-
-  bi=3
-  plot \
-  IN_FN_YCSB u 1:(column(bi+7)/1000.0) w l smooth bezier lw 3 lc rgb "#FF0000" t "99.99th", \
-  IN_FN_YCSB u 1:(column(bi+6)/1000.0) w l smooth bezier lw 3 lc rgb "#BF003F" t "99.9th", \
-  IN_FN_YCSB u 1:(column(bi+5)/1000.0) w l smooth bezier lw 3 lc rgb "#7F007F" t "99th", \
-  IN_FN_YCSB u 1:(column(bi+4)/1000.0) w l smooth bezier lw 3 lc rgb "#3F00BF" t "90th", \
-  IN_FN_YCSB u 1:(column(bi+1)/1000.0) w l smooth bezier lw 3 lc rgb "#0000FF" t "avg"
-
-  # This doesn't help
-  #print sprintf("GPVAL_DATA_Y_MAX=%f", GPVAL_DATA_Y_MAX)
-}
-
-# Write latency
-if (1) {
-  reset
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%H:%M"
-
-  set xlabel "Time (HH:MM)"
-  set ylabel "Write latency (ms)"
-  set xtics nomirror tc rgb "black"
-  set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "black"
-  set border back lc rgb "#808080" back
-
-  # Align the stacked plots
-  set lmargin LMARGIN
-
-  set xrange ["00:00:00":TIME_MAX]
-
-  set logscale y
-
-  bi = 11
-  plot \
-  IN_FN_YCSB u 1:(column(bi+7)/1000.0) w l smooth bezier lw 3 lc rgb "#FF0000" t "99.99th", \
-  IN_FN_YCSB u 1:(column(bi+6)/1000.0) w l smooth bezier lw 3 lc rgb "#BF003F" t "99.9th", \
-  IN_FN_YCSB u 1:(column(bi+5)/1000.0) w l smooth bezier lw 3 lc rgb "#7F007F" t "99th", \
-  IN_FN_YCSB u 1:(column(bi+4)/1000.0) w l smooth bezier lw 3 lc rgb "#3F00BF" t "90th", \
-  IN_FN_YCSB u 1:(column(bi+1)/1000.0) w l smooth bezier lw 3 lc rgb "#0000FF" t "avg"
 }
 
 
@@ -328,7 +377,7 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":TIME_MAX]
+  set xrange [TIME_MIN:TIME_MAX]
 
   i_x=21
   i_y=3
@@ -369,7 +418,7 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
-  set xrange ["00:00:00":TIME_MAX]
+  set xrange [TIME_MIN:TIME_MAX]
 
   i_x=21
   i_y=9
@@ -388,6 +437,20 @@ if (1) {
     IN_FN_DSTAT u i_x:column(i_y)   w l smooth bezier lw 3 lc rgb "blue" not, \
     IN_FN_DSTAT u i_x:column(i_y+1) w l smooth bezier lw 3 lc rgb "red"  not
   }
+}
+
+
+# Experiment parameters
+if (1) {
+  reset
+  set noxtics
+  set noytics
+  set noborder
+  f(x) = x
+  #set label 1 at screen 0.025, screen 0.90 PARAMS font "courier,10" left front
+  # Looks better. Feels narrower.
+  set label 1 at screen 0.025, screen 0.90 PARAMS font "DejaVu Sans Mono,7" left front
+  plot f(x) lc rgb "white" not
 }
 
 # exit
