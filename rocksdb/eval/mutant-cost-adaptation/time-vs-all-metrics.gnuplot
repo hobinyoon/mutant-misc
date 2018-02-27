@@ -96,13 +96,13 @@ if (1) {
   reset
   set xdata time
   set timefmt "%H:%M:%S"
-  set format x "%1H"
+  set format x "%H:%M"
 
   set xlabel "Time (hour)" offset 0,0.2
   set ylabel "Total SSTable size (GB)" offset 0.5, 0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "black"
+  set grid xtics ytics front lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
@@ -110,19 +110,25 @@ if (1) {
 
   set xrange ["00:00:00.000":TIME_MAX]
 
+
   # Colors of fast and slow storage device
   C0 = "red"
   C1 = "blue"
+  C00 = "#FFE8E8"
+  C10 = "#E8E8FF"
+  TP = 0.1
 
   LW_NUM_SSTS = 2
 
-  plot \
-  IN_FN_ROCKSDB u 1:8:3:(0)        w vectors nohead lc rgb C0 lw LW_NUM_SSTS not, \
-  IN_FN_ROCKSDB u 2:8:(0):($10-$8) w vectors nohead lc rgb C0 lw LW_NUM_SSTS not, \
-  IN_FN_ROCKSDB u 1:9:3:(0)        w vectors nohead lc rgb C1 lw LW_NUM_SSTS not, \
-  IN_FN_ROCKSDB u 2:9:(0):($11-$9) w vectors nohead lc rgb C1 lw LW_NUM_SSTS not
+  set label "SSTables in fast storage" at graph 0.6, 0.2  front #fc rgb C0
+  set label "SSTables in slow storage" at graph 0.6, 0.55 front #fc rgb C0
 
-  # vectors: x y xdelta ydelta
+  plot \
+  IN_FN_ROCKSDB u 1:($4+$5) w filledcurves y1=0 fs noborder solid lc rgb C10 not, \
+  IN_FN_ROCKSDB u 1:4       w filledcurves y1=0 fs noborder solid lc rgb C00 not, \
+  IN_FN_ROCKSDB u 1:($4+$5) w l lc rgb C1 lw LW_NUM_SSTS not, \
+  IN_FN_ROCKSDB u 1:4       w l lc rgb C0 lw LW_NUM_SSTS not, \
+
 }
 
 

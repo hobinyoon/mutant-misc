@@ -157,27 +157,21 @@ class SstEvents:
 
   def Write(self, fn):
     with open(fn, "w") as fo:
-      fmt = "%12s %12s %7.3f %4d %4d %4d %4d %7.3f %7.3f %7.3f %7.3f" \
+      fmt = "%12s %4d %4d %7.3f %7.3f" \
           " %4s %9s %1s %4s %1s %1s %1s"
-      header = Util.BuildHeader(fmt, "rel_ts_HHMMSS_begin" \
-          " rel_ts_HHMMSS_end" \
-          " ts_dur" \
-          " num_fast_sstables_begin" \
-          " num_slow_sstables_begin" \
-          " num_fast_sstables_end" \
-          " num_slow_sstables_end" \
-          " fast_sstable_size_sum_in_gb_begin" \
-          " slow_sstable_size_sum_in_gb_begin" \
-          " fast_sstable_size_sum_in_gb_end" \
-          " slow_sstable_size_sum_in_gb_end" \
+      header = Util.BuildHeader(fmt, "rel_ts_HHMMSS" \
+          " num_fast_sstables" \
+          " num_slow_sstables" \
+          " fast_sstable_size_sum_in_gb" \
+          " slow_sstable_size_sum_in_gb" \
           \
-          " end_sst_id" \
-          " end_sst_size" \
-          " end_sst_path_id" \
-          " end_sst_creation_jobid" \
-          " end_sst_creation_reason" \
-          " end_sst_temp_triggered_single_migr" \
-          " end_sst_migration_direction")
+          " sst_id" \
+          " sst_size" \
+          " sst_path_id" \
+          " sst_creation_jobid" \
+          " sst_creation_reason" \
+          " sst_temp_triggered_single_migr" \
+          " sst_migration_direction")
 
       ts_prev = datetime.timedelta(0)
       ts_str_prev = "00:00:00.000"
@@ -213,15 +207,24 @@ class SstEvents:
             if creation_reason == "C":
               migr_dirc = self.rocks_log_reader.comp_info.MigrDirc(job_id, sst_id)
 
-        fo.write((fmt + "\n") % (ts_str_prev
-          , ts_str
-          , (ts.total_seconds() - ts_prev.total_seconds())
+        fo.write((fmt + "\n") % (ts_str
           , num_ssts_prev[0]
           , num_ssts_prev[1]
-          , num_ssts[0]
-          , num_ssts[1]
           , (float(total_sst_size_prev[0]) / 1024 / 1024 / 1024)
           , (float(total_sst_size_prev[1]) / 1024 / 1024 / 1024)
+
+          , "-" # sst_id
+          , "-" # sst_size
+          , "-" # path_id
+          , "-" # job_id
+          , "-" # creation_reason
+          , "-" # temp_triggered_migr
+          , "-" # migr_dirc
+          ))
+
+        fo.write((fmt + "\n") % (ts_str
+          , num_ssts[0]
+          , num_ssts[1]
           , (float(total_sst_size[0]) / 1024 / 1024 / 1024)
           , (float(total_sst_size[1]) / 1024 / 1024 / 1024)
 
