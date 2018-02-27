@@ -73,6 +73,10 @@ class StgCost:
       Cons.P("Updated %s %d" % (fn, os.path.getsize(fn)))
 
 
+  def GetUnitPrice(self):
+    return self.stg_pricing
+
+
   def __repr__(self):
     s = []
     for k, v in sorted(vars(self).items()):

@@ -26,138 +26,6 @@ def terminating(thing):
     thing.terminate()
 
 
-def GetFnCostSloEpsilonVsMetrics():
-  fn_out = "%s/cost-slo-epsilon-vs-metrics" % Conf.GetOutDir()
-  if os.path.isfile(fn_out):
-    return fn_out
-
-  dn_base = Conf.GetDir("dn_base")
-  # {cost_slo_epsilon: fn}
-  cse_fn ={}
-  for cost_slo_epsilon, fn0 in Conf.Get("by_cost_slo_epsilons").iteritems():
-    fn = "%s/%s" % (dn_base, fn0)
-    cse_fn[cost_slo_epsilon] = fn
-  #Cons.P(pprint.pformat(cse_fn))
-
-  params = []
-  for cost_slo_epsilon, fn_ycsb_log in sorted(cse_fn.iteritems()):
-    params.append(fn_ycsb_log)
-
-  parallel_processing = True
-  if parallel_processing:
-    with terminating(Pool()) as pool:
-      result = pool.map(GetFnTimeVsMetrics, params)
-  else:
-    result = []
-    for p in params:
-      result.append(GetFnTimeVsMetrics(p))
-  #Cons.P(result)
-
-  cse_outfn = {}
-  i = 0
-  for cost_slo_epsilon, fn_ycsb_log in sorted(cse_fn.iteritems()):
-    cse_outfn[cost_slo_epsilon] = result[i]
-    i += 1
-
-  with open(fn_out, "w") as fo:
-    fo.write("# CSE: Storge cost SLO epsilon\n")
-    fo.write("# JR: jobs_recovery\n")
-    fo.write("# JF: jobs_flush\n")
-    fo.write("# JC: jobs_compaction\n")
-    fo.write("#   JCL: jobs_comp_leveled_organization_triggered\n")
-    fo.write("#   SSCL: total_sst_size_comp_level_triggered_in_gb\n")
-    fo.write("#   SSCLCM: total_sst_size_comp_level_triggered_comp_migrs_in_gb\n")
-    fo.write("#     SSCLCMS: total_sst_size_comp_level_triggered_comp_migrs_to_slow_in_gb\n")
-    fo.write("#     SSCLCMF: total_sst_size_comp_level_triggered_comp_migrs_to_fast_in_gb\n")
-    fo.write("# JCT: jobs_comp_temp_triggered_migr\n")
-    fo.write("#   SSCT: total_sst_size_comp_temp_triggered_migr_in_gb\n")
-    fo.write("#     SSCTS: To slow storage\n")
-    fo.write("#     SSCTF: To fast storage\n")
-    fo.write("\n")
-
-    fmt = "%4.2f %8.6f %8.6f %8.6f %8.6f %1d %2d %4d" \
-        " %4d %7.3f %7.3f %7.3f %7.3f" \
-        " %4d %7.3f %7.3f %7.3f"
-    header = Util.BuildHeader(fmt, "CSE" \
-        " stg_unit_cost_$_gb_month" \
-        " stg_cost_$" \
-        " fast_stg_cost_$" \
-        " slow_stg_cost_$" \
-        " JR" \
-        " JF" \
-        " JC" \
-          " JCL" \
-          " SSCL" \
-          " SSCLCM" \
-            " SSCLCMS" \
-            " SSCLCMF" \
-        " JCT" \
-          " SSCT" \
-            " SSCTS" \
-            " SSCTF" \
-        )
-    fo.write(header + "\n")
-
-    for cost_slo_epsilon, fn1 in sorted(cse_outfn.iteritems()):
-      kvs = [
-          ["total_stg_unit_cost", None]
-          , ["total_stg_cost", None]
-          , ["fast_stg_cost", None]
-          , ["slow_stg_cost", None]
-          , ["num_jobs_recovery", None]
-          , ["num_jobs_flush", None]
-          , ["num_jobs_comp_all", None]
-            , ["num_jobs_comp_level_triggered", None]
-            , ["total_sst_size_comp_level_triggered_in_gb", None]
-            , ["total_sst_size_comp_level_triggered_comp_migrs_in_gb", None]
-              , ["total_sst_size_comp_level_triggered_comp_migrs_to_slow_in_gb", None]
-              , ["total_sst_size_comp_level_triggered_comp_migrs_to_fast_in_gb", None]
-          , ["num_jobs_comp_temp_triggered_migr", None]
-            , ["total_sst_size_comp_temp_triggered_migr", None]
-              , ["total_sst_size_comp_temp_triggered_migr_to_slow", None]
-              , ["total_sst_size_comp_temp_triggered_migr_to_fast", None]
-          ]
-
-      with open(fn1) as fo1:
-        for line in fo1:
-          if not line.startswith("#"):
-            continue
-
-          for kv in kvs:
-            k = kv[0]
-            mo = re.match(r".+%s=(?P<v>(\d|\.)+)" % k, line)
-            if mo:
-              kv[1] = float(mo.group("v"))
-              continue
-
-      try:
-        fo.write((fmt + "\n") % (
-          cost_slo_epsilon
-          , kvs[0][1]
-          , kvs[1][1]
-          , kvs[2][1]
-          , kvs[3][1]
-          , kvs[4][1]
-          , kvs[5][1]
-          , kvs[6][1]
-          , kvs[7][1]
-          , kvs[8][1]
-          , kvs[9][1]
-          , kvs[10][1]
-          , kvs[11][1]
-          , kvs[12][1]
-          , kvs[13][1]
-          , kvs[14][1]
-          , kvs[15][1]
-          ))
-      except TypeError as e:
-        Cons.P(fn1)
-        raise e
-
-  Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-  return fn_out
-
-
 def GetFnTimeVsMetrics(fn_ycsb):
   mo = re.match(r"(?P<dn_log>.+)/(?P<job_id>\d\d\d\d\d\d-\d\d\d\d\d\d)/ycsb/(?P<exp_dt>\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d).+", fn_ycsb)
   dn_log = mo.group("dn_log")
@@ -168,7 +36,7 @@ def GetFnTimeVsMetrics(fn_ycsb):
   #Cons.P(exp_dt)
   dn_log_job = "%s/%s" % (dn_log, job_id)
   lr = RocksdbLogReader(dn_log_job, exp_dt)
-  return lr.FnMetricByTime()
+  return (lr.FnMetricByTime(), lr.GetTargetCostChanges())
 
 
 class RocksdbLogReader:
@@ -273,6 +141,23 @@ class RocksdbLogReader:
 
   def FnMetricByTime(self):
     return self.fn_out
+
+  def GetTargetCostChanges(self):
+    with open(self.fn_out) as fo:
+      for line in fo:
+        #   cost_changes=[0:00:00 0.400000, 0:15:10.288680 0.200000, 0:30:10.288906 0.300000]
+        mo = re.match(r"#   cost_changes=\[(?P<v>(\d|:|\.|,| )+)\]", line)
+        if mo:
+          rel_time = []
+          target_cost = []
+          for v in mo.group("v").split(", "):
+            v1 = v.split(" ")
+            rel_time.append(v1[0])
+            target_cost.append(v1[1])
+          return (" ".join(rel_time), " ".join(target_cost))
+
+
+    raise RuntimeError("Unexpected: %s" % self.fn_out)
 
   def __repr__(self):
     return "<%s>" % " ".join("%s=%s" % item for item in sorted(vars(self).items()))

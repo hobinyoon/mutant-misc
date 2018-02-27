@@ -74,7 +74,8 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
   dn_log_job = "%s/%s" % (dn_log, job_id)
 
   (fn_dstat, num_stgdevs) = DstatLog.GetPlotFn1(dn_log_job, exp_dt)
-  fn_rocksdb = RocksdbLog.GetFnTimeVsMetrics(fn_ycsb_log)
+  (fn_rocksdb, target_cost_changes) = RocksdbLog.GetFnTimeVsMetrics(fn_ycsb_log)
+  #Cons.P(target_cost_changes)
 
   fn_cpu_avg = CpuAvg.GetFnForPlot(fn_ycsb_log)
   fn_mem_usage = ProcMemLog.GetFnForPlot(dn_log, job_id, exp_dt)
@@ -89,6 +90,8 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
     env["IN_FN_ROCKSDB"] = fn_rocksdb
     env["IN_FN_CPU_AVG"] = fn_cpu_avg
     env["IN_FN_MEM"] = fn_mem_usage
+    env["TARGET_COST_CHANGES_TIME"] = target_cost_changes[0]
+    env["TARGET_COST_CHANGES_COST"] = target_cost_changes[1]
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/time-vs-all-metrics.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))

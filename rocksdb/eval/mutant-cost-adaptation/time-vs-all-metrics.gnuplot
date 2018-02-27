@@ -8,6 +8,8 @@ IN_FN_YCSB = system("echo $IN_FN_YCSB")
 IN_FN_ROCKSDB = system("echo $IN_FN_ROCKSDB")
 IN_FN_CPU_AVG = system("echo $IN_FN_CPU_AVG")
 IN_FN_MEM = system("echo $IN_FN_MEM")
+TARGET_COST_CHANGES_TIME = system("echo $TARGET_COST_CHANGES_TIME")
+TARGET_COST_CHANGES_COST = system("echo $TARGET_COST_CHANGES_COST")
 OUT_FN = system("echo $OUT_FN")
 
 set print "-"
@@ -102,14 +104,15 @@ if (1) {
   set ylabel "Total SSTable size (GB)" offset 0.5, 0
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
-  set grid xtics ytics front lc rgb "black"
+  set grid ytics front lc rgb "black"
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
   set lmargin LMARGIN
 
+  Y_MAX=16
   set xrange ["00:00:00.000":TIME_MAX]
-
+  set yrange [0:Y_MAX]
 
   # Colors of fast and slow storage device
   C0 = "red"
@@ -123,12 +126,16 @@ if (1) {
   set label "SSTables in fast storage" at graph 0.6, 0.2  front #fc rgb C0
   set label "SSTables in slow storage" at graph 0.6, 0.55 front #fc rgb C0
 
+  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
+    x0 = word(TARGET_COST_CHANGES_TIME, i)
+    set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" front
+  }
+
   plot \
   IN_FN_ROCKSDB u 1:($4+$5) w filledcurves y1=0 fs noborder solid lc rgb C10 not, \
   IN_FN_ROCKSDB u 1:4       w filledcurves y1=0 fs noborder solid lc rgb C00 not, \
   IN_FN_ROCKSDB u 1:($4+$5) w l lc rgb C1 lw LW_NUM_SSTS not, \
-  IN_FN_ROCKSDB u 1:4       w l lc rgb C0 lw LW_NUM_SSTS not, \
-
+  IN_FN_ROCKSDB u 1:4       w l lc rgb C0 lw LW_NUM_SSTS not
 }
 
 

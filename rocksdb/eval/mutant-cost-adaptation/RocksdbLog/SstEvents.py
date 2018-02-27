@@ -157,13 +157,14 @@ class SstEvents:
 
   def Write(self, fn):
     with open(fn, "w") as fo:
-      fmt = "%12s %4d %4d %7.3f %7.3f" \
+      fmt = "%12s %4d %4d %7.3f %7.3f %8.6f" \
           " %4s %9s %1s %4s %1s %1s %1s"
       header = Util.BuildHeader(fmt, "rel_ts_HHMMSS" \
           " num_fast_sstables" \
           " num_slow_sstables" \
           " fast_sstable_size_sum_in_gb" \
           " slow_sstable_size_sum_in_gb" \
+          " current_stg_cost_in_gb_month" \
           \
           " sst_id" \
           " sst_size" \
@@ -173,6 +174,7 @@ class SstEvents:
           " sst_temp_triggered_single_migr" \
           " sst_migration_direction")
 
+      stg_unit_price = self.rocks_log_reader.stg_cost.GetUnitPrice()
       ts_prev = datetime.timedelta(0)
       ts_str_prev = "00:00:00.000"
       num_ssts_prev = [0, 0]
@@ -207,11 +209,18 @@ class SstEvents:
             if creation_reason == "C":
               migr_dirc = self.rocks_log_reader.comp_info.MigrDirc(job_id, sst_id)
 
+        total_stg_size_prev = total_sst_size_prev[0] + total_sst_size_prev[1]
+        total_stg_size = total_sst_size[0] + total_sst_size[1]
+        stg_cost_prev = (float(total_sst_size_prev[0]) * stg_unit_price[0] + float(total_sst_size_prev[1]) * stg_unit_price[1]) \
+            / total_stg_size_prev if total_stg_size_prev != 0 else 0
+        stg_cost = (float(total_sst_size[0]) * stg_unit_price[0] + float(total_sst_size[1]) * stg_unit_price[1]) / total_stg_size if total_stg_size != 0 else 0
+
         fo.write((fmt + "\n") % (ts_str
           , num_ssts_prev[0]
           , num_ssts_prev[1]
           , (float(total_sst_size_prev[0]) / 1024 / 1024 / 1024)
           , (float(total_sst_size_prev[1]) / 1024 / 1024 / 1024)
+          , stg_cost_prev
 
           , "-" # sst_id
           , "-" # sst_size
@@ -227,6 +236,7 @@ class SstEvents:
           , num_ssts[1]
           , (float(total_sst_size[0]) / 1024 / 1024 / 1024)
           , (float(total_sst_size[1]) / 1024 / 1024 / 1024)
+          , stg_cost
 
           , sst_id
           , sst_size
