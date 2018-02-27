@@ -1,0 +1,18 @@
+dn_base: ~/work/mutant/log/ycsb/mutant-cost-adaptation
+
+#Common exp attrs:
+#  md_caching=false
+#  calc_sst_placement=true
+#  cost_slo_epsilon=0.05
+#  stg_devs=[[u'/mnt/local-ssd0/rocksdb-data/ycsb/t0', 0.528], [u'/mnt/ebs-st1/rocksdb-data-t1', 0.045]]
+#  monitor_temp=true
+#  cost_slo=0.4
+#  migrate_sstables=true
+
+cost_slo: 0.4
+
+by_costchanges_targetiops:
+  "15 0.2, 30 0.3":
+    4000: 180227-112539/ycsb/180227-164909.023-d
+  "15 0.3, 30 0.35":
+    4000: 180227-115410/ycsb/180227-171254.830-d
