@@ -1,3 +1,11 @@
+import os
+import sys
+
+sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~"))
+import Cons
+import Util
+
+
 class SstInfo:
   def __init__(self):
     self.sstid_info = {}
@@ -30,6 +38,10 @@ class SiEntry:
     self.sst_id = int(j2["file_number"])
     self.path_id = int(j2["path_id"])
     self.sst_size = int(j2["file_size"])
+    self.level = int(j2["level"])
+    if self.level < 0:
+      Cons.P("Interesting: sst_id=%d level=%d" % (self.sst_id, self.level))
+      self.level = 0
 
     self.reason = None
     self.job_id = None
@@ -62,3 +74,6 @@ class SiEntry:
 
   def JobId(self):
     return self.job_id
+
+  def Level(self):
+    return self.level

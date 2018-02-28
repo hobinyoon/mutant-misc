@@ -19,9 +19,11 @@ class SstEvents:
     # {timestamp: [num_ssts_in_fast_storage, num_ssts_in_slow_storage]}
     self.ts_sstsize = {}
     self.ts_numssts = {}
-    # Creation time to SSTable ID
+
+    # Creation time to SSTable ID and deletion time to one
     #   We assume no two timestamps are identical
     self.createts_sstid = {}
+    self.deletets_sstid = {}
 
 
   # 2018/02/27-16:49:17.959334 7ff0ed2b2700 EVENT_LOG_v1 {"time_micros": 1519750157959324, "mutant_sst_opened": {"file_number": 2274, "file_size":
@@ -108,6 +110,8 @@ class SstEvents:
     self.ts_sstsize[ts1] = list(self.cur_sstsize)
     self.ts_numssts[ts1] = list(self.cur_numssts)
 
+    self.deletets_sstid[ts1] = sst_id
+
 
   def _GetRelTs(self, ts0):
     ts = datetime.datetime.strptime(ts0, "%Y/%m/%d-%H:%M:%S.%f")
@@ -158,7 +162,8 @@ class SstEvents:
   def Write(self, fn):
     with open(fn, "w") as fo:
       fmt = "%12s %4d %4d %7.3f %7.3f %8.6f" \
-          " %4s %9s %1s %4s %1s %1s %1s"
+          " %4s %9s %1s %4s %1s %1s %1s" \
+          " %8.6f %8.6f %8.6f"
       header = Util.BuildHeader(fmt, "rel_ts_HHMMSS" \
           " num_fast_sstables" \
           " num_slow_sstables" \
@@ -172,13 +177,21 @@ class SstEvents:
           " sst_creation_jobid" \
           " sst_creation_reason" \
           " sst_temp_triggered_single_migr" \
-          " sst_migration_direction")
+          " sst_migration_direction" \
+          " cur_stg_cost_leveled_split_01" \
+          " cur_stg_cost_leveled_split_12" \
+          " cur_stg_cost_leveled_split_23" \
+          )
 
       stg_unit_price = self.rocks_log_reader.stg_cost.GetUnitPrice()
       ts_prev = datetime.timedelta(0)
       ts_str_prev = "00:00:00.000"
       num_ssts_prev = [0, 0]
       total_sst_size_prev = [0, 0]
+      cur_sst_size_by_levels = {0:0, 1:0, 2:0, 3:0}
+      cur_stg_cost_by_level01_prev = 0
+      cur_stg_cost_by_level12_prev = 0
+      cur_stg_cost_by_level23_prev = 0
       i = 0
       for ts, num_ssts in sorted(self.ts_numssts.iteritems()):
         if i % 40 == 0:
@@ -204,16 +217,44 @@ class SstEvents:
           if si.Reason() is not None:
             creation_reason = si.Reason()
 
+          cur_sst_size_by_levels[si.Level()] += sst_size
+
           temp_triggered_migr = "T" if self.rocks_log_reader.comp_info.TempTriggeredSingleSstMigr(job_id) else "-"
           if self.rocks_log_reader.migrate_sstables:
             if creation_reason == "C":
               migr_dirc = self.rocks_log_reader.comp_info.MigrDirc(job_id, sst_id)
+
+        if ts in self.deletets_sstid:
+          sst_id = self.deletets_sstid[ts]
+          si = self.rocks_log_reader.sst_info.Get(sst_id)
+          sst_size = si.Size()
+          cur_sst_size_by_levels[si.Level()] -= sst_size
 
         total_stg_size_prev = total_sst_size_prev[0] + total_sst_size_prev[1]
         total_stg_size = total_sst_size[0] + total_sst_size[1]
         stg_cost_prev = (float(total_sst_size_prev[0]) * stg_unit_price[0] + float(total_sst_size_prev[1]) * stg_unit_price[1]) \
             / total_stg_size_prev if total_stg_size_prev != 0 else 0
         stg_cost = (float(total_sst_size[0]) * stg_unit_price[0] + float(total_sst_size[1]) * stg_unit_price[1]) / total_stg_size if total_stg_size != 0 else 0
+
+        total_stg_size = cur_sst_size_by_levels[0] + cur_sst_size_by_levels[1] + cur_sst_size_by_levels[2] + cur_sst_size_by_levels[3]
+        cur_stg_cost_by_level01 = \
+            (cur_sst_size_by_levels[0] * stg_unit_price[0]
+                + cur_sst_size_by_levels[1] * stg_unit_price[1]
+                + cur_sst_size_by_levels[2] * stg_unit_price[1]
+                + cur_sst_size_by_levels[3] * stg_unit_price[1]) \
+            / total_stg_size
+        cur_stg_cost_by_level12 = \
+            (cur_sst_size_by_levels[0] * stg_unit_price[0]
+                + cur_sst_size_by_levels[1] * stg_unit_price[0]
+                + cur_sst_size_by_levels[2] * stg_unit_price[1]
+                + cur_sst_size_by_levels[3] * stg_unit_price[1]) \
+            / total_stg_size
+        cur_stg_cost_by_level23 = \
+            (cur_sst_size_by_levels[0] * stg_unit_price[0]
+                + cur_sst_size_by_levels[1] * stg_unit_price[0]
+                + cur_sst_size_by_levels[2] * stg_unit_price[0]
+                + cur_sst_size_by_levels[3] * stg_unit_price[1]) \
+            / total_stg_size
 
         fo.write((fmt + "\n") % (ts_str
           , num_ssts_prev[0]
@@ -229,6 +270,10 @@ class SstEvents:
           , "-" # creation_reason
           , "-" # temp_triggered_migr
           , "-" # migr_dirc
+
+          , cur_stg_cost_by_level01_prev
+          , cur_stg_cost_by_level12_prev
+          , cur_stg_cost_by_level23_prev
           ))
 
         fo.write((fmt + "\n") % (ts_str
@@ -245,11 +290,20 @@ class SstEvents:
           , creation_reason
           , temp_triggered_migr
           , migr_dirc
+
+          , cur_stg_cost_by_level01
+          , cur_stg_cost_by_level12
+          , cur_stg_cost_by_level23
           ))
         ts_str_prev = ts_str
         ts_prev = ts
         num_ssts_prev = list(num_ssts)
         total_sst_size_prev = list(total_sst_size)
+
+        cur_stg_cost_by_level01_prev = cur_stg_cost_by_level01
+        cur_stg_cost_by_level12_prev = cur_stg_cost_by_level12
+        cur_stg_cost_by_level23_prev = cur_stg_cost_by_level23
+
     Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
 
   def __repr__(self):

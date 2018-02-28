@@ -37,6 +37,8 @@ set output OUT_FN
 LMARGIN = 10
 set sample 1000
 
+# Hide the SSTable loading phase. Not to distract the reviewers
+#TIME_MIN = "00:00:00"
 TIME_MIN = "00:00:12"
 
 # autofreq interval
@@ -66,9 +68,12 @@ if (1) {
   y_m = (y_b + y_t) / 2.0
 
   y_t1 = y_t + 0.07
-  y_t2 = y_t1 + 0.13
+  y_t2 = y_t1 + 0.12
+  y_t3 = y_t2 + 0.12
 
-  set label "Target cost changes ($\\GB\\month)" at TIME_MIN, y_t2 offset -1.5, 0 tc rgb "black"
+  set label "Target cost ($/GB/month)" at TIME_MIN, y_t3 offset -1.5, 0 tc rgb "black"
+  set label "Initial value" at TIME_MIN, y_t2 offset -1.5, 0 tc rgb "black"
+  set label "Changes" at TIME_MIN, y_t2 offset  8.9, 0 tc rgb "black"
 
   #set arrow from TIME_MIN, y_m to TIME_MAX, y_m nohead lc rgb "black" lw LW front
   do for [i=1:words(TARGET_COST_CHANGES_TIME)] {
@@ -83,6 +88,11 @@ if (1) {
 
   plot x w l lc rgb "white" not
 }
+
+
+# Line type and width of the vertical cost change lines
+LT_CC = 0
+LW_CC = 4
 
 
 # Storage cost
@@ -111,7 +121,7 @@ if (1) {
 
   do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
     x0 = word(TARGET_COST_CHANGES_TIME, i)
-    set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" front
+    set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" lw LW_CC lt LT_CC front
   }
 
   plot \
@@ -157,7 +167,7 @@ if (1) {
 
   do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
     x0 = word(TARGET_COST_CHANGES_TIME, i)
-    set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" front
+    set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" lw LW_CC lt LT_CC front
   }
 
   plot \
@@ -193,7 +203,7 @@ if (1) {
 
   do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
     x0 = word(TARGET_COST_CHANGES_TIME, i)
-    set arrow from x0, Y_MIN to x0, Y_MAX nohead lc rgb "black" front
+    set arrow from x0, Y_MIN to x0, Y_MAX nohead lc rgb "black" lw LW_CC lt LT_CC front
   }
 
   if (1) {
@@ -237,6 +247,136 @@ if (1) {
   IN_FN_YCSB u 1:(column(bi_w+5)/1000.0) w l smooth bezier lw 3 lc rgb "#FF8080" not, \
   IN_FN_YCSB u 1:(column(bi_w+1)/1000.0) w l smooth bezier lw 3 lc rgb "#FF0000" not
 }
+
+
+# Storage cost: Mutant vs. leveled-organization
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)" offset 0,0.2
+  set ylabel "Storage cost\n($/GB/month)" offset 1, 0
+  set xtics nomirror tc rgb "black" autofreq 0, AFI
+  set xtics add ("00:00" TIME_MIN)
+  set ytics nomirror tc rgb "black"
+  set grid ytics front lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  Y_MAX=0.6
+  set xrange [TIME_MIN:TIME_MAX]
+  set yrange [0:Y_MAX]
+
+  LW = 2
+
+  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
+    x0 = word(TARGET_COST_CHANGES_TIME, i)
+    set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" lw LW_CC lt LT_CC front
+  }
+
+  # Color for leveled-organization
+  C_l = "blue"
+
+  y0 = 0.045
+  set arrow from TIME_MIN, y0 to TIME_MAX, y0 nohead lc rgb C_l lw LW
+  y0 = 0.528
+  set arrow from TIME_MIN, y0 to TIME_MAX, y0 nohead lc rgb C_l lw LW
+
+  if (1) {
+    # Color for leveled-organization label
+    C_lt = "blue"
+
+    x0 = 0.82
+    y0 = 0.83
+    y_h = 0.10
+    x00 = x0 - 0.011
+    x1 = x0 + 0.13
+
+    y00 = y0-(y_h/2)
+    y01 = y0+(y_h/2)
+    set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "R: | 0 1 2 3" at screen x0,y0 tc rgb C_lt front
+
+    y0 = 0.57
+    y00 = y0-(y_h/2)
+    y01 = y0+(y_h/2)
+    set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "R: 0 | 1 2 3" at screen x0,y0 tc rgb C_lt front
+
+    y0 = 0.42
+    y00 = y0-(y_h/2)
+    y01 = y0+(y_h/2)
+    set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "R: 0 1 | 2 3" at screen x0,y0 tc rgb C_lt front
+
+    y0 = 0.335
+    y00 = y0-(y_h/2)
+    y01 = y0+(y_h/2)
+    set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "R: 0 1 2 | 3" at screen x0,y0 tc rgb C_lt front
+
+    y0 = 0.25
+    y00 = y0-(y_h/2)
+    y01 = y0+(y_h/2)
+    set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "R: 0 1 2 3 |" at screen x0,y0 tc rgb C_lt front
+  }
+
+  plot \
+  IN_FN_ROCKSDB u 1:6  w l lw LW lc rgb "black" not, \
+  IN_FN_ROCKSDB u 1:14 w l lw LW lc rgb C_l not, \
+  IN_FN_ROCKSDB u 1:15 w l lw LW lc rgb C_l not, \
+  IN_FN_ROCKSDB u 1:16 w l lw LW lc rgb C_l not
+}
+
+
+# DB IOPS
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "DB IOPS"
+  set xtics nomirror tc rgb "black" autofreq 0, AFI
+  set xtics add ("00:00" TIME_MIN)
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  Y_MIN=Y_MIN_DB_IOPS
+  Y_MAX=Y_MAX_DB_IOPS
+  set xrange [TIME_MIN:TIME_MAX]
+  set yrange [Y_MIN:Y_MAX]
+
+  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
+    x0 = word(TARGET_COST_CHANGES_TIME, i)
+    set arrow from x0, Y_MIN to x0, Y_MAX nohead lc rgb "black" lw LW_CC lt LT_CC front
+  }
+
+  plot \
+  IN_FN_YCSB u 1:2 w lp pt 7 ps 0.08 lc rgb "red" not
+}
+# DB IOPS breakdown into reads and writes?  We'll see if it's needed. When you specify target IOPS, it's not needed.
+
+
+# So I can look the top of the screen. My neck hurts.
+if (1) {
+  reset
+  set lmargin LMARGIN
+  do for [i=1:5] {
+    plot x w l lc rgb "white" not
+  }
+}
+exit
 
 
 # Read latency
@@ -320,41 +460,6 @@ if (0) {
   IN_FN_YCSB u 1:(column(bi+4)/1000.0) w l smooth bezier lw 3 lc rgb "#3F00BF" t "90th", \
   IN_FN_YCSB u 1:(column(bi+1)/1000.0) w l smooth bezier lw 3 lc rgb "#0000FF" t "avg"
 }
-
-
-# DB IOPS
-if (1) {
-  reset
-  set xdata time
-  set timefmt "%H:%M:%S"
-  set format x "%H:%M"
-
-  set xlabel "Time (HH:MM)"
-  set ylabel "DB IOPS"
-  set xtics nomirror tc rgb "black" autofreq 0, AFI
-  set xtics add ("00:00" TIME_MIN)
-  set ytics nomirror tc rgb "black"
-  set grid xtics ytics back lc rgb "black"
-  set border back lc rgb "#808080" back
-
-  # Align the stacked plots
-  set lmargin LMARGIN
-
-  Y_MIN=Y_MIN_DB_IOPS
-  Y_MAX=Y_MAX_DB_IOPS
-  set xrange [TIME_MIN:TIME_MAX]
-  set yrange [Y_MIN:Y_MAX]
-
-  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
-    x0 = word(TARGET_COST_CHANGES_TIME, i)
-    set arrow from x0, Y_MIN to x0, Y_MAX nohead lc rgb "black" front
-  }
-
-  plot \
-  IN_FN_YCSB u 1:2 w lp pt 7 ps 0.08 lc rgb "red" not
-}
-exit
-# DB IOPS breakdown into reads and writes?  We'll see if it's needed. When you specify target IOPS, it's not needed.
 
 
 # Total number of SSTables
