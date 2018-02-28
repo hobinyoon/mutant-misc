@@ -6,7 +6,7 @@ FN_OUT = system("echo $FN_OUT")
 
 set print "-"
 
-set terminal pdfcairo enhanced size 1.8in, (1.8*0.90)in
+set terminal pdfcairo enhanced size 2.1in, (2.1*0.90)in
 set output FN_OUT
 
 set border back lc rgb "#808080"
