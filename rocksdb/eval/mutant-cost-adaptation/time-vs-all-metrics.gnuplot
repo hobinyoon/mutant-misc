@@ -31,10 +31,10 @@ if (1) {
 }
 
 
-set terminal pdfcairo enhanced size 3.8in, (3.8*0.4)in
+set terminal pdfcairo enhanced size 3.8in, (3.8*0.30)in
 set output OUT_FN
 
-LMARGIN = 10
+LMARGIN = 0.17
 set sample 1000
 
 # Hide the SSTable loading phase. Not to distract the reviewers
@@ -44,7 +44,7 @@ TIME_MIN = "00:00:12"
 # autofreq interval
 AFI = 15 * 60
 
-# Cost changes
+# Cost change labels
 if (1) {
   reset
   set xdata time
@@ -54,8 +54,8 @@ if (1) {
   set noborder
 
   # Align the stacked plots
-  set lmargin LMARGIN
-  set bmargin 0
+  set lmargin screen LMARGIN
+  set bmargin screen 0.05
 
   Y_MAX=1
   set xrange [TIME_MIN:TIME_MAX]
@@ -63,13 +63,13 @@ if (1) {
 
   LW = 4
 
-  y_t = 0.07
+  y_t = 0.09
   y_b = 0.0
   y_m = (y_b + y_t) / 2.0
 
-  y_t1 = y_t + 0.07
-  y_t2 = y_t1 + 0.12
-  y_t3 = y_t2 + 0.12
+  y_t1 = y_t + 0.10
+  y_t2 = y_t1 + 0.15
+  y_t3 = y_t2 + 0.15
 
   set label "Target cost ($/GB/month)" at TIME_MIN, y_t3 offset -1.5, 0 tc rgb "black"
   set label "Initial value" at TIME_MIN, y_t2 offset -1.5, 0 tc rgb "black"
@@ -111,9 +111,11 @@ if (1) {
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
-  set lmargin LMARGIN
+  set lmargin screen LMARGIN
+  set tmargin screen 0.96
+  set bmargin screen 0.05
 
-  Y_MAX=0.6
+  Y_MAX=0.59
   set xrange [TIME_MIN:TIME_MAX]
   set yrange [0:Y_MAX]
 
@@ -137,7 +139,7 @@ if (1) {
   set format x "%H:%M"
 
   set xlabel "Time (HH:MM)" offset 0,0.2
-  set ylabel "Total SSTable size (GB)" offset -0.5, 0
+  set ylabel "Total SSTable size\n(GB)" offset 0, 0
   set xtics nomirror tc rgb "black" autofreq 0, AFI
   set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black" autofreq 0,5
@@ -146,9 +148,11 @@ if (1) {
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
-  set lmargin LMARGIN
+  set lmargin screen LMARGIN
+  set tmargin screen 0.98
+  set bmargin screen 0.05
 
-  Y_MAX=16
+  Y_MAX=14.5
   set xrange [TIME_MIN:TIME_MAX]
   set yrange [0:Y_MAX]
 
@@ -160,9 +164,9 @@ if (1) {
 
   LW_NUM_SSTS = 2
 
-  x0 = 0.6
-  set label "In fast storage" at graph x0, 0.2  front #fc rgb C0
-  set label "In slow storage" at graph x0, 0.55 front #fc rgb C0
+  x0 = 0.62
+  set label "In fast storage" at graph x0, 0.2 front #fc rgb C0
+  set label "In slow storage" at graph x0, 0.6 front #fc rgb C0
   #set label "SSTables in slow storage" at graph 0.6, 0.55 front #fc rgb C0
 
   do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
@@ -186,7 +190,7 @@ if (1) {
   set format x "%H:%M"
 
   set xlabel "Time (HH:MM)"
-  set ylabel "DB latency (ms)" offset 1.5,0
+  set ylabel "DB latency\n(ms)" offset 2,0
   set xtics nomirror tc rgb "black" autofreq 0, AFI
   set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
@@ -194,10 +198,12 @@ if (1) {
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
-  set lmargin LMARGIN
+  set lmargin screen LMARGIN
+  set tmargin screen 0.96
+  set bmargin screen 0.05
 
   Y_MIN=0.01
-  Y_MAX=100
+  Y_MAX=90
   set xrange [TIME_MIN:TIME_MAX]
   set yrange [Y_MIN:Y_MAX]
 
@@ -208,7 +214,7 @@ if (1) {
 
   if (1) {
     x0 = 0.83
-    y0 = 0.58
+    y0 = 0.50
     y_h = 0.10
 
     x00 = x0 - 0.01
@@ -218,19 +224,19 @@ if (1) {
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
     set label "Read avg" at screen x0,y0 front
 
-    y0 = 0.78
+    y0 = 0.79
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
     set label "Read 99th" at screen x0,y0 front
 
-    y0 = 0.43
+    y0 = 0.25
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
     set label "Write 99th" at screen x0,y0 front
 
-    y0 = 0.34
+    y0 = 0.15
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
@@ -265,9 +271,11 @@ if (1) {
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
-  set lmargin LMARGIN
+  set lmargin screen LMARGIN
+  set tmargin screen 0.96
+  set bmargin screen 0.05
 
-  Y_MAX=0.6
+  Y_MAX=0.59
   set xrange [TIME_MIN:TIME_MAX]
   set yrange [0:Y_MAX]
 
@@ -291,43 +299,42 @@ if (1) {
     # Color for leveled-organization label
     C_lt = "blue"
 
-    x0 = 0.82
-    y0 = 0.83
-    y_h = 0.10
+    x0 = 0.81
+    y0 = 0.85
+    y_h = 0.12
     x00 = x0 - 0.011
-    x1 = x0 + 0.13
+    x1 = x0 + 0.18
 
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
     set label "L: 0 1 2 3 |" at screen x0,y0 tc rgb C_lt front
 
-    y0 = 0.60
+    y0 = 0.525
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
     set label "L: 0 1 2 | 3" at screen x0,y0 tc rgb C_lt front
 
-    y0 = 0.42
+    y0 = 0.27
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
     set label "L: 0 1 | 2 3" at screen x0,y0 tc rgb C_lt front
 
-    y0 = 0.335
+    y0 = 0.15
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
     set label "L: 0 | 1 2 3" at screen x0,y0 tc rgb C_lt front
 
-    y0 = 0.25
+    y0 = 0.04
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
     set label "L: | 0 1 2 3" at screen x0,y0 tc rgb C_lt front
 
-    x0 = 0.82
-    y0 = 0.52
+    y0 = 0.435
     #y00 = y0-(y_h/2)
     #y01 = y0+(y_h/2)
     #set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
@@ -359,7 +366,7 @@ if (1) {
   set border back lc rgb "#808080" back
 
   # Align the stacked plots
-  set lmargin LMARGIN
+  set lmargin screen LMARGIN
 
   Y_MIN=Y_MIN_DB_IOPS
   Y_MAX=Y_MAX_DB_IOPS
@@ -380,9 +387,23 @@ if (1) {
 # So I can look the top of the screen. My neck hurts.
 if (1) {
   reset
-  set lmargin LMARGIN
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "Dummy" offset 1,0
+  set xtics nomirror tc rgb "black" autofreq 0, AFI
+  set xtics add ("00:00" TIME_MIN)
+  set ytics nomirror tc rgb "black"
+  set grid xtics ytics back lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  set xrange [TIME_MIN:TIME_MAX]
+
+  set lmargin screen LMARGIN
   do for [i=1:5] {
-    plot x w l lc rgb "white" not
+    plot IN_FN_YCSB u 1:0 w l lc rgb "white" not
   }
 }
 exit
