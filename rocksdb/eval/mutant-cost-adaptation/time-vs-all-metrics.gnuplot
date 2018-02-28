@@ -150,8 +150,9 @@ if (1) {
 
   LW_NUM_SSTS = 2
 
-  set label "In fast storage" at graph 0.55, 0.2  front #fc rgb C0
-  set label "In slow storage" at graph 0.55, 0.55 front #fc rgb C0
+  x0 = 0.6
+  set label "In fast storage" at graph x0, 0.2  front #fc rgb C0
+  set label "In slow storage" at graph x0, 0.55 front #fc rgb C0
   #set label "SSTables in slow storage" at graph 0.6, 0.55 front #fc rgb C0
 
   do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
@@ -186,7 +187,7 @@ if (1) {
   set lmargin LMARGIN
 
   Y_MIN=0.01
-  Y_MAX=40
+  Y_MAX=100
   set xrange [TIME_MIN:TIME_MAX]
   set yrange [Y_MIN:Y_MAX]
 
@@ -195,18 +196,51 @@ if (1) {
     set arrow from x0, Y_MIN to x0, Y_MAX nohead lc rgb "black" front
   }
 
+  if (1) {
+    x0 = 0.83
+    y0 = 0.58
+    y_h = 0.10
+
+    x00 = x0 - 0.01
+    x1 = x0 + 0.19
+    y00 = y0-(y_h/2)
+    y01 = y0+(y_h/2)
+    set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "Read avg" at screen x0,y0 front
+
+    y0 = 0.78
+    y00 = y0-(y_h/2)
+    y01 = y0+(y_h/2)
+    set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "Read 99th" at screen x0,y0 front
+
+    y0 = 0.43
+    y00 = y0-(y_h/2)
+    y01 = y0+(y_h/2)
+    set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "Write 99th" at screen x0,y0 front
+
+    y0 = 0.34
+    y00 = y0-(y_h/2)
+    y01 = y0+(y_h/2)
+    set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "Write avg" at screen x0,y0 front
+  }
+
   set logscale y
 
   bi_r = 3
   bi_w = 11
   plot \
-  IN_FN_YCSB u 1:(column(bi_r+1)/1000.0) w l smooth bezier lw 3 lc rgb "#0000FF" t "Read avg", \
-  IN_FN_YCSB u 1:(column(bi_w+1)/1000.0) w l smooth bezier lw 3 lc rgb "#FF0000" t "Write avg"
+  IN_FN_YCSB u 1:(column(bi_r+5)/1000.0) w l smooth bezier lw 3 lc rgb "#8080FF" not, \
+  IN_FN_YCSB u 1:(column(bi_r+1)/1000.0) w l smooth bezier lw 3 lc rgb "#0000FF" not, \
+  IN_FN_YCSB u 1:(column(bi_w+5)/1000.0) w l smooth bezier lw 3 lc rgb "#FF8080" not, \
+  IN_FN_YCSB u 1:(column(bi_w+1)/1000.0) w l smooth bezier lw 3 lc rgb "#FF0000" not
 }
 
 
 # Read latency
-if (1) {
+if (0) {
   reset
   set xdata time
   set timefmt "%H:%M:%S"
@@ -249,7 +283,7 @@ if (1) {
 
 
 # Write latency
-if (1) {
+if (0) {
   reset
   set xdata time
   set timefmt "%H:%M:%S"

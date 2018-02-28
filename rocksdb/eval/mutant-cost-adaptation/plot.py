@@ -25,7 +25,7 @@ def main(argv):
   Util.MkDirs(Conf.GetOutDir())
   PlotTimeVsMetrics()
 
-    
+
 def PlotTimeVsMetrics():
   with Cons.MT("Plotting time vs metrics ..."):
     dn_base = Conf.GetDir("dn_base")
@@ -62,7 +62,7 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
 
   (fn_ycsb, time_max, params1) = YcsbLog.GenDataMetricsByTime(fn_ycsb_log, exp_dt)
   #Cons.P("%s\n%s\n%s" % (fn_ycsb, time_max, params1))
-  #time_max = "00:30:00"
+  time_max = "01:00:00"
 
   params_formatted = fn_ycsb_log + "\n" + pprint.pformat(params1[0]) + "\n" + pprint.pformat(params1[1])
   # No idea how to put spaces for the indentations. It used to work.
@@ -95,7 +95,6 @@ def _PlotTimeVsAllMetrics(fn_ycsb_log):
     env["OUT_FN"] = fn_out
     Util.RunSubp("gnuplot %s/time-vs-all-metrics.gnuplot" % os.path.dirname(__file__), env=env)
     Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-  sys.exit(0)
 
 
 class ExpTuple:
