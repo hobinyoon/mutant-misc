@@ -153,7 +153,14 @@ class RocksdbLogReader:
           for v in mo.group("v").split(", "):
             v1 = v.split(" ")
             rel_time.append(v1[0])
-            target_cost.append(v1[1])
+            c = v1[1]
+            # Remove trailing 0s
+            while True:
+              mo1 = re.match(r"\d+\.\d*0", c)
+              if mo1 is None:
+                break
+              c = c[:-1]
+            target_cost.append(c)
           return (" ".join(rel_time), " ".join(target_cost))
 
 

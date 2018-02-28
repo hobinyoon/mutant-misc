@@ -16,11 +16,11 @@ by_costchanges_targetiops:
     2000: 180227-115502/ycsb/180227-171223.457-d
     3000: 180227-115428/ycsb/180227-171307.110-d
     #4000: 180227-112539/ycsb/180227-164909.023-d
+    1000: 180227-115534/ycsb/180227-171344.085-d
   "15 0.3, 30 0.35":
     2000: 180227-115517/ycsb/180227-171328.621-d
     3000: 180227-115444/ycsb/180227-171308.848-d
     #4000: 180227-115410/ycsb/180227-171254.830-d
+    1000: 180227-115555/ycsb/180227-171334.701-d
 
-# TODO: Target IOPS 4000 might be too much. A big dip in throughput when the target IOPS changes.
-
-# TODO: Mark when IOPS changes.
+# Target IOPS 4000 might be too much. A big dip in throughput when the target IOPS changes.

@@ -16,13 +16,74 @@ set print "-"
 #print sprintf("NUM_STGDEVS=%d", NUM_STGDEVS)
 print sprintf("IN_FN_ROCKSDB=%s", IN_FN_ROCKSDB)
 
-set terminal pdfcairo enhanced size 6in, (2.3*0.85)in
+# Get ranges
+if (1) {
+  set terminal unknown
+  set xdata time
+  set timefmt "%H:%M:%S"
+
+  plot IN_FN_YCSB u 1:2 w l
+  #Y_MAX_DB_IOPS=GPVAL_DATA_Y_MAX
+  Y_MIN_DB_IOPS=GPVAL_Y_MIN
+  Y_MAX_DB_IOPS=GPVAL_Y_MAX
+
+  #show variables all
+}
+
+
+set terminal pdfcairo enhanced size 3.8in, (3.8*0.4)in
 set output OUT_FN
 
 LMARGIN = 10
 set sample 1000
 
 TIME_MIN = "00:00:12"
+
+# autofreq interval
+AFI = 15 * 60
+
+# Cost changes
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+
+  set notics
+  set noborder
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+  set bmargin 0
+
+  Y_MAX=1
+  set xrange [TIME_MIN:TIME_MAX]
+  set yrange [0:Y_MAX]
+
+  LW = 4
+
+  y_t = 0.07
+  y_b = 0.0
+  y_m = (y_b + y_t) / 2.0
+
+  y_t1 = y_t + 0.07
+  y_t2 = y_t1 + 0.13
+
+  set label "Target cost changes ($\\GB\\month)" at TIME_MIN, y_t2 offset -1.5, 0 tc rgb "black"
+
+  #set arrow from TIME_MIN, y_m to TIME_MAX, y_m nohead lc rgb "black" lw LW front
+  do for [i=1:words(TARGET_COST_CHANGES_TIME)] {
+    if (i == 1) {
+      x0 = TIME_MIN
+    } else {
+      x0 = word(TARGET_COST_CHANGES_TIME, i)
+    }
+    set arrow from x0, y_t to x0, y_b head lc rgb "black" lw LW front
+    set label word(TARGET_COST_CHANGES_COST, i) at x0, y_t1 center tc rgb "black"
+  }
+
+  plot x w l lc rgb "white" not
+}
+
 
 # Storage cost
 if (1) {
@@ -31,9 +92,9 @@ if (1) {
   set timefmt "%H:%M:%S"
   set format x "%H:%M"
 
-  #set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "Storage cost\n($/GB/month)" offset 0.5, 0
-  set xtics nomirror tc rgb "black"
+  set xlabel "Time (HH:MM)" offset 0,0.2
+  set ylabel "Storage cost\n($/GB/month)" offset 1, 0
+  set xtics nomirror tc rgb "black" autofreq 0, AFI
   set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
   set grid ytics front lc rgb "black"
@@ -65,11 +126,12 @@ if (1) {
   set timefmt "%H:%M:%S"
   set format x "%H:%M"
 
-  #set xlabel "Time (hour)" offset 0,0.2
-  set ylabel "Total SSTable size (GB)" offset 0.5, 0
-  set xtics nomirror tc rgb "black"
+  set xlabel "Time (HH:MM)" offset 0,0.2
+  set ylabel "Total SSTable size (GB)" offset -0.5, 0
+  set xtics nomirror tc rgb "black" autofreq 0, AFI
   set xtics add ("00:00" TIME_MIN)
-  set ytics nomirror tc rgb "black"
+  set ytics nomirror tc rgb "black" autofreq 0,5
+  set mytics 5
   set grid ytics front lc rgb "black"
   set border back lc rgb "#808080" back
 
@@ -88,8 +150,8 @@ if (1) {
 
   LW_NUM_SSTS = 2
 
-  set label "Total SSTable size in fast storage" at graph 0.55, 0.2  front #fc rgb C0
-  set label "Total SSTable size in slow storage" at graph 0.55, 0.55 front #fc rgb C0
+  set label "In fast storage" at graph 0.55, 0.2  front #fc rgb C0
+  set label "In slow storage" at graph 0.55, 0.55 front #fc rgb C0
   #set label "SSTables in slow storage" at graph 0.6, 0.55 front #fc rgb C0
 
   do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
@@ -105,6 +167,44 @@ if (1) {
 }
 
 
+# DB read and write latency
+if (1) {
+  reset
+  set xdata time
+  set timefmt "%H:%M:%S"
+  set format x "%H:%M"
+
+  set xlabel "Time (HH:MM)"
+  set ylabel "DB latency (ms)" offset 1.5,0
+  set xtics nomirror tc rgb "black" autofreq 0, AFI
+  set xtics add ("00:00" TIME_MIN)
+  set ytics nomirror tc rgb "black"
+  set grid ytics back lc rgb "black"
+  set border back lc rgb "#808080" back
+
+  # Align the stacked plots
+  set lmargin LMARGIN
+
+  Y_MIN=0.01
+  Y_MAX=40
+  set xrange [TIME_MIN:TIME_MAX]
+  set yrange [Y_MIN:Y_MAX]
+
+  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
+    x0 = word(TARGET_COST_CHANGES_TIME, i)
+    set arrow from x0, Y_MIN to x0, Y_MAX nohead lc rgb "black" front
+  }
+
+  set logscale y
+
+  bi_r = 3
+  bi_w = 11
+  plot \
+  IN_FN_YCSB u 1:(column(bi_r+1)/1000.0) w l smooth bezier lw 3 lc rgb "#0000FF" t "Read avg", \
+  IN_FN_YCSB u 1:(column(bi_w+1)/1000.0) w l smooth bezier lw 3 lc rgb "#FF0000" t "Write avg"
+}
+
+
 # Read latency
 if (1) {
   reset
@@ -112,9 +212,9 @@ if (1) {
   set timefmt "%H:%M:%S"
   set format x "%H:%M"
 
-  #set xlabel "Time (HH:MM)"
+  set xlabel "Time (HH:MM)"
   set ylabel "Read latency (ms)" offset 1,0
-  set xtics nomirror tc rgb "black"
+  set xtics nomirror tc rgb "black" autofreq 0, AFI
   set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
   set grid ytics back lc rgb "black"
@@ -157,7 +257,7 @@ if (1) {
 
   set xlabel "Time (HH:MM)"
   set ylabel "Write latency (ms)" offset 1,0
-  set xtics nomirror tc rgb "black"
+  set xtics nomirror tc rgb "black" autofreq 0, AFI
   set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
   set grid ytics back lc rgb "black"
@@ -197,7 +297,7 @@ if (1) {
 
   set xlabel "Time (HH:MM)"
   set ylabel "DB IOPS"
-  set xtics nomirror tc rgb "black"
+  set xtics nomirror tc rgb "black" autofreq 0, AFI
   set xtics add ("00:00" TIME_MIN)
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "black"
@@ -206,13 +306,20 @@ if (1) {
   # Align the stacked plots
   set lmargin LMARGIN
 
+  Y_MIN=Y_MIN_DB_IOPS
+  Y_MAX=Y_MAX_DB_IOPS
   set xrange [TIME_MIN:TIME_MAX]
+  set yrange [Y_MIN:Y_MAX]
 
-  #set logscale y
+  do for [i=2:words(TARGET_COST_CHANGES_TIME)] {
+    x0 = word(TARGET_COST_CHANGES_TIME, i)
+    set arrow from x0, Y_MIN to x0, Y_MAX nohead lc rgb "black" front
+  }
 
   plot \
   IN_FN_YCSB u 1:2 w lp pt 7 ps 0.08 lc rgb "red" not
 }
+exit
 # DB IOPS breakdown into reads and writes?  We'll see if it's needed. When you specify target IOPS, it's not needed.
 
 
