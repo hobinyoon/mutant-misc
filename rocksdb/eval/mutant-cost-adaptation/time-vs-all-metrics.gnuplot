@@ -249,7 +249,7 @@ if (1) {
 }
 
 
-# Storage cost: Mutant vs. leveled-organization
+# Storage cost: Mutant vs. others
 if (1) {
   reset
   set xdata time
@@ -278,8 +278,9 @@ if (1) {
     set arrow from x0, 0 to x0, Y_MAX nohead lc rgb "black" lw LW_CC lt LT_CC front
   }
 
-  # Color for leveled-organization
+  # Color for other organization strategies
   C_l = "blue"
+  C_rr = "red"
 
   y0 = 0.045
   set arrow from TIME_MIN, y0 to TIME_MAX, y0 nohead lc rgb C_l lw LW
@@ -299,35 +300,43 @@ if (1) {
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
-    set label "R: | 0 1 2 3" at screen x0,y0 tc rgb C_lt front
+    set label "L: 0 1 2 3 |" at screen x0,y0 tc rgb C_lt front
 
-    y0 = 0.57
+    y0 = 0.60
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
-    set label "R: 0 | 1 2 3" at screen x0,y0 tc rgb C_lt front
+    set label "L: 0 1 2 | 3" at screen x0,y0 tc rgb C_lt front
 
     y0 = 0.42
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
-    set label "R: 0 1 | 2 3" at screen x0,y0 tc rgb C_lt front
+    set label "L: 0 1 | 2 3" at screen x0,y0 tc rgb C_lt front
 
     y0 = 0.335
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
-    set label "R: 0 1 2 | 3" at screen x0,y0 tc rgb C_lt front
+    set label "L: 0 | 1 2 3" at screen x0,y0 tc rgb C_lt front
 
     y0 = 0.25
     y00 = y0-(y_h/2)
     y01 = y0+(y_h/2)
     set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
-    set label "R: 0 1 2 3 |" at screen x0,y0 tc rgb C_lt front
+    set label "L: | 0 1 2 3" at screen x0,y0 tc rgb C_lt front
+
+    x0 = 0.82
+    y0 = 0.52
+    #y00 = y0-(y_h/2)
+    #y01 = y0+(y_h/2)
+    #set obj rect from screen x00,y00 to screen x1,y01 fs noborder fc rgb "white" front
+    set label "RR" at screen x0,y0 tc rgb C_rr front
   }
 
   plot \
   IN_FN_ROCKSDB u 1:6  w l lw LW lc rgb "black" not, \
+  IN_FN_ROCKSDB u 1:17 w l lw LW lc rgb C_rr not, \
   IN_FN_ROCKSDB u 1:14 w l lw LW lc rgb C_l not, \
   IN_FN_ROCKSDB u 1:15 w l lw LW lc rgb C_l not, \
   IN_FN_ROCKSDB u 1:16 w l lw LW lc rgb C_l not

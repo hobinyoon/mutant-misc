@@ -44,17 +44,21 @@ class SstEvents:
     sst_size = int(j2["file_size"])
     sst_id = int(j2["file_number"])
     path_id = int(j2["path_id"])
-    level = int(j2["level"])
 
     ts1 = self._GetRelTs(mo.group("ts"))
+
+    if ts1 in self.createts_sstid:
+      ts_before = ts1
+      while ts1 in self.createts_sstid:
+        ts1 += datetime.timedelta(microseconds = 1)
+      Cons.P("Duplicate timestamp %s. sst_id=%d. Adjusted to %s" % (ts_before, sst_id, ts1))
+    self.createts_sstid[ts1] = sst_id
 
     self.cur_sstsize[path_id] += sst_size
     self.cur_numssts[path_id] += 1
 
     self.ts_sstsize[ts1] = list(self.cur_sstsize)
     self.ts_numssts[ts1] = list(self.cur_numssts)
-
-    self.createts_sstid[ts1] = sst_id
 
     self.rocks_log_reader.sst_info.Add(sst_id, j1)
   
@@ -99,6 +103,13 @@ class SstEvents:
     sst_id = int(j1["file_number"])
 
     ts1 = self._GetRelTs(ts0)
+    if ts1 in self.deletets_sstid:
+      ts_before = ts1
+      while ts1 in self.deletets_sstid:
+        ts1 += datetime.timedelta(microseconds = 1)
+      Cons.P("Duplicate timestamp %s. sst_id=%d. Adjusted to %s" % (ts_before, sst_id, ts1))
+    self.deletets_sstid[ts1] = sst_id
+
     si = self.rocks_log_reader.sst_info.Get(sst_id)
     if si is None:
       # This happens when RocksDB loads existing database. It doesn't log anything.
@@ -109,8 +120,6 @@ class SstEvents:
     self.cur_numssts[path_id] -= 1
     self.ts_sstsize[ts1] = list(self.cur_sstsize)
     self.ts_numssts[ts1] = list(self.cur_numssts)
-
-    self.deletets_sstid[ts1] = sst_id
 
 
   def _GetRelTs(self, ts0):
@@ -163,7 +172,7 @@ class SstEvents:
     with open(fn, "w") as fo:
       fmt = "%12s %4d %4d %7.3f %7.3f %8.6f" \
           " %4s %9s %1s %4s %1s %1s %1s" \
-          " %8.6f %8.6f %8.6f"
+          " %8.6f %8.6f %8.6f %8.6f"
       header = Util.BuildHeader(fmt, "rel_ts_HHMMSS" \
           " num_fast_sstables" \
           " num_slow_sstables" \
@@ -181,6 +190,7 @@ class SstEvents:
           " cur_stg_cost_leveled_split_01" \
           " cur_stg_cost_leveled_split_12" \
           " cur_stg_cost_leveled_split_23" \
+          " cur_stg_cost_rr" \
           )
 
       stg_unit_price = self.rocks_log_reader.stg_cost.GetUnitPrice()
@@ -188,10 +198,16 @@ class SstEvents:
       ts_str_prev = "00:00:00.000"
       num_ssts_prev = [0, 0]
       total_sst_size_prev = [0, 0]
+
       cur_sst_size_by_levels = {0:0, 1:0, 2:0, 3:0}
       cur_stg_cost_by_level01_prev = 0
       cur_stg_cost_by_level12_prev = 0
       cur_stg_cost_by_level23_prev = 0
+
+      cur_sst_size_by_rr = {0:0, 1:0}
+      cur_stg_cost_by_rr_prev = 0
+      rr_sstid_stgidx = {}
+
       i = 0
       for ts, num_ssts in sorted(self.ts_numssts.iteritems()):
         if i % 40 == 0:
@@ -219,6 +235,10 @@ class SstEvents:
 
           cur_sst_size_by_levels[si.Level()] += sst_size
 
+          rr_stg_idx = 0 if cur_sst_size_by_rr[0] < cur_sst_size_by_rr[1] else 1
+          cur_sst_size_by_rr[rr_stg_idx] += sst_size
+          rr_sstid_stgidx[sst_id] = rr_stg_idx
+
           temp_triggered_migr = "T" if self.rocks_log_reader.comp_info.TempTriggeredSingleSstMigr(job_id) else "-"
           if self.rocks_log_reader.migrate_sstables:
             if creation_reason == "C":
@@ -229,6 +249,9 @@ class SstEvents:
           si = self.rocks_log_reader.sst_info.Get(sst_id)
           sst_size = si.Size()
           cur_sst_size_by_levels[si.Level()] -= sst_size
+
+          rr_stg_idx = rr_sstid_stgidx[sst_id]
+          cur_sst_size_by_rr[rr_stg_idx] -= sst_size
 
         total_stg_size_prev = total_sst_size_prev[0] + total_sst_size_prev[1]
         total_stg_size = total_sst_size[0] + total_sst_size[1]
@@ -256,6 +279,12 @@ class SstEvents:
                 + cur_sst_size_by_levels[3] * stg_unit_price[1]) \
             / total_stg_size
 
+        total_stg_size = cur_sst_size_by_rr[0] + cur_sst_size_by_rr[1]
+        cur_stg_cost_by_rr = \
+            (cur_sst_size_by_rr[0] * stg_unit_price[0]
+                + cur_sst_size_by_rr[1] * stg_unit_price[1]) \
+            / total_stg_size
+
         fo.write((fmt + "\n") % (ts_str
           , num_ssts_prev[0]
           , num_ssts_prev[1]
@@ -274,6 +303,7 @@ class SstEvents:
           , cur_stg_cost_by_level01_prev
           , cur_stg_cost_by_level12_prev
           , cur_stg_cost_by_level23_prev
+          , cur_stg_cost_by_rr_prev
           ))
 
         fo.write((fmt + "\n") % (ts_str
@@ -294,6 +324,7 @@ class SstEvents:
           , cur_stg_cost_by_level01
           , cur_stg_cost_by_level12
           , cur_stg_cost_by_level23
+          , cur_stg_cost_by_rr
           ))
         ts_str_prev = ts_str
         ts_prev = ts
@@ -303,6 +334,7 @@ class SstEvents:
         cur_stg_cost_by_level01_prev = cur_stg_cost_by_level01
         cur_stg_cost_by_level12_prev = cur_stg_cost_by_level12
         cur_stg_cost_by_level23_prev = cur_stg_cost_by_level23
+        cur_stg_cost_by_rr_prev = cur_stg_cost_by_rr
 
     Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
 
