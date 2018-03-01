@@ -51,7 +51,7 @@ c_min = 0.045
 c_max = 0.528
 
 TMARGIN = 0.96
-RMARGIN = 0.71
+RMARGIN = 0.70
 
 # Average read latency
 if (1) {
@@ -120,7 +120,7 @@ if (1) {
     set obj rect from screen x00,y00 to screen x01,y01 fs noborder fc rgb "white" front
     set label "Slow\nDB" center at screen x0,y0 front
 
-    x0 = 0.70
+    x0 = 0.69
     y0 = 0.73
     x00 = x0 - 0.040
     x01 = x0 + 0.04
