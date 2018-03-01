@@ -6,8 +6,7 @@ OUT_FN = system("echo $OUT_FN")
 set print "-"
 #print sprintf("TIME_MAX=%s", TIME_MAX)
 
-#set terminal pdfcairo enhanced size 2.3in, (2.3*0.85)in
-set terminal pdfcairo enhanced size 2.5in, (2.5*0.85)in
+set terminal pdfcairo enhanced size 3.5in, 2.4in
 set output OUT_FN
 
 if (0) {
@@ -46,58 +45,16 @@ if (0) {
 }
 
 
-# Legend
-if (1) {
-  x_l = 0.1
-  x_r = x_l + 0.04
-  y_t = 0.9
-  y_height = 0.8
-  y_b = y_t - y_height
-  y_c = (y_t + y_b) / 2.0
-
-  # Play with this if you see horizontal stripes
-  y_overlap=0.95
-  y_unit_height = y_height / 256.0
-
-  do for [i=0:255] {
-    set obj rect from graph x_l, y_t - y_unit_height * (i+1+y_overlap) to graph x_r, y_t - y_unit_height * i \
-      fs solid 1.0 noborder fc rgb color_01(i / 255.0) lw 0.1 front
-  }
-
-  # Bounding box
-  set obj rect from graph x_l, y_t - y_unit_height * (255+1+y_overlap) to graph x_r, y_t - y_unit_height * (0) \
-    fs transparent solid 0.0 border fc rgb "#808080" front
-
-  # For Mutant, these are cost SLOs, not actual costs.
-  # For RocksDB, these are actual costs.
-  costs = "0.045 0.1 0.2 0.3 0.4 0.5 0.528"
-  cost_min = 0.045
-  cost_max = 0.528
-  cost_01(x) = (x - cost_min) / (cost_max - cost_min)
-  do for [i=1:words(costs)] {
-    #cost_str = sprintf("$%s", word(costs, i))
-    cost_str = word(costs, i)
-    cost = word(costs, i) + 0.0
-    y0 = y_t + (y_b - y_t) * cost_01(cost)
-    set arrow from graph x_r, y0 to graph x_r+0.02, y0 nohead lc rgb "#808080" front
-    set label at graph x_r + 0.05, y0 point pt i ps 0.5 lc rgb color_01(cost_01(cost)) front
-    set label cost_str at graph x_r, y0 left offset 2.5,0 tc rgb color_01(cost_01(cost)) front
-  }
-
-  set label "Cost ($/GB/month)" at graph x_r, y_c center offset 8,0 rotate by 90
-
-  set notics
-  set noborder
-  plot x lc rgb "white" not
-}
-
-
 c_min = 0.045
 c_max = 0.528
 
+TMARGIN = 0.96
+RMARGIN = 0.74
+
+# Average read latency
 if (1) {
   reset
-  set xlabel "K IOPS"
+  set xlabel "Throughput (K IOPS)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
@@ -105,71 +62,95 @@ if (1) {
 
   set logscale xy
   set xrange[1/1.5:100*1.5]
-  #set yrange[0.1:]
+
+  # Legend
+  if (1) {
+    x_l = 0.78
+    x_r = x_l + 0.023
+    y_t = 0.96
+    y_height = 0.78
+    y_b = y_t - y_height
+    y_c = (y_t + y_b) / 2.0
+
+    # Play with this if you see horizontal stripes
+    y_overlap=0.95
+    y_unit_height = y_height / 256.0
+
+    do for [i=0:255] {
+      set obj rect from screen x_l, y_t - y_unit_height * (i+1+y_overlap) to screen x_r, y_t - y_unit_height * i \
+        fs solid 1.0 noborder fc rgb color_01(i / 255.0) lw 0.1 front
+    }
+
+    # Bounding box
+    set obj rect from screen x_l, y_t - y_unit_height * (255+1+y_overlap) to screen x_r, y_t - y_unit_height * (0) \
+      fs transparent solid 0.0 border fc rgb "#808080" front
+
+    # For Mutant, these are cost SLOs, not actual costs.
+    # For RocksDB, these are actual costs.
+    costs = "0.045 0.1 0.2 0.3 0.4 0.5 0.528"
+    cost_min = 0.045
+    cost_max = 0.528
+    cost_01(x) = (x - cost_min) / (cost_max - cost_min)
+    x_r1 = x_r + 0.015
+    x_r2 = x_r1 + 0.03
+    x_r3 = x_r2 + 0.02
+    do for [i=1:words(costs)] {
+      #cost_str = sprintf("$%s", word(costs, i))
+      cost_str = word(costs, i)
+      #print cost_str
+      cost = cost_str + 0.0
+      y0 = y_t + (y_b - y_t) * cost_01(cost)
+      set arrow from screen x_r, y0 to screen x_r1, y0 nohead lc rgb "#808080" front
+      set label at screen x_r2, y0 point pt i ps 0.5 lc rgb color_01(cost_01(cost)) front
+      set label cost_str at screen x_r3, y0 left tc rgb "black" front
+    }
+
+    set label "Cost ($/GB/month)" at screen x_r, y_c center offset 8,0 rotate by 90
+  }
+
+  if (1) {
+    set label "Slow\nDB" center at screen 0.24,0.915 front
+    set obj rect from screen 0.655,0.60 to screen 0.73,0.725 fs noborder fc rgb "white" front
+    set label "Fast\nDB" center at screen 0.69,0.69 front
+
+    x0 = 0.34
+    y0 = 0.78
+    x1 = 0.63
+    y1 = 0.60
+    set arrow from screen x0,y0 to screen x1,y1 heads size screen 0.008,90
+
+    x0 = 0.425
+    y0 = 0.78
+    x1 = x0 + 0.035
+    y1 = y0 - 0.03
+    set label "M" at screen x0,y0 rotate by -20 font "Times,16" front
+    set label "UTANT" at screen x1,y1 rotate by -20 font "Times,12" front
+  }
+
+  set tmargin screen TMARGIN
+  set rmargin screen RMARGIN
 
   color_cost(x) = color_01((x - c_min) / (c_max - c_min))
 
-  l_x = 0.97
-  l_y = 0.9
-  labels = "Average 90th 99th 99.9th 99.99th"
-
   LW = 2
   PS = 0.4
-  RB = 35
 
   costs = "0.045 0.1 0.2 0.3 0.4 0.5 0.528"
 
-  # Read latency
-  if (1) {
-    set ylabel "Read latency (ms)" offset 1.5,0
-    # Base index
-    b=5
-    do for [i=1:words(labels)] {
-      if (i == 1) {
-        unset label 1
-        set yrange[0.05:3]
-        plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
-      } else {
-        set label 1 word(labels, i) at graph l_x,l_y right
-        set autoscale y
-        plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
-      }
-    }
-  }
+  set ylabel "Read latency (ms)" offset 1.5,0
+  # Base index
+  b=5
 
-  # Write latency
-  if (1) {
-    set autoscale y
-    set ylabel "Write latency (ms)" offset 1.5,0
-    b = 10
-    do for [i=1:words(labels)] {
-      if (i == 1) {
-        unset label 1
-      } else {
-        set label 1 word(labels, i) at graph l_x,l_y right
-      }
-      plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
-    }
-  }
-
-  # Read latency avg. y-axis linear scale. This might be better to present.
-  b = 5
   i = 1
-  set ylabel "Read latency (ms)" offset 0.0,0
-  #set label 1 word(labels, i) at graph l_x,l_y right
-  unset label 1
-  unset logscale
-  set logscale x
-  set yrange[0:1.6]
-  set ytics nomirror tc rgb "black" format "%.1f" autofreq 0,0.5
+  set yrange[0.05:3]
   plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
 }
 
 
-# Unmodified DB performance with tail latencies
+# Average write latency
 if (1) {
   reset
-  set xlabel "K IOPS"
+  set xlabel "Throughput (K IOPS)"
   set xtics nomirror tc rgb "black"
   set ytics nomirror tc rgb "black"
   set grid xtics ytics back lc rgb "#808080"
@@ -177,108 +158,22 @@ if (1) {
 
   set logscale xy
   set xrange[1/1.5:100*1.5]
-  set yrange[:100*1.5]
+
+  set tmargin screen TMARGIN
+  set rmargin screen RMARGIN
 
   color_cost(x) = color_01((x - c_min) / (c_max - c_min))
 
   LW = 2
   PS = 0.4
-  BW = 0.06
 
-  set boxwidth BW
+  costs = "0.045 0.1 0.2 0.3 0.4 0.5 0.528"
 
-  costs = "0.045 0.528"
+  set ylabel "Write latency (ms)" offset 1.5,0
+  # Base index
+  b=10
 
-  # Read latency
-  if (1) {
-    set ylabel "Read latency (ms)" offset 1.5,0
-
-    # Base index
-    b=5
-
-    plot \
-      for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000):(color_cost($1)) w candlesticks lc rgb variable lw LW fillstyle empty not whiskerbars, \
-      for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b)/1000):(color_cost($1)) w lp pt 7 ps PS lc rgb variable lt 0 lw LW not
-  }
-
-  # Write latency
-  if (1) {
-    #set autoscale y
-    set ylabel "Write latency (ms)" offset 1.5,0
-    b = 10
-    plot \
-      for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b+2)/1000):(column(b+1)/1000):(column(b+4)/1000):(column(b+3)/1000):(color_cost($1)) w candlesticks lc rgb variable lw LW fillstyle empty not whiskerbars, \
-      for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b)/1000):(color_cost($1)) w lp pt 7 ps PS lc rgb variable lt 0 lw LW not
-
-    #plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
-  }
-}
-
-
-# Legend for the tail latencies
-if (1) {
-  reset
-
-  set notics
-  set noborder
-  set lmargin 0
-  set rmargin 0
-  set bmargin 0
-  set tmargin 0
-
-  LW=2
-
-  if (1) {
-    xm=0.08
-    bw=0.03
-    xl=xm-bw/2
-    xr=xm+bw/2
-    yt=0.95
-    yb=yt-0.25
-    y1=yb+(yt-yb)*1/3
-    y2=yb+(yt-yb)*2/3
-
-    set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "blue"
-    set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "blue"
-    set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "blue"
-
-    # Draw the box twice (face and border) to erase the vertical line behind the box
-    set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
-    set obj rect from graph xl,y1 to graph xr,y2 fs empty border lc rgb "blue" fc rgb "blue" lw LW front
-
-    yb1=yb-0.10
-    set obj circle at graph xm,yb1 size graph .007 fs transparent solid fc rgb "blue" front
-
-    yb2=yb1-0.12
-    set label "$0.045\nEBS\nMag" at graph xm,yb2 center tc rgb "blue"
-  }
-
-  if (1) {
-    xm=xm+0.20
-    xl=xm-bw/2
-    xr=xm+bw/2
-
-    set arrow from graph xm,yb to graph xm,yt nohead lw LW lc rgb "red"
-    set arrow from graph xl,yt to graph xr,yt nohead lw LW lc rgb "red"
-    set arrow from graph xl,yb to graph xr,yb nohead lw LW lc rgb "red"
-
-    set obj rect from graph xl,y1 to graph xr,y2 fs solid noborder fc rgb "white" front
-    set obj rect from graph xl,y1 to graph xr,y2 fs empty border lc rgb "red" fc rgb "red" lw LW front
-
-    set obj circle at graph xm,yb1 size graph .007 fs transparent solid fc rgb "red" front
-
-    set label "$0.528\nLocal\nSSD" at graph xm,yb2 center tc rgb "red"
-  }
-
-  if (1) {
-    xm=xm+0.10
-    set label "99.99th" at graph xm,yt left
-    set label "99.9th"  at graph xm,y2 left
-    set label "99th"    at graph xm,y1 left
-    set label "90th"    at graph xm,yb left
-    set label "Avg"     at graph xm,yb1 left
-  }
-
-  f(x)=x
-  plot f(x) lc rgb "white" not
+  i = 1
+  set yrange[0.01:10]
+  plot for [j=1:words(costs)] IN_YCSB u ($1 == word(costs, j) ? $4/1000 : 1/0):(column(b + i - 1)/1000):(color_cost($1)) w lp pt j ps PS lc rgb variable lw LW not
 }
