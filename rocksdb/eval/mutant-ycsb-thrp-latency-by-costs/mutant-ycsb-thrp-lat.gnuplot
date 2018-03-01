@@ -6,7 +6,9 @@ OUT_FN = system("echo $OUT_FN")
 set print "-"
 #print sprintf("TIME_MAX=%s", TIME_MAX)
 
-set terminal pdfcairo enhanced size 3.5in, 2.4in
+size_x = 2.9
+size_y = size_x * 0.69
+set terminal pdfcairo enhanced size (size_x)in, (size_y)in
 set output OUT_FN
 
 if (0) {
@@ -49,7 +51,7 @@ c_min = 0.045
 c_max = 0.528
 
 TMARGIN = 0.96
-RMARGIN = 0.74
+RMARGIN = 0.71
 
 # Average read latency
 if (1) {
@@ -65,10 +67,10 @@ if (1) {
 
   # Legend
   if (1) {
-    x_l = 0.78
+    x_l = 0.75
     x_r = x_l + 0.023
     y_t = 0.96
-    y_height = 0.78
+    y_height = 0.745
     y_b = y_t - y_height
     y_c = (y_t + y_b) / 2.0
 
@@ -109,9 +111,23 @@ if (1) {
   }
 
   if (1) {
-    set label "Slow\nDB" center at screen 0.24,0.915 front
-    set obj rect from screen 0.655,0.60 to screen 0.73,0.725 fs noborder fc rgb "white" front
-    set label "Fast\nDB" center at screen 0.69,0.69 front
+    x0 = 0.24
+    y0 = 0.94
+    x00 = x0 - 0.060
+    x01 = x0 + 0.06
+    y00 = y0 - 0.08
+    y01 = y0 + 0.035
+    set obj rect from screen x00,y00 to screen x01,y01 fs noborder fc rgb "white" front
+    set label "Slow\nDB" center at screen x0,y0 front
+
+    x0 = 0.70
+    y0 = 0.73
+    x00 = x0 - 0.040
+    x01 = x0 + 0.04
+    y00 = y0 - 0.08
+    y01 = y0 + 0.035
+    set obj rect from screen x00,y00 to screen x01,y01 fs noborder fc rgb "white" front
+    set label "Fast\nDB" center at screen x0,y0 front
 
     x0 = 0.34
     y0 = 0.78
@@ -121,10 +137,10 @@ if (1) {
 
     x0 = 0.425
     y0 = 0.78
-    x1 = x0 + 0.035
-    y1 = y0 - 0.03
-    set label "M" at screen x0,y0 rotate by -20 font "Times,16" front
-    set label "UTANT" at screen x1,y1 rotate by -20 font "Times,12" front
+    x1 = x0 + 0.040
+    y1 = y0 - 0.035
+    set label "M" at screen x0,y0 rotate by -24 font "Times,16" front
+    set label "UTANT" at screen x1,y1 rotate by -24 font "Times,12" front
   }
 
   set tmargin screen TMARGIN
