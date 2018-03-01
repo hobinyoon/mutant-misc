@@ -78,9 +78,10 @@ if (1) {
   reset
   cost_slo = 0.3
 
+  set xlabel "SSTable migration resistance (%)"
   set ylabel "Storage cost\n(relative to SLO)" offset 0.5,0
   set y2label "($/GB/month)" offset -0.5,0
-  set xtics nomirror tc rgb "white" autofreq 0,5
+  set xtics nomirror tc rgb "black" autofreq 0,5
   set mxtics 5
 
   set ytics nomirror tc rgb "black" format "%0.2f" autofreq 0,0.05
