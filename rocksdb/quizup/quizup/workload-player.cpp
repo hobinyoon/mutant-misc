@@ -308,7 +308,7 @@ namespace WorkloadPlayer {
         }
       }
 
-      int phase = SimTime::MaySleepUntilSimulatedTime(too_ts, ws);
+      SimTime::MaySleepUntilSimulatedTime(too_ts, ws);
       if (_stop_requested)
         break;
 
@@ -356,54 +356,12 @@ namespace WorkloadPlayer {
           }
         }
 
-        if (phase == 0) {
-          // No reads during the load phase
-        } else if (1 <= phase) {
+        {
           string v;
           DbClient::Get(k, v, ws);
-
-          if (phase == 1) {
-          } else if (phase == 2) {
-            ProgMon::StartReportingToSlaAdmin();
-            phase2_started = true;
-            break;
-          }
         }
       } else {
         THROW(boost::format("Unexpected op %c") % too.op);
-      }
-    }
-
-    if (phase2_started && req_extra_reads) {
-      size_t q_size = latest_keys_q.size();
-      if (q_size == 0) {
-        // Nothing to do
-      } else {
-        while (! _stop_requested) {
-          boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-          int read_121_phase = 0;
-          if (now < SimTime::SimulationTime3()) {
-            read_121_phase = 0;
-          } else if (now < SimTime::SimulationTime4()) {
-            read_121_phase = 1;
-          } else {
-            read_121_phase = 2;
-          }
-          int sleep_ms = rand() % _xr_sleep_upper_bound_ms[read_121_phase];
-
-          if (SimTime::SimulationTimeEnd() <= now + boost::posix_time::milliseconds(sleep_ms))
-            break;
-          SimTime::SleepFor(sleep_ms);
-          if (_stop_requested)
-            break;
-
-          long oid = latest_keys_q[rand() % q_size];
-          char k1[20];
-          sprintf(k1, "%ld", oid);
-          string v;
-          for (int i = 0; i < _xr_gets_per_key; i ++)
-            DbClient::Get(k1, v, ws);
-        }
       }
     }
   }

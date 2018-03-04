@@ -4,16 +4,11 @@ monitor_temp: true
 # temperatures of the unmodified RocksDB
 migrate_sstables: true
 
-sst_ott: 20.0
-
-organize_L0_sstables: false
-
-cache_filter_index_at_all_levels: true
+cache_filter_index_at_all_levels: false
 
 db_path: ~/work/rocksdb-data/quizup
 slow_dev1_path: uninitialized
 slow_dev2_path: uninitialized
-slow_dev3_path: uninitialized
 
 #workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/0.05
 #workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/0.10
@@ -30,8 +25,9 @@ log_archive_dn: ~/work/mutant/misc/rocksdb/log
 # Value: 1000 - (8 + 18 + 8) = 966
 #
 # (100% data, 1k, no-compression) generates about 2GB of data
-#record_size: 40000
-record_size: 10000
+#
+# Go for 10GB of data
+record_size: 5000
 
 # For a dry run without actually making requests to RocksDB
 request_db: true
@@ -76,7 +72,12 @@ simulated_time_end:   160727-122652.458000
 #
 # -1.0 for undefined.
 workload_start_from: -1.0
-workload_stop_at:    -1.0
+#workload_stop_at:    -1.0
+workload_stop_at:    0.9
+
+# TODO: Make an option for not doing anything after loading to 90%
+# In seconds.
+wait_for_after_done: 600
 
 #simulation_time_dur_in_sec: 10000
 # From 6%, it needs to go slower than 10000 sec. You can go with different
@@ -96,7 +97,8 @@ workload_stop_at:    -1.0
 
 # No saturation on sc1. Good. With the 2-level storage setup, you need to wait
 # a long time, like 5% before seeing the hit on the cold storage device.
-simulation_time_dur_in_sec: 60000
+#simulation_time_dur_in_sec: 60000
+simulation_time_dur_in_sec: 600
 #simulation_time_dur_in_sec: 4000
 
 # Dev on Mjolnir. Mjolnir latency is pretty high. I'm guessing the storage medium is HDD.
@@ -113,20 +115,7 @@ simulation_time_dur_in_sec: 60000
 #   1x speed replay to the end
 121x_speed_replay: false
 
-pid_params: 23,0.1,0,0
-
-# This decides the SlaAdmin adjustment interval too.
 report_interval_in_ms: 1000
 
-sla_admin_type: "none"
-sla_observed_value_hist_q_size: 30
-error_adj_ranges: -0.1,-0.025
+# TODO: change this to the list format
 slow_dev: xvde
-sst_ott_adj_cooldown_ms: 5000
-pid_i_exp_decay_factor: 0.9
-
-# To generate more IOs
-extra_reads: true
-xr_queue_size: 500
-xr_iops: 1000:1500:2000
-xr_gets_per_key: 10

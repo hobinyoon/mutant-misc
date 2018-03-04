@@ -88,13 +88,10 @@ def main():
   # symlink ~/work/rocksdb-data to it
   if hasattr(options, "fast_dev_path"):
     with Cons.MT("Setting up fast_dev_path:", print_time=False):
-      if socket.gethostname() == "node3":
-        pass
-      else:
-        # We don't delete content in the fast_dev to save the rsync time.
-        Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (options.fast_dev_path, options.fast_dev_path))
-        Util.RunSubp("rm %s/work/rocksdb-data || true" % os.path.expanduser("~"))
-        Util.RunSubp("ln -s %s %s/work/rocksdb-data" % (options.fast_dev_path, os.path.expanduser("~")))
+      # We don't delete content in the fast_dev to save the rsync time.
+      Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (options.fast_dev_path, options.fast_dev_path))
+      Util.RunSubp("rm %s/work/rocksdb-data || true" % os.path.expanduser("~"))
+      Util.RunSubp("ln -s %s %s/work/rocksdb-data" % (options.fast_dev_path, os.path.expanduser("~")))
 
   if options.db_path is None:
     raise RuntimeError("Unexpected")

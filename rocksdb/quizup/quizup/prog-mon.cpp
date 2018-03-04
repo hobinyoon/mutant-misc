@@ -54,8 +54,6 @@ std::vector<long> _latency_get;
 long _total_put_cnt = 0;
 long _total_get_cnt = 0;
 
-bool _start_sla_admin_report_latency = false;
-
 
 void ReporterThread();
 void _ReporterThread();
@@ -270,17 +268,9 @@ void _ReporterThread() {
   ofs << boost::format("# hostname: %s\n") % Util::Hostname();
 
   ofs << boost::format("# simulation_time_begin: %s\n") % Util::ToString(SimTime::SimulationTimeBegin());
-  ofs << boost::format("# simulation_time_1    : %s\n") % Util::ToString(SimTime::SimulationTime1());
-  ofs << boost::format("# simulation_time_2    : %s\n") % Util::ToString(SimTime::SimulationTime2());
-  ofs << boost::format("# simulation_time_3    : %s\n") % Util::ToString(SimTime::SimulationTime3());
-  ofs << boost::format("# simulation_time_4    : %s\n") % Util::ToString(SimTime::SimulationTime4());
   ofs << boost::format("# simulation_time_end  : %s\n") % Util::ToString(SimTime::SimulationTimeEnd());
 
   ofs << boost::format("# simulated_time_begin: %s\n") % Util::ToString(SimTime::SimulatedTimeBegin());
-  ofs << boost::format("# simulated_time_1    : %s\n") % Util::ToString(SimTime::SimulatedTime1());
-  ofs << boost::format("# simulated_time_2    : %s\n") % Util::ToString(SimTime::SimulatedTime2());
-  ofs << boost::format("# simulated_time_3    : %s\n") % Util::ToString(SimTime::SimulatedTime3());
-  ofs << boost::format("# simulated_time_4    : %s\n") % Util::ToString(SimTime::SimulatedTime4());
   ofs << boost::format("# simulated_time_end  : %s\n") % Util::ToString(SimTime::SimulatedTimeEnd());
   ofs << "#\n";
 
@@ -434,41 +424,11 @@ void _ReportPerTimeIntervalStat(ofstream& ofs, const string& fmt1, const string&
 
   ofs << s1 << "\n";
   Cons::P(s2);
-
-  if (_start_sla_admin_report_latency) {
-    // Latency in milliseconds
-    rocksdb::Mutant::SlaAdminAdjust(latency_get_stat.avg / 1000.0);
-  }
 }
 
 
 const string& FnClientLog() {
   return _fn_client_log;
-}
-
-
-void StartReportingToSlaAdmin() {
-  static mutex m;
-  // Test and test-and-set.
-  if (! _start_sla_admin_report_latency) {
-    lock_guard<mutex> _(m);
-    if (! _start_sla_admin_report_latency) {
-      string pid_params = Conf::GetStr("pid_params");
-      vector<string> t;
-      static const auto sep = boost::is_any_of(":");
-      boost::split(t, pid_params, sep);
-      if (t.size() != 4)
-        THROW(boost::format("Unexpected: [%s]") % pid_params);
-
-      rocksdb::Mutant::SlaAdminInit(
-        atof(t[0].c_str()) // target latency in ms
-        , atof(t[1].c_str()) // P
-        , atof(t[2].c_str()) // I
-        , atof(t[3].c_str()) // D
-        );
-      _start_sla_admin_report_latency = true;
-    }
-  }
 }
 
 

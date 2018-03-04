@@ -77,8 +77,6 @@ void Init() {
   options.mutant_options.cache_filter_index_at_all_levels = Conf::Get("cache_filter_index_at_all_levels").as<bool>();
   options.mutant_options.monitor_temp = Conf::Get("monitor_temp").as<bool>();
   options.mutant_options.migrate_sstables = Conf::Get("migrate_sstables").as<bool>();
-  options.mutant_options.sst_ott = Conf::Get("sst_ott").as<double>();
-  options.mutant_options.organize_L0_sstables = Conf::Get("organize_L0_sstables").as<bool>();
 
   // True for the SLA admin evaluation
   //options.mutant_options.replaying = true;
