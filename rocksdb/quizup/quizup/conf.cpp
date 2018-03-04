@@ -55,30 +55,11 @@ namespace Conf {
       ("cache_filter_index_at_all_levels", po::value<bool>()->default_value(Get("cache_filter_index_at_all_levels").as<bool>()))
       ("monitor_temp", po::value<bool>()->default_value(Get("monitor_temp").as<bool>()))
       ("migrate_sstables", po::value<bool>()->default_value(Get("migrate_sstables").as<bool>()))
-      ("sst_ott", po::value<double>()->default_value(Get("sst_ott").as<double>()))
-      ("organize_L0_sstables", po::value<bool>()->default_value(Get("organize_L0_sstables").as<bool>()))
       ("db_path", po::value<string>()->default_value(GetStr("db_path")))
-      ("slow_dev1_path", po::value<string>()->default_value(GetStr("slow_dev1_path")))
-      ("slow_dev2_path", po::value<string>()->default_value(GetStr("slow_dev2_path")))
-      ("slow_dev3_path", po::value<string>()->default_value(GetStr("slow_dev3_path")))
       ("workload_start_from", po::value<double>()->default_value(Get("workload_start_from").as<double>()))
       ("workload_stop_at", po::value<double>()->default_value(Get("workload_stop_at").as<double>()))
       ("simulation_time_dur_in_sec", po::value<int>()->default_value(Get("simulation_time_dur_in_sec").as<int>()))
       ("record_size", po::value<int>()->default_value(Get("record_size").as<int>()))
-      ("121x_speed_replay", po::value<bool>()->default_value(Get("121x_speed_replay").as<bool>()))
-      ("pid_params", po::value<string>()->default_value(Get("pid_params").as<string>()))
-
-      ("sla_admin_type", po::value<string>()->default_value(Get("sla_admin_type").as<string>()))
-      ("sla_observed_value_hist_q_size", po::value<int>()->default_value(Get("sla_observed_value_hist_q_size").as<int>()))
-      ("error_adj_ranges", po::value<string>()->default_value(GetStr("error_adj_ranges")))
-      ("slow_dev", po::value<string>()->default_value(GetStr("slow_dev")))
-      ("sst_ott_adj_cooldown_ms", po::value<int>()->default_value(Get("sst_ott_adj_cooldown_ms").as<int>()))
-      ("pid_i_exp_decay_factor", po::value<double>()->default_value(Get("pid_i_exp_decay_factor").as<double>()))
-
-      ("extra_reads", po::value<bool>()->default_value(Get("extra_reads").as<bool>()))
-      ("xr_queue_size", po::value<int>()->default_value(Get("xr_queue_size").as<int>()))
-      ("xr_iops", po::value<string>()->default_value(Get("xr_iops").as<string>()))
-      ("xr_gets_per_key", po::value<int>()->default_value(Get("xr_gets_per_key").as<int>()))
       ;
 
     po::variables_map vm;
@@ -95,30 +76,12 @@ namespace Conf {
     __EditYaml<bool>("cache_filter_index_at_all_levels", vm);
     __EditYaml<bool>("monitor_temp", vm);
     __EditYaml<bool>("migrate_sstables", vm);
-    __EditYaml<double>("sst_ott", vm);
     __EditYaml<bool>("organize_L0_sstables", vm);
     __EditYaml<string>("db_path", vm);
-    __EditYaml<string>("slow_dev1_path", vm);
-    __EditYaml<string>("slow_dev2_path", vm);
-    __EditYaml<string>("slow_dev3_path", vm);
     __EditYaml<double>("workload_start_from", vm);
     __EditYaml<double>("workload_stop_at", vm);
     __EditYaml<int>("simulation_time_dur_in_sec", vm);
     __EditYaml<int>("record_size", vm);
-    __EditYaml<bool>("121x_speed_replay", vm);
-    __EditYaml<string>("pid_params", vm);
-
-    __EditYaml<string>("sla_admin_type", vm);
-    __EditYaml<int>("sla_observed_value_hist_q_size", vm);
-    __EditYaml<string>("error_adj_ranges", vm);
-    __EditYaml<string>("slow_dev", vm);
-    __EditYaml<int>("sst_ott_adj_cooldown_ms", vm);
-    __EditYaml<double>("pid_i_exp_decay_factor", vm);
-
-    __EditYaml<bool>("extra_reads", vm);
-    __EditYaml<int>("xr_queue_size", vm);
-    __EditYaml<string>("xr_iops", vm);
-    __EditYaml<int>("xr_gets_per_key", vm);
   }
 
   void Init(int argc, char* argv[]) {

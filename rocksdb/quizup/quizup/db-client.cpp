@@ -58,10 +58,13 @@ void Init() {
   options.create_if_missing = true;
 
   // 200 GB for each of the db_paths.
+  // TODO
   options.db_paths.emplace_back(db_path + "/t0", 200L*1024*1024*1024);
   options.db_paths.emplace_back(Conf::GetStr("slow_dev1_path"), 200L*1024*1024*1024);
-  options.db_paths.emplace_back(Conf::GetStr("slow_dev2_path"), 200L*1024*1024*1024);
-  options.db_paths.emplace_back(Conf::GetStr("slow_dev3_path"), 200L*1024*1024*1024);
+
+
+
+
 
   options.compression = kNoCompression;
   options.compression_per_level.clear();

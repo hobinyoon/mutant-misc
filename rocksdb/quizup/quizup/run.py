@@ -141,31 +141,21 @@ def main():
 
   Dstat.Restart()
 
-  # Construct args for quizup. Not all arguments to this script needs to be passed.
+  # Construct args for quizup.
+
+
+
+
   args0 = []
   for k in [ \
       "db_path" \
-      , "slow_dev1_path", "slow_dev2_path", "slow_dev3_path" \
+      , "db_stg_devs" \
       , "cache_filter_index_at_all_levels" \
       , "monitor_temp" \
       , "migrate_sstables" \
       , "workload_start_from", "workload_stop_at" \
       , "simulation_time_dur_in_sec" \
-      , "sst_ott" \
-      , "organize_L0_sstables" \
-      , "121x_speed_replay" \
-      , "pid_params" \
       , "record_size" \
-      , "sla_admin_type" \
-      , "sla_observed_value_hist_q_size" \
-      , "error_adj_ranges" \
-      , "slow_dev" \
-      , "sst_ott_adj_cooldown_ms" \
-      , "pid_i_exp_decay_factor" \
-      , "extra_reads" \
-      , "xr_queue_size" \
-      , "xr_iops" \
-      , "xr_gets_per_key" \
       ]:
     if (hasattr(options, k)) and (getattr(options, k) is not None):
       args0.append("--%s=%s" % (k, getattr(options, k)))

@@ -7,8 +7,6 @@ migrate_sstables: true
 cache_filter_index_at_all_levels: false
 
 db_path: ~/work/rocksdb-data/quizup
-slow_dev1_path: uninitialized
-slow_dev2_path: uninitialized
 
 #workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/0.05
 #workload_dir: ~/work/quizup-data/memcached-2w/simulator-data/0.10
@@ -69,10 +67,7 @@ simulated_time_end:   160727-122652.458000
 # With (100% data, running 1% from 90% loaded DB, 1k record size, 5400 sec
 # simulation time, 3G of memory, EBS st1). Peak idle CPU usage is like 76%
 # before the disk becomes the bottleneck.
-#
-# -1.0 for undefined.
-workload_start_from: -1.0
-#workload_stop_at:    -1.0
+workload_start_from: 1.0
 workload_stop_at:    0.9
 
 # TODO: Make an option for not doing anything after loading to 90%
@@ -109,13 +104,4 @@ simulation_time_dur_in_sec: 600
 #   With 2000 secs, about 55% CPU idle. This is probably the fastest you can go without overloading the system.
 #simulation_time_dur_in_sec: 2000
 
-# To see how the SLA admin works
-#   1x speed replay to the 91% of the workload
-#   2x speed replay to the 92% of the workload
-#   1x speed replay to the end
-121x_speed_replay: false
-
 report_interval_in_ms: 1000
-
-# TODO: change this to the list format
-slow_dev: xvde
