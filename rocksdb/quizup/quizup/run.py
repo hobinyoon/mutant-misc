@@ -2,6 +2,7 @@
 
 import base64
 import datetime
+import json
 import optparse
 import os
 import pprint
@@ -12,6 +13,7 @@ import sys
 import time
 import types
 import yaml
+import zlib
 
 sys.path.insert(0, "%s/work/mutant/ec2-tools/lib/util" % os.path.expanduser("~"))
 import Cons
@@ -32,149 +34,103 @@ def sigint_handler(signal, frame):
 def main():
   parser = optparse.OptionParser(usage="usage: %prog [options]",
       version="%prog 0.1")
-  parser.add_option("--job_id", help="Job ID. Unique to an EC2 instance")
-  parser.add_option("--fast_dev_path", help="Fast dev path")
-  parser.add_option("--slow_dev1_path", help="Slow dev1 path")
-  parser.add_option("--slow_dev2_path", help="Slow dev1 path")
-  parser.add_option("--slow_dev3_path", help="Slow dev1 path")
-  parser.add_option("--db_path", help="DB path")
-  parser.add_option("--init_db_to_90p_loaded", help="Upload result to S3")
-  parser.add_option("--evict_cached_data", default="true", help="Evict cached data")
-  parser.add_option("--memory_limit_in_mb", default=0, help="Memory limit in MB. 0 for unlimited.")
-  parser.add_option("--upload_result_to_s3", action='store_true', help="Upload result to S3")
-
-  parser.add_option("--exp_desc", help="Base64-encoded experiment description")
-
-  parser.add_option("--cache_filter_index_at_all_levels", help="Cache metadata")
-  parser.add_option("--monitor_temp", help="Monitor temperature")
-  parser.add_option("--migrate_sstables", help="Migrate SSTables")
-  parser.add_option("--sst_ott", help="SSTable organization temperature threshold")
-  parser.add_option("--organize_L0_sstables", help="Organize L0 SSTables")
-  parser.add_option("--121x_speed_replay", help="1x-2x-1x speed replay")
-  parser.add_option("--pid_params", help="PID controller parameters")
-
-  parser.add_option("--workload_start_from", help="Where the workload data is to be played. In percentage.")
-  parser.add_option("--workload_stop_at", help="Where the workload data is to be played. In percentage.")
-  parser.add_option("--simulation_time_dur_in_sec", help="Simulation time duration.")
-
-  parser.add_option("--record_size", help="Record size")
-
-  parser.add_option("--sla_admin_type", help="SLA admin type")
-  parser.add_option("--sla_observed_value_hist_q_size", help="SLA observed value queue size")
-  parser.add_option("--error_adj_ranges", help="SLA admin error adjustment ranges")
-  parser.add_option("--slow_dev", help="slow storage device name such as xvde")
-  parser.add_option("--sst_ott_adj_cooldown_ms", help="sst_ott adjustment cooldown time")
-  parser.add_option("--pid_i_exp_decay_factor", help="Exponential decay factor of I per sec")
-
-  parser.add_option("--extra_reads", help="Req extra reads")
-  parser.add_option("--xr_queue_size", help="XR queue size")
-  parser.add_option("--xr_iops", help="XR IOPS")
-  parser.add_option("--xr_gets_per_key", help="XR gets per key")
+  parser.add_option("--encoded_params", help="Encoded parameters")
 
   (options, args) = parser.parse_args()
   if len(args) != 0:
     parser.error("wrong number of arguments")
-  Cons.P(pprint.pformat(options))
+  #Cons.P(pprint.pformat(options))
 
   signal.signal(signal.SIGINT, sigint_handler)
 
+  params = json.loads(zlib.decompress(base64.b64decode(options.encoded_params)))
+  # Cons.P(pprint.pformat(params))
+  #
+  # {u'cache_filter_index_at_all_levels': u'false',
+  #     u'db_path': u'/mnt/local-ssd1/rocksdb-data/quizup',
+  #     u'db_stg_devs': [[u'/mnt/local-ssd0/rocksdb-data/ycsb/t0', 0.528],
+  #       [u'/mnt/ebs-st1/rocksdb-data-t1', 0.045]],
+  #     u'evict_cached_data': u'true',
+  #     u'exp_desc': u'Mutant_QuizUp',
+  #     u'memory_limit_in_mb': 5120.0,
+  #     u'migrate_sstables': u'true',
+  #     u'migration_resistance': 0.05,
+  #     u'monitor_temp': u'true',
+  #     u'record_size': 5000,
+  #     u'simulation_time_dur_in_sec': 600,
+  #     u'target_cost': 0.4,
+  #     u'use_90p_loaded_db': u'false',
+  #     u'workload_time_range': [0.0, 0.9]}
+
   with Cons.MT("Building ..."):
-    if socket.gethostname() == "node3":
-      Util.RunSubp("make -j")
-    else:
-      Util.RunSubp("make -j16")
+    Util.RunSubp("make -j16")
 
-  # Set fast dev paths, e.g., "/mnt/local-ssd1/rocksdb-data" and
-  # symlink ~/work/rocksdb-data to it
-  if hasattr(options, "fast_dev_path"):
-    with Cons.MT("Setting up fast_dev_path:", print_time=False):
-      # We don't delete content in the fast_dev to save the rsync time.
-      Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (options.fast_dev_path, options.fast_dev_path))
-      Util.RunSubp("rm %s/work/rocksdb-data || true" % os.path.expanduser("~"))
-      Util.RunSubp("ln -s %s %s/work/rocksdb-data" % (options.fast_dev_path, os.path.expanduser("~")))
+  if ("use_90p_loaded_db" in params) and (params["use_90p_loaded_db"].lower() == "true"):
+    raise RuntimeError("Implement!")
+    # cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use_90p_loaded_db"][0], params["db_path"])
+    # # aws s3 sync fails sometimes when pounded with requests and it seems that it doesn't tell you whether it succeeded or not.
+    # #   Repeat many times. It fixed the issue.
+    # #   A better approach would be running a checksum. Oh well.
+    # for i in range(5):
+    #   Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
+    # if 2 <= len(r["load"]["use_90p_loaded_db"]):
+    #   cmd = "aws s3 sync --delete s3://rocksdb-data/%s %s" % (r["load"]["use_90p_loaded_db"][1], params["db_stg_devs"][1][0])
+    #   for i in range(5):
+    #     Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
+    # Util.RunSubp("sync", measure_time=True, shell=True, gen_exception=False)
 
-  if options.db_path is None:
-    raise RuntimeError("Unexpected")
+    # # Re-create the directories when a preloaded DB is not specified.
+    # paths = params["db_stg_devs"]
+    # for i in range(len(r["load"]["use_90p_loaded_db"]), len(paths)):
+    #   Util.RunSubp("rm -rf %s || true" % paths[i][0])
+    #   Util.MkDirs(paths[i][0])
 
-  if options.init_db_to_90p_loaded.lower() == "true":
-    with Cons.MT("Loading the 90% loaded DB ..."):
-      # Use the local copy on mjolnir
-      if socket.gethostname() == "node3":
-        Util.RunSubp("rsync -av -e ssh --delete ~/work/rocksdb-data/quizup-90p-loaded/quizup localhost:work/rocksdb-data/")
-      else:
-        # The experiment is run on us-east-1. Don't bother with synching with
-        # the other regions for now. It's a huge amount of traffic and "aws s3
-        # sync" doesn't provide a way. You need "aws s3 cp" as well for
-        # uploading the result later on.
-        Util.RunSubp("aws s3 sync --delete s3://rocksdb-data/quizup-90p-loaded %s" % options.db_path)
+  # Load the database from the scratch
   else:
     # Delete existing data
-    if socket.gethostname() == "node3":
-      Util.RunSubp("rm -rf %s || true" % options.db_path)
-    else:
-      Util.RunSubp("sudo rm -rf %s || true" % options.db_path)
+    Util.RunSubp("sudo rm -rf %s || true" % params["db_path"])
 
-  # Set slow dev paths
-  if socket.gethostname() == "node3":
-    # No need for this on mjolnir
-    pass
-  else:
-    for i in range(1, 4):
-      attr_name = "slow_dev%d_path" % i
-      if not hasattr(options, attr_name):
-        continue
-      slow_dev_path = getattr(options, attr_name)
-      if slow_dev_path is not None:
-        with Cons.MT("Setting up slow_dev%d_path:" % i, print_time=False):
-          Util.RunSubp("sudo rm -rf %s || true" % slow_dev_path)
-          Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (slow_dev_path, slow_dev_path))
-          # Let RocksDB use the slow devices directly. This symlink approach
-          # doesn't work when the database doesn't exist yet.
-          #Util.RunSubp("rm %s/work/rocksdb-data/quizup/t%d || true" % (os.path.expanduser("~"), i))
-          #Util.RunSubp("ln -s %s %s/work/rocksdb-data/quizup/t%d" % (slow_dev_path, os.path.expanduser("~"), i))
+    for p in params["db_stg_devs"]:
+      Util.RunSubp("rm -rf %s || true" % p[0])
+      Util.MkDirs(p[0])
 
-  if options.evict_cached_data.lower() == "true":
-    if socket.gethostname() == "node3":
-      pass
-    else:
-      _EvictCache()
+    # One experiment per machine instance. We don't do multiple experiments, since it's bad for the EBS rate limiting.
+
+    if False:
+      # The ycsb log directory contains 2 files when the load phase is included. 1, otherwise.
+      cur_datetime = datetime.datetime.now().strftime("%y%m%d-%H%M%S.%f")[:-3]
+      fn_ycsb_log = "%s/%s-%s" % (_dn_log_root_ycsb, cur_datetime, params["workload_type"])
+      cmd = "cd %s && bin/ycsb load rocksdb %s -m %s > %s 2>&1" % (_dn_ycsb, ycsb_params, mutant_options, fn_ycsb_log)
+      Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
+      Cons.P("Created %s %d" % (fn_ycsb_log, os.path.getsize(fn_ycsb_log)))
+      # No need to upload these to S3
+      #Util.RunSubp("pbzip2 -k %s" % fn_ycsb_log)
+      #UploadToS3("%s.bz2" % fn_ycsb_log)
+
+      # Archive rocksdb log
+      fn1 = "%s/%s" % (_dn_log_rocksdb, cur_datetime)
+      cmd = "cp %s/LOG %s" % (params["db_path"], fn1)
+      Util.RunSubp(cmd, measure_time=True, shell=True, gen_exception=False)
+      #Util.RunSubp("pbzip2 -k %s" % fn1)
+      #UploadToS3("%s.bz2" % fn1)
+      CheckRocksDBLog(fn1)
+
+  if params["evict_cached_data"].lower() == "true":
+    _EvictCache()
 
   Dstat.Restart()
 
-  # Construct args for quizup.
+  cmd = "stdbuf -i0 -o0 -e0 ./quizup --encoded_params=%s" % options.encoded_params
 
-
-
-
-  args0 = []
-  for k in [ \
-      "db_path" \
-      , "db_stg_devs" \
-      , "cache_filter_index_at_all_levels" \
-      , "monitor_temp" \
-      , "migrate_sstables" \
-      , "workload_start_from", "workload_stop_at" \
-      , "simulation_time_dur_in_sec" \
-      , "record_size" \
-      ]:
-    if (hasattr(options, k)) and (getattr(options, k) is not None):
-      args0.append("--%s=%s" % (k, getattr(options, k)))
-  cmd = "stdbuf -i0 -o0 -e0 ./quizup %s" % " ".join(args0)
-
-  if options.memory_limit_in_mb == 0:
+  if params["memory_limit_in_mb"] == 0:
     Util.RunSubp("LD_LIBRARY_PATH=%s/work/mutant/rocksdb %s" \
         % (os.path.expanduser("~"), cmd), shell=True, gen_exception=False)
   else:
-    fn_cgconfig = None
-    if socket.gethostname() == "node3":
-      # Different user name on mjolnir
-      fn_cgconfig = "%s/cgconfig-mjolnir.conf" % os.path.dirname(__file__)
-    else:
-      fn_cgconfig = "%s/cgconfig.conf" % os.path.dirname(__file__)
+    fn_cgconfig = "%s/cgconfig.conf" % os.path.dirname(__file__)
     Util.RunSubp("sed -i 's/" \
         "^    memory\.limit_in_bytes = .*" \
         "/    memory\.limit_in_bytes = %d;" \
-        "/g' %s" % (int(float(options.memory_limit_in_mb) * 1024 * 1024), fn_cgconfig))
+        "/g' %s" % (int(float(params["memory_limit_in_mb"]) * 1024 * 1024), fn_cgconfig))
     Util.RunSubp("sudo cgconfigparser -l %s" % fn_cgconfig)
     Util.RunSubp("LD_LIBRARY_PATH=%s/work/mutant/rocksdb cgexec -g memory:small_mem %s" \
         % (os.path.expanduser("~"), cmd), shell=True, gen_exception=False)
@@ -184,9 +140,9 @@ def main():
   # Draw attention if there is any WARN or ERROR in the RocksDB log
   CheckRocksDBLog()
 
-  AppendAllOptionsToClientLogFileAndZip(options)
-
-  UploadToS3(options.job_id)
+  if ("upload_result_to_s3" in params) and (params["upload_result_to_s3"].lower() == "true"):
+    AppendAllOptionsToClientLogFileAndZip(params)
+    UploadToS3(params["job_id"])
 
 
 def _EvictCache():
