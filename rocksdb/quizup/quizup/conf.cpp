@@ -51,15 +51,7 @@ namespace Conf {
     po::options_description od("Allowed options");
     od.add_options()
       ("help", "show help message")
-
-      ("cache_filter_index_at_all_levels", po::value<bool>()->default_value(Get("cache_filter_index_at_all_levels").as<bool>()))
-      ("monitor_temp", po::value<bool>()->default_value(Get("monitor_temp").as<bool>()))
-      ("migrate_sstables", po::value<bool>()->default_value(Get("migrate_sstables").as<bool>()))
-      ("db_path", po::value<string>()->default_value(GetStr("db_path")))
-      ("workload_start_from", po::value<double>()->default_value(Get("workload_start_from").as<double>()))
-      ("workload_stop_at", po::value<double>()->default_value(Get("workload_stop_at").as<double>()))
-      ("simulation_time_dur_in_sec", po::value<int>()->default_value(Get("simulation_time_dur_in_sec").as<int>()))
-      ("record_size", po::value<int>()->default_value(Get("record_size").as<int>()))
+      ("encoded_params", po::value<string>()->default_value(Get("encoded_params")))
       ;
 
     po::variables_map vm;
@@ -72,6 +64,13 @@ namespace Conf {
       cout << od << "\n";
       exit(0);
     }
+
+    string v = vm["encoded_params"].as<string>();
+    Cons::P(v);
+    exit(0);
+    // TODO
+    //string v = vm["encoded_params"].as<string>();
+    //vm.
 
     __EditYaml<bool>("cache_filter_index_at_all_levels", vm);
     __EditYaml<bool>("monitor_temp", vm);
