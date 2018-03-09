@@ -32,11 +32,13 @@ quizup: librocksdb $(objs)
 		-lpthread \
 		-lrocksdb \
 		-lboost_filesystem \
+		-lboost_iostreams \
 		-lboost_program_options \
 		-lboost_regex \
 		-lboost_system \
 		-lboost_thread \
 		-lboost_timer \
+		-ljsoncpp \
 		-lyaml-cpp
 
 clean:
